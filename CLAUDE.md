@@ -158,8 +158,9 @@ weldex/
 [x] GA4タグ埋め込み済み（コメントアウト解除＋ID差し替えのみでOK）
 [x] Phase5 STEP1：Formspree ENDPOINT差し替え・テスト送信確認（https://formspree.io/f/mqendgdb）
 [x] Phase5 STEP2：GA4タグ有効化（G-643YQLHM8F）
-[ ] Phase5 STEP3：Cloudflare Pagesにデプロイ
-[ ] Phase5 STEP4：動作確認（フォーム・スマホ・アナリティクス）
+[x] Phase5 STEP3：Cloudflare Pagesにデプロイ（weldex.pages.dev）
+[x] Phase5 STEP4：カスタムドメイン設定・動作確認（https://weldex.jp）
+# 2026-05-08 Phase5完了：weldex.jp 公開
 ```
 
 ### Phase 1：営業自動化（収集・診断）

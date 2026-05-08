@@ -1,0 +1,32 @@
+"""
+outreach/config.py
+営業自動化システムの設定・環境変数管理
+"""
+import os
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+# Google Places API
+GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+
+# SendGrid
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+FROM_EMAIL       = os.environ.get("FROM_EMAIL", "info@weldex.jp")
+FROM_NAME        = os.environ.get("FROM_NAME", "Weldex")
+
+# Gmail API
+GMAIL_CLIENT_ID      = os.environ.get("GMAIL_CLIENT_ID", "")
+GMAIL_CLIENT_SECRET  = os.environ.get("GMAIL_CLIENT_SECRET", "")
+GMAIL_REFRESH_TOKEN  = os.environ.get("GMAIL_REFRESH_TOKEN", "")
+
+# 収集設定
+DEFAULT_LIMIT        = 20      # 1回の収集件数上限
+COLLECT_INTERVAL_SEC = 1.5     # API呼び出し間隔（秒）
+REQUEST_TIMEOUT_SEC  = 8       # サイト診断タイムアウト（秒）
+
+# メール送信設定
+DAILY_SEND_LIMIT     = 50      # 特定電子メール法：1日上限
+
+# DB
+DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'outreach.db')
