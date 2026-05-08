@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weldex 予約システム デモ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f7f6f3;
+      --white:   #ffffff;
+      --ink:     #1a1814;
+      --ink2:    #4a4640;
+      --ink3:    #9a948e;
+      --border:  #e4e0da;
+      --accent:  #2d5be3;
+      --accent2: #e8eeff;
+      --line:    #06c755;
+      --line2:   #d4f5df;
+      --green:   #1a7a3c;
+      --red:     #dc2626;
+      --gold:    #c8973a;
+    }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; overflow-x: hidden; max-width: 100vw; }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      background: var(--ink); color: var(--white);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem; height: 56px;
+    }
+    .topnav-logo { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.06em; }
+    .topnav-tag { font-size: 0.65rem; background: rgba(255,255,255,0.12); padding: 0.25rem 0.75rem; letter-spacing: 0.1em; }
+
+    /* ── DEMO TABS ── */
+    .demo-tabs { background: var(--white); border-bottom: 1px solid var(--border); display: flex; padding: 0 2.5rem; gap: 0; }
+    .tab-btn { padding: 1rem 1.5rem; font-size: 0.8rem; font-weight: 500; color: var(--ink3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'Noto Sans JP', sans-serif; letter-spacing: 0.03em; }
+    .tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+    .tab-btn:hover:not(.active) { color: var(--ink2); }
+    .tab-btn .tab-icon { margin-right: 0.4rem; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ═══════════════════════════════
+       WEB予約タブ
+    ═══════════════════════════════ */
+    .booking-wrap {
+      max-width: 1100px; margin: 0 auto; padding: 2.5rem;
+      display: grid; grid-template-columns: 1fr 380px; gap: 2rem; align-items: start;
+    }
+    @media(max-width:700px){
+      .booking-wrap { grid-template-columns: 1fr !important; padding: 1rem !important; }
+      .line-demo-wrap { grid-template-columns: 1fr !important; padding: 1rem !important; }
+      .admin-wrap { padding: 1rem !important; }
+      .admin-stats { grid-template-columns: repeat(2,1fr) !important; }
+      .admin-grid { grid-template-columns: 1fr !important; }
+      .topnav { padding: 0 1rem !important; }
+      .demo-tabs { padding: 0 0.5rem !important; }
+      .tab-btn { padding: 0.75rem 0.75rem !important; font-size: 0.75rem !important; }
+    }
+
+    /* カレンダー */
+    .cal-panel { background: var(--white); border: 1px solid var(--border); overflow: hidden; }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .cal-month { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+    .cal-nav { display: flex; gap: 0.5rem; }
+    .cal-nav-btn { background: none; border: 1px solid var(--border); color: var(--ink2); width: 32px; height: 32px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+    .cal-nav-btn:hover { background: var(--bg); }
+    .cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border); }
+    .cal-dow { text-align: center; padding: 0.75rem 0; font-size: 0.68rem; color: var(--ink3); letter-spacing: 0.05em; }
+    .cal-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-size: clamp(0.65rem, 2.5vw, 0.82rem); cursor: pointer; position: relative;
+      border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      transition: background 0.15s; color: var(--ink2);
+    }
+    .cal-day:nth-child(7n) { border-right: none; }
+    .cal-day.empty { cursor: default; }
+    .cal-day.past { color: var(--border); cursor: not-allowed; }
+    .cal-day.available:hover { background: var(--accent2); color: var(--accent); }
+    .cal-day.selected { background: var(--ink); color: var(--white); }
+    .cal-day.today::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+    .cal-day.selected.today::after { background: var(--white); }
+    .cal-day.full { color: var(--ink3); }
+    .cal-dot { position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .cal-legend { display: flex; gap: 1.25rem; padding: 0.875rem 1.5rem; border-top: 1px solid var(--border); }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; color: var(--ink3); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* 時間スロット */
+    .time-panel { background: var(--white); border: 1px solid var(--border); margin-top: 1rem; }
+    .time-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .time-header h3 { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+    .time-header span { font-size: 0.72rem; color: var(--ink3); }
+    .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); padding: 1px; }
+    .time-slot {
+      background: var(--white); padding: 0.75rem 0.5rem; text-align: center;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .time-slot:hover:not(.full):not(.selected) { background: var(--accent2); }
+    .time-slot.selected { background: var(--ink); }
+    .time-slot.full { background: var(--bg); cursor: not-allowed; }
+    .time-slot .t { font-size: 0.82rem; font-weight: 500; color: var(--ink); transition: color 0.15s; }
+    .time-slot.selected .t { color: var(--white); }
+    .time-slot.full .t { color: var(--border); }
+    .time-slot .s { font-size: 0.65rem; color: var(--ink3); margin-top: 0.15rem; transition: color 0.15s; }
+    .time-slot.selected .s { color: rgba(255,255,255,0.6); }
+    .time-slot.full .s { color: var(--border); }
+
+    /* フォームパネル */
+    .form-panel { background: var(--white); border: 1px solid var(--border); }
+    .form-panel-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .form-panel-header h2 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--ink); }
+    .form-panel-header p { font-size: 0.75rem; color: var(--ink3); margin-top: 0.2rem; }
+    .selected-summary { background: var(--accent2); border: 1px solid rgba(45,91,227,0.2); padding: 0.875rem 1rem; margin: 1rem 1.5rem 0; display: none; }
+    .selected-summary.show { display: flex; align-items: center; gap: 0.75rem; }
+    .summary-icon { font-size: 1.1rem; }
+    .summary-text { font-size: 0.8rem; color: var(--accent); font-weight: 500; }
+    .form-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+    .f-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .f-group label { font-size: 0.68rem; color: var(--ink3); letter-spacing: 0.08em; }
+    .f-group input, .f-group select, .f-group textarea {
+      border: 1px solid var(--border); padding: 0.7rem 0.875rem;
+      font-size: 0.875rem; font-family: 'Noto Sans JP', sans-serif;
+      color: var(--ink); background: var(--bg); outline: none; transition: all 0.2s;
+      -webkit-appearance: none;
+    }
+    .f-group input:focus, .f-group select:focus, .f-group textarea:focus {
+      border-color: var(--accent); background: var(--white);
+    }
+    .f-group textarea { resize: none; height: 72px; }
+    .btn-book { background: var(--ink); color: var(--white); border: none; padding: 0.9rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: background 0.2s; width: 100%; letter-spacing: 0.05em; }
+    .btn-book:hover { background: var(--accent); }
+    .btn-book:disabled { background: var(--border); cursor: not-allowed; }
+    .form-note { font-size: 0.7rem; color: var(--ink3); text-align: center; margin-top: 0.5rem; }
+
+    /* 確認画面 */
+    .confirm-screen { display: none; padding: 1.5rem; text-align: center; }
+    .confirm-screen.show { display: block; }
+    .confirm-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .confirm-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.5rem; }
+    .confirm-text { font-size: 0.82rem; color: var(--ink3); line-height: 1.8; margin-bottom: 1.5rem; }
+    .confirm-detail { background: var(--bg); border: 1px solid var(--border); padding: 1rem; margin-bottom: 1.5rem; }
+    .confirm-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
+    .confirm-row:last-child { border-bottom: none; }
+    .confirm-row .cl { color: var(--ink3); }
+    .confirm-row .cv { color: var(--ink); font-weight: 500; }
+    .btn-reset { background: none; border: 1px solid var(--border); color: var(--ink2); padding: 0.7rem 2rem; font-size: 0.82rem; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
+
+    /* ═══════════════════════════════
+       LINE予約タブ（モック）
+    ═══════════════════════════════ */
+    .line-demo-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+
+    /* スマホモック */
+    .phone-mockup { position: relative; margin: 0 auto; }
+    .phone-frame { width: 320px; background: #1a1814; border-radius: 40px; padding: 12px; box-shadow: 0 24px 60px rgba(0,0,0,0.25); margin: 0 auto; }
+    .phone-screen { background: #e8e0d6; border-radius: 30px; overflow: hidden; }
+    .phone-status { background: #1a1814; padding: 12px 20px 6px; display: flex; justify-content: space-between; align-items: center; }
+    .phone-status span { font-size: 11px; color: white; font-weight: 600; }
+    .line-header { background: var(--line); padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+    .line-header-icon { width: 36px; height: 36px; background: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .line-header-info h3 { font-size: 13px; font-weight: 600; color: white; }
+    .line-header-info p { font-size: 10px; color: rgba(255,255,255,0.8); }
+    .chat-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 400px; background: #e8e0d6; }
+    .msg { max-width: 75%; }
+    .msg.bot { align-self: flex-start; }
+    .msg.user { align-self: flex-end; }
+    .msg-bubble { padding: 10px 12px; border-radius: 16px; font-size: 12px; line-height: 1.6; }
+    .msg.bot .msg-bubble { background: white; color: var(--ink); border-bottom-left-radius: 4px; }
+    .msg.user .msg-bubble { background: var(--line); color: white; border-bottom-right-radius: 4px; }
+    .msg-time { font-size: 9px; color: var(--ink3); margin-top: 3px; }
+    .msg.user .msg-time { text-align: right; }
+
+    .rich-menu { background: white; border-top: 1px solid #ddd; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #ddd; }
+    .rm-btn { background: white; padding: 10px 4px; text-align: center; cursor: pointer; }
+    .rm-btn .rm-icon { font-size: 18px; display: block; }
+    .rm-btn .rm-label { font-size: 10px; color: var(--ink2); margin-top: 3px; }
+
+    .quick-replies { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .qr { background: var(--white); border: 1px solid var(--line); color: var(--green); font-size: 11px; padding: 5px 10px; border-radius: 16px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
+
+    /* 右側の説明 */
+    .line-feature-panel { display: flex; flex-direction: column; gap: 1.5rem; padding-top: 1rem; }
+    .feature-item { display: flex; gap: 1.25rem; align-items: flex-start; }
+    .feature-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--border); line-height: 1; flex-shrink: 0; width: 40px; }
+    .feature-title { font-size: 0.95rem; font-weight: 500; color: var(--ink); margin-bottom: 0.3rem; }
+    .feature-desc { font-size: 0.82rem; color: var(--ink3); line-height: 1.75; font-weight: 300; }
+    .feature-tag { display: inline-block; background: var(--line2); color: var(--green); font-size: 0.65rem; padding: 0.2rem 0.6rem; margin-top: 0.5rem; font-weight: 500; }
+    .feature-tag.accent { background: var(--accent2); color: var(--accent); }
+
+    /* フロー図 */
+    .flow-panel { background: var(--white); border: 1px solid var(--border); padding: 1.5rem; margin-top: 2rem; }
+    .flow-title { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink3); margin-bottom: 1.25rem; }
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+    .flow-step { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+    .flow-circle { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .flow-circle.line-c { background: var(--line2); }
+    .flow-circle.web-c { background: var(--accent2); }
+    .flow-circle.auto-c { background: #fff3e0; }
+    .flow-circle.done-c { background: #f0fdf4; }
+    .flow-label { font-size: 0.68rem; color: var(--ink2); text-align: center; max-width: 64px; line-height: 1.4; }
+    .flow-arrow { color: var(--border); font-size: 1.2rem; padding: 0 0.5rem; margin-bottom: 1.2rem; }
+
+    /* ═══════════════════════════════
+       管理画面タブ
+    ═══════════════════════════════ */
+    .admin-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .admin-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+    .admin-date { font-size: 0.78rem; color: var(--ink3); }
+    .admin-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); margin-bottom: 1.5rem; border: 1px solid var(--border); }
+    .admin-stat { background: var(--white); padding: 1.25rem 1.5rem; }
+    .admin-stat .al { font-size: 0.65rem; color: var(--ink3); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+    .admin-stat .av { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--ink); }
+    .admin-stat .as { font-size: 0.7rem; color: var(--ink3); margin-top: 0.2rem; }
+    .admin-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1rem; }
+    .booking-list { background: var(--white); border: 1px solid var(--border); }
+    .list-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .list-header h3 { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+    .list-tabs { display: flex; gap: 0; }
+    .list-tab { font-size: 0.72rem; padding: 0.3rem 0.75rem; cursor: pointer; border: 1px solid var(--border); color: var(--ink3); background: var(--bg); transition: all 0.15s; }
+    .list-tab.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+    .booking-item { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    .booking-item:last-child { border-bottom: none; }
+    .booking-item:hover { background: var(--bg); }
+    .bi-time { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; color: var(--ink); min-width: 64px; }
+    .bi-info { flex: 1; }
+    .bi-name { font-size: 0.875rem; font-weight: 500; color: var(--ink); }
+    .bi-detail { font-size: 0.72rem; color: var(--ink3); margin-top: 0.1rem; }
+    .bi-channel { font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 2px; }
+    .bi-channel.web { background: var(--accent2); color: var(--accent); }
+    .bi-channel.line { background: var(--line2); color: var(--green); }
+    .bi-status { font-size: 0.7rem; padding: 0.2rem 0.6rem; }
+    .status-confirmed { background: #f0fdf4; color: var(--green); }
+    .status-pending { background: #fefce8; color: #a16207; }
+    .status-cancelled { background: #fef2f2; color: var(--red); }
+
+    /* 今日のサマリー */
+    .today-panel { background: var(--white); border: 1px solid var(--border); }
+    .today-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+    .today-timeline { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0; }
+    .tl-item { display: flex; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+    .tl-item:last-child { border-bottom: none; }
+    .tl-time { font-size: 0.72rem; color: var(--ink3); width: 40px; flex-shrink: 0; padding-top: 0.1rem; font-family: 'Syne', sans-serif; font-weight: 600; }
+    .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 0.25rem; }
+    .tl-name { font-size: 0.8rem; color: var(--ink); font-weight: 500; }
+    .tl-sub { font-size: 0.68rem; color: var(--ink3); margin-top: 0.1rem; }
+
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(26,24,20,0.6); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--white); border: 1px solid var(--border);
+      width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+      animation: modalIn 0.22s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes modalIn {
+      from { opacity:0; transform:translateY(14px) scale(0.97); }
+      to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+    .modal-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--white); z-index: 1;
+    }
+    .modal-name-jp { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+    .modal-name-kana { font-size: 0.7rem; color: var(--ink3); margin-top: 0.2rem; letter-spacing: 0.05em; }
+    .modal-visit-count { font-size: 0.68rem; background: var(--accent2); color: var(--accent); padding: 0.2rem 0.6rem; margin-top: 0.4rem; display: inline-block; }
+    .modal-close-btn {
+      background: none; border: 1px solid var(--border); color: var(--ink3);
+      width: 30px; height: 30px; cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .modal-close-btn:hover { color: var(--ink); border-color: var(--ink2); }
+    .modal-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+    .modal-section-title { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink3); margin-bottom: 0.75rem; font-family: 'Syne', sans-serif; }
+    .info-grid { display: flex; flex-direction: column; gap: 0; }
+    .info-row { display: flex; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+    .info-row:last-child { border-bottom: none; }
+    .info-icon { font-size: 0.9rem; flex-shrink: 0; width: 20px; text-align: center; padding-top: 0.05rem; }
+    .info-label { font-size: 0.65rem; color: var(--ink3); width: 60px; flex-shrink: 0; padding-top: 0.15rem; letter-spacing: 0.05em; }
+    .info-val { font-size: 0.875rem; color: var(--ink); font-weight: 300; flex: 1; line-height: 1.5; }
+    .info-val.notes { color: var(--ink2); font-size: 0.82rem; }
+    .history-list { display: flex; flex-direction: column; gap: 0; }
+    .history-row { display: flex; gap: 0.75rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .history-row:last-child { border-bottom: none; }
+    .h-status { font-size: 0.9rem; flex-shrink: 0; }
+    .h-date { font-size: 0.75rem; color: var(--ink2); font-family: 'Syne', sans-serif; flex-shrink: 0; min-width: 110px; }
+    .h-menu { font-size: 0.78rem; color: var(--ink3); }
+    .h-ch { font-size: 0.62rem; padding: 0.15rem 0.45rem; flex-shrink: 0; }
+    .h-ch.web  { background: var(--accent2); color: var(--accent); }
+    .h-ch.line { background: #d4f5df; color: #1a7a3c; }
+    .modal-foot {
+      padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+      display: flex; gap: 0.75rem; justify-content: space-between; align-items: center;
+      position: sticky; bottom: 0; background: var(--white);
+    }
+    .modal-foot-left { font-size: 0.7rem; color: var(--ink3); }
+    .modal-foot-right { display: flex; gap: 0.75rem; }
+    .btn-modal-edit { background: transparent; border: 1px solid var(--border); color: var(--ink2); padding: 0.5rem 1.1rem; font-size: 0.78rem; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s; }
+    .btn-modal-edit:hover { border-color: var(--ink2); color: var(--ink); }
+    .btn-modal-book { background: var(--ink); color: var(--white); border: none; padding: 0.5rem 1.1rem; font-size: 0.78rem; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: background 0.15s; }
+    .btn-modal-book:hover { background: var(--accent); }
+    /* 顧客名クリック */
+    .clickable-name { cursor: pointer; color: var(--accent); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; transition: color 0.15s; }
+    .clickable-name:hover { text-decoration-style: solid; }
+    /* 編集フォーム */
+    .edit-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.875rem; }
+    .edit-field label { font-size: 0.65rem; color: var(--ink3); letter-spacing: 0.08em; }
+    .edit-field input, .edit-field textarea { border: 1px solid var(--border); padding: 0.6rem 0.75rem; font-size: 0.875rem; font-family: 'Noto Sans JP', sans-serif; color: var(--ink); background: var(--bg); outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+    .edit-field input:focus, .edit-field textarea:focus { border-color: var(--accent); background: var(--white); }
+    .edit-field textarea { resize: vertical; min-height: 72px; }
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px) {
+      .booking-wrap, .line-demo-wrap, .admin-grid { grid-template-columns: 1fr; }
+      .phone-frame { width: 280px; }
+      .admin-stats { grid-template-columns: repeat(2,1fr); }
+      .flow { gap: 0.25rem; }
+      .time-grid { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-logo">Weldex 予約システム</div>
+  <div class="topnav-tag">DEMO</div>
+</div>
+
+<div class="demo-tabs">
+  <button class="tab-btn active" onclick="switchTab('web')"><span class="tab-icon">🌐</span>WEB予約</button>
+  <button class="tab-btn" onclick="switchTab('line')"><span class="tab-icon">💬</span>LINE予約</button>
+  <button class="tab-btn" onclick="switchTab('admin')"><span class="tab-icon">📊</span>管理画面</button>
+</div>
+
+<!-- ═══ WEB予約タブ ═══ -->
+<div id="tab-web" class="tab-content active">
+  <div class="booking-wrap">
+    <div>
+      <!-- カレンダー -->
+      <div class="cal-panel">
+        <div class="cal-header">
+          <span class="cal-month" id="calMonth">2025年6月</span>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div class="cal-dow-row">
+          <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
+          <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div><div class="cal-dow">土</div>
+        </div>
+        <div class="cal-days-grid" id="calDays"></div>
+        <div class="cal-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div>空きあり</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--border);"></div>満員</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--ink);"></div>選択中</div>
+        </div>
+      </div>
+
+      <!-- 時間スロット -->
+      <div class="time-panel" id="timePanel" style="display:none;">
+        <div class="time-header">
+          <h3 id="timePanelDate">時間を選択</h3>
+          <span id="timePanelSub">希望の時間帯をお選びください</span>
+        </div>
+        <div class="time-grid" id="timeGrid"></div>
+      </div>
+    </div>
+
+    <!-- フォームパネル -->
+    <div class="form-panel">
+      <div class="form-panel-header">
+        <h2>ご予約フォーム</h2>
+        <p>日時を選択してから入力してください</p>
+      </div>
+      <div class="selected-summary" id="selectedSummary">
+        <span class="summary-icon">📅</span>
+        <span class="summary-text" id="summaryText"></span>
+      </div>
+
+      <!-- フォーム -->
+      <div id="formSection">
+        <div class="form-body">
+          <div class="f-group">
+            <label>お名前 *</label>
+            <input type="text" id="fname" placeholder="山田 花子">
+          </div>
+          <div class="f-group">
+            <label>電話番号 *</label>
+            <input type="tel" id="ftel" placeholder="090-XXXX-XXXX">
+          </div>
+          <div class="f-group">
+            <label>メールアドレス</label>
+            <input type="email" id="femail" placeholder="mail@example.com">
+          </div>
+          <div class="f-group">
+            <label>メニュー</label>
+            <select id="fmenu">
+              <option value="">-- 選択してください --</option>
+              <option>初回カウンセリング（60分）</option>
+              <option>定期メンテナンス（30分）</option>
+              <option>相談・見学（無料）</option>
+              <option>その他</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label>ご要望・備考</label>
+            <textarea placeholder="初めての方・ご要望などがあればご記入ください"></textarea>
+          </div>
+          <button class="btn-book" id="bookBtn" onclick="confirmBooking()" disabled>
+            予約を確定する
+          </button>
+          <div class="form-note">確認後、メール・SMSでご連絡します</div>
+        </div>
+      </div>
+
+      <!-- 完了画面 -->
+      <div class="confirm-screen" id="confirmScreen">
+        <div class="confirm-icon">✅</div>
+        <div class="confirm-title">ご予約が完了しました</div>
+        <div class="confirm-text">確認メールをお送りしました。<br>前日にリマインドをお送りします。</div>
+        <div class="confirm-detail">
+          <div class="confirm-row"><span class="cl">日時</span><span class="cv" id="confirmDate">—</span></div>
+          <div class="confirm-row"><span class="cl">お名前</span><span class="cv" id="confirmName">—</span></div>
+          <div class="confirm-row"><span class="cl">メニュー</span><span class="cv" id="confirmMenu">—</span></div>
+          <div class="confirm-row"><span class="cl">予約番号</span><span class="cv" id="confirmNo">—</span></div>
+        </div>
+        <button class="btn-reset" onclick="resetBooking()">別の日程で予約する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LINE予約タブ ═══ -->
+<div id="tab-line" class="tab-content">
+  <div class="line-demo-wrap">
+    <!-- スマホモック -->
+    <div class="phone-mockup">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-status">
+            <span>9:41</span>
+            <span>LINE</span>
+          </div>
+          <div class="line-header">
+            <div class="line-header-icon">🏢</div>
+            <div class="line-header-info">
+              <h3 id="lineStoreName">〇〇クリニック 公式</h3>
+              <p>認証済みアカウント</p>
+            </div>
+          </div>
+          <div class="chat-body" id="chatBody">
+            <!-- メッセージはJSで生成 -->
+          </div>
+          <div class="rich-menu">
+            <div class="rm-btn" onclick="lineAction('reserve')"><span class="rm-icon">📅</span><span class="rm-label">予約する</span></div>
+            <div class="rm-btn" onclick="lineAction('confirm')"><span class="rm-icon">✅</span><span class="rm-label">予約確認</span></div>
+            <div class="rm-btn" onclick="lineAction('cancel')"><span class="rm-icon">❌</span><span class="rm-label">キャンセル</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.72rem;color:var(--ink3);">
+        ← リッチメニューをタップして試せます
+      </div>
+    </div>
+
+    <!-- 右側の説明 -->
+    <div>
+      <div style="margin-bottom:2rem;">
+        <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.75rem;">LINE Reservation System</div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--ink);margin-bottom:0.5rem;">LINEだけで、予約が完結。</h2>
+        <p style="font-size:0.875rem;color:var(--ink3);font-weight:300;line-height:1.8;">電話・WEBフォームに加えてLINEを導入することで、24時間予約受付・自動リマインドまで対応。スタッフの電話対応を大幅に削減できます。</p>
+      </div>
+
+      <div class="line-feature-panel">
+        <div class="feature-item">
+          <div class="feature-num">01</div>
+          <div>
+            <div class="feature-title">リッチメニューで直感操作</div>
+            <div class="feature-desc">「予約する」「確認」「キャンセル」をボタン一つで。電話番号を知らなくていい。</div>
+            <span class="feature-tag">LINE Messaging API</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">02</div>
+          <div>
+            <div class="feature-title">自動リマインド送信</div>
+            <div class="feature-desc">予約前日・当日朝にLINEで自動通知。無断キャンセルを大幅削減。</div>
+            <span class="feature-tag">自動化</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">03</div>
+          <div>
+            <div class="feature-title">WEB予約と一元管理</div>
+            <div class="feature-desc">LINE・WEBどちらからの予約も同じ管理画面で確認。二重予約を防止。</div>
+            <span class="feature-tag accent">統合管理</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">04</div>
+          <div>
+            <div class="feature-title">既存LINEアカウントに追加可</div>
+            <div class="feature-desc">すでに公式アカウントをお持ちの場合、Webhook設定で既存アカウントに機能を追加できます。</div>
+            <span class="feature-tag">導入しやすい</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- フロー図 -->
+      <div class="flow-panel">
+        <div class="flow-title">予約フロー</div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-circle line-c">💬</div><div class="flow-label">LINE友達追加</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-circle line-c">📅</div><div class="flow-label">メニューから予約</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-circle web-c">📝</div><div class="flow-label">日時・情報入力</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-circle auto-c">✅</div><div class="flow-label">自動確認送信</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-circle auto-c">🔔</div><div class="flow-label">前日リマインド</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-circle done-c">🎉</div><div class="flow-label">来店・来院</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 管理画面タブ ═══ -->
+<div id="tab-admin" class="tab-content">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <div class="admin-title">予約管理ダッシュボード</div>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <button onclick="switchAdminTab('reservation')" id="btnReservation"
+          style="background:var(--ink);color:white;border:none;padding:.45rem 1rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+          予約管理
+        </button>
+        <button onclick="switchAdminTab('customer')" id="btnCustomer"
+          style="background:var(--bg);color:var(--ink2);border:1px solid var(--border);padding:.45rem 1rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+          顧客管理
+        </button>
+        <button onclick="switchAdminTab('csv')" id="btnCsv"
+          style="background:var(--bg);color:var(--ink2);border:1px solid var(--border);padding:.45rem 1rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+          CSV取込
+        </button>
+        <button onclick="switchAdminTab('remind')" id="btnRemind"
+          style="background:var(--bg);color:var(--ink2);border:1px solid var(--border);padding:.45rem 1rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+          リマインド
+        </button>
+        <div class="admin-date" id="adminDate"></div>
+      </div>
+    </div>
+
+    <div class="admin-stats">
+      <div class="admin-stat"><div class="al">今日の予約</div><div class="av">12</div><div class="as">+3件 昨日比</div></div>
+      <div class="admin-stat"><div class="al">今月の予約</div><div class="av">148</div><div class="as">先月比 +12%</div></div>
+      <div class="admin-stat"><div class="al">キャンセル率</div><div class="av" style="color:var(--green);">4.2%</div><div class="as">先月 8.1% → 改善</div></div>
+      <div class="admin-stat"><div class="al">LINE経由</div><div class="av" style="color:var(--green);">68%</div><div class="as">WEB 32%</div></div>
+    </div>
+
+
+    <!-- CSV取込パネル -->
+    <div id="csvPanel" style="display:none;margin-bottom:1rem;">
+      <div style="background:var(--white);border:1px solid var(--border);">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);">
+          <span style="font-size:.82rem;font-weight:500;color:var(--ink);">既存データのCSV取込</span>
+          <p style="font-size:.75rem;color:var(--ink3);margin-top:.25rem;">ExcelやCSSVの顧客リストをインポートできます。電話番号で重複チェックを行います。</p>
+        </div>
+        <div style="padding:1.5rem 1.25rem;">
+          <!-- ドラッグ&ドロップゾーン -->
+          <div id="dropZone"
+            style="border:2px dashed var(--border);padding:3rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);"
+            onclick="document.getElementById('csvFileInput').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent2)'"
+            ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+            ondrop="handleCsvDrop(event)">
+            <div style="font-size:2rem;margin-bottom:.75rem;">📄</div>
+            <div style="font-size:.9rem;font-weight:500;color:var(--ink);margin-bottom:.35rem;">CSVまたはExcelファイルをドロップ</div>
+            <div style="font-size:.75rem;color:var(--ink3);">または クリックしてファイルを選択</div>
+            <div style="font-size:.68rem;color:var(--ink3);margin-top:.75rem;">対応形式：.csv / .xlsx / .xls</div>
+          </div>
+          <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none;" onchange="handleCsvFile(this.files[0])">
+
+          <!-- カラムマッピング説明 -->
+          <div style="margin-top:1.5rem;background:var(--bg);padding:1rem;border:1px solid var(--border);">
+            <div style="font-size:.72rem;font-weight:500;color:var(--ink);margin-bottom:.75rem;">対応しているCSVヘッダー（日本語・英語どちらでも可）</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">
+              <div style="font-size:.72rem;color:var(--ink2);">氏名 / 名前 / 患者名 → 氏名</div>
+              <div style="font-size:.72rem;color:var(--ink2);">フリガナ / カナ → フリガナ</div>
+              <div style="font-size:.72rem;color:var(--ink2);">電話番号 / TEL / tel → 電話</div>
+              <div style="font-size:.72rem;color:var(--ink2);">メール / メールアドレス → メール</div>
+              <div style="font-size:.72rem;color:var(--ink2);">生年月日 / 誕生日 → 生年月日</div>
+              <div style="font-size:.72rem;color:var(--ink2);">住所 / address → 住所</div>
+              <div style="font-size:.72rem;color:var(--ink2);">備考 / メモ / notes → メモ</div>
+            </div>
+          </div>
+
+          <!-- インポート結果 -->
+          <div id="csvResult" style="display:none;margin-top:1.25rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- リマインドパネル -->
+    <div id="remindPanel" style="display:none;margin-bottom:1rem;">
+      <div style="background:var(--white);border:1px solid var(--border);">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <span style="font-size:.82rem;font-weight:500;color:var(--ink);">リマインド管理</span>
+            <p style="font-size:.75rem;color:var(--ink3);margin-top:.25rem;">前日にメール・LINEで自動送信されます。手動送信も可能です。</p>
+          </div>
+          <button onclick="sendAllReminders()"
+            style="background:var(--line);color:white;border:none;padding:.5rem 1.25rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+            全件リマインド送信
+          </button>
+        </div>
+        <div style="padding:1.25rem;">
+          <!-- 明日の予約一覧 -->
+          <div style="font-size:.72rem;color:var(--ink3);margin-bottom:.75rem;font-weight:500;">明日の予約（リマインド対象）</div>
+          <div id="remindList"></div>
+          <!-- リマインド送信ログ -->
+          <div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem;">
+            <div style="font-size:.72rem;color:var(--ink3);margin-bottom:.75rem;font-weight:500;">送信ログ</div>
+            <div id="remindLog" style="display:flex;flex-direction:column;gap:0;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 顧客管理パネル -->
+    <div id="customerPanel" style="display:none;margin-bottom:1rem;">
+      <div style="background:var(--white);border:1px solid var(--border);">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+          <span style="font-size:.82rem;font-weight:500;color:var(--ink);">顧客管理</span>
+          <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="customerSearch" placeholder="名前・電話で検索"
+              oninput="renderCustomerList()"
+              style="border:1px solid var(--border);padding:.4rem .75rem;font-size:.78rem;font-family:'Noto Sans JP',sans-serif;color:var(--ink);background:var(--bg);outline:none;width:180px;">
+            <button onclick="openAddCustomerModal()"
+              style="background:var(--ink);color:white;border:none;padding:.45rem 1rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+              + 顧客を追加
+            </button>
+          </div>
+        </div>
+        <div id="customerListWrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
+        <div style="padding:.75rem 1.25rem;border-top:1px solid var(--border);font-size:.7rem;color:var(--ink3);" id="customerCount"></div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="booking-list">
+        <div class="list-header">
+          <h3>予約一覧</h3>
+          <div class="list-tabs">
+            <div class="list-tab active" onclick="switchListTab(this,'today')">今日</div>
+            <div class="list-tab" onclick="switchListTab(this,'tomorrow')">明日</div>
+            <div class="list-tab" onclick="switchListTab(this,'all')">全件</div>
+          </div>
+        </div>
+        <div id="bookingList"></div>
+      </div>
+
+      <div class="today-panel">
+        <div class="today-header">本日のスケジュール</div>
+        <div class="today-timeline" id="todayTimeline"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script>
+// ─── TAB SWITCH ───
+function switchTab(id){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.closest('.tab-btn').classList.add('active');
+}
+
+// ─── CALENDAR ───
+const _today = new Date();
+let currentYear  = _today.getFullYear();
+let currentMonth = _today.getMonth();   // 0-indexed: 今月から開始
+let selectedDate = null;
+let selectedTime = null;
+
+// 実際に予約された日付セット（WEB予約確定時に追加）
+const bookedDates = new Set(); // "YYYY-MM-DD" 形式
+
+// デモ用：今月の一部の日を満員にする（実際はDBから取得）
+function getFullDays(year, month){
+  // 今月・翌月は一部ランダムで満員にする（デモ用）
+  const seed = year * 100 + month;
+  return [seed%7+3, seed%5+10, seed%9+17, seed%6+22].filter(d=>{
+    const max = new Date(year, month+1, 0).getDate();
+    return d > 0 && d <= max;
+  });
+}
+
+function renderCalendar(){
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('calMonth').textContent=`${currentYear}年${monthNames[currentMonth]}`;
+
+  const firstDay    = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+  const todayY = _today.getFullYear();
+  const todayM = _today.getMonth();
+  const todayD = _today.getDate();
+  const fullDays = getFullDays(currentYear, currentMonth);
+
+  // 過去月への戻るボタンを無効化
+  const prevBtn = document.querySelector('.cal-nav-btn');
+  if(prevBtn){
+    const isCurrentMonth = currentYear===todayY && currentMonth===todayM;
+    prevBtn.disabled = isCurrentMonth;
+    prevBtn.style.opacity = isCurrentMonth ? '0.3' : '1';
+    prevBtn.style.cursor  = isCurrentMonth ? 'not-allowed' : 'pointer';
+  }
+
+  let html = '';
+  // 空白セル（月初の曜日まで）
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const thisDate = new Date(currentYear, currentMonth, d);
+    const todayDate= new Date(todayY, todayM, todayD);
+    const isPast   = thisDate < todayDate;
+    const isSun    = thisDate.getDay() === 0; // 日曜は定休日（デモ）
+    const isFull   = fullDays.includes(d);
+    const isToday  = d===todayD && currentMonth===todayM && currentYear===todayY;
+    const isSelected = selectedDate===d && !isPast;
+    const dateStr  = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasBooking = bookedDates.has(dateStr); // 自分が予約した日
+
+    let cls = 'cal-day';
+    if(isPast || isSun)  cls += ' past';
+    else if(isFull)      cls += ' full';
+    else                 cls += ' available';
+    if(isToday)          cls += ' today';
+    if(isSelected)       cls += ' selected';
+
+    const dot    = (!isPast && !isSun && !isFull) ? '<div class="cal-dot"></div>' : '';
+    const myDot  = hasBooking ? '<div class="cal-dot" style="background:var(--gold);right:4px;top:4px;"></div>' : '';
+    const canClick = !isPast && !isSun && !isFull;
+
+    html += `<div class="${cls}" onclick="${canClick?'selectDate('+d+')':''}">
+      <span>${d}</span>${dot}${myDot}
+    </div>`;
+  }
+  document.getElementById('calDays').innerHTML = html;
+}
+
+function changeMonth(dir){
+  // 今月より前には戻れない
+  const newMonth = currentMonth + dir;
+  const newYear  = newMonth < 0 ? currentYear-1 : newMonth > 11 ? currentYear+1 : currentYear;
+  const adjMonth = ((newMonth % 12) + 12) % 12;
+  if(newYear < _today.getFullYear() || (newYear===_today.getFullYear() && adjMonth < _today.getMonth())) return;
+  currentYear  = newYear;
+  currentMonth = adjMonth;
+  selectedDate = null; selectedTime = null;
+  document.getElementById('timePanel').style.display = 'none';
+  document.getElementById('selectedSummary').classList.remove('show');
+  document.getElementById('bookBtn').disabled = true;
+  renderCalendar();
+}
+
+function selectDate(d){
+  selectedDate=d; selectedTime=null;
+  document.getElementById('bookBtn').disabled=true;
+  document.getElementById('selectedSummary').classList.remove('show');
+  renderCalendar();
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const dow = '月火水木金土日'[new Date(currentYear,currentMonth,d).getDay()];
+  const dateStr=`${currentYear}年${monthNames[currentMonth]}${d}日`;
+  document.getElementById('timePanelDate').textContent=`${dateStr}（${dow}）`;
+  document.getElementById('timePanelSub').textContent='希望の時間帯をお選びください';
+  document.getElementById('timePanel').style.display='block';
+  renderTimeSlots();
+  document.getElementById('timePanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderTimeSlots(){
+  const fullSlots=['10:00','13:00','16:00'];
+  const times=['09:00','09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30'];
+  const statuses=['残1','残3','—','残2','残4','残1','—','残2','残3','残1','残4','残2','—','残3','残1','残2'];
+  document.getElementById('timeGrid').innerHTML=times.map((t,i)=>{
+    const isFull=fullSlots.includes(t);
+    const isSel=selectedTime===t;
+    return `<div class="time-slot${isFull?' full':''}${isSel?' selected':''}" onclick="${isFull?'':'selectTime(\''+t+'\')'}">
+      <div class="t">${t}</div>
+      <div class="s">${isFull?'満員':statuses[i]}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectTime(t){
+  selectedTime=t;
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const summary=`${currentYear}年${monthNames[currentMonth]}${selectedDate}日 ${t}〜`;
+  document.getElementById('summaryText').textContent=summary;
+  document.getElementById('selectedSummary').classList.add('show');
+  document.getElementById('bookBtn').disabled=false;
+  renderTimeSlots();
+}
+
+function confirmBooking(){
+  const name  = document.getElementById('fname').value.trim();
+  const tel   = document.getElementById('ftel').value.trim();
+  const email = document.getElementById('femail').value.trim();
+  const menu  = document.getElementById('fmenu').value || '未選択';
+  if(!name||!tel){showToast('お名前と電話番号を入力してください');return;}
+
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const dateStr=`${currentYear}年${monthNames[currentMonth]}${selectedDate}日`;
+  const fullDate=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}`;
+  const reservationNo='WLD-'+Math.floor(Math.random()*90000+10000);
+  // カレンダーにマーキング
+  bookedDates.add(fullDate);
+
+  // ── 顧客DBに追加 or 既存を更新 ──
+  const existing = CUSTOMERS.find(cu => cu.phone.replace(/-/g,'') === tel.replace(/-/g,''));
+  const newReservation = {
+    date: fullDate, time: selectedTime,
+    menu, status:'confirmed', ch:'web'
+  };
+
+  if(existing){
+    existing.history.unshift(newReservation);
+    showToast(`✓ 既存顧客「${existing.name}」に予約を追加しました`);
+  } else {
+    const newId = Math.max(...CUSTOMERS.map(cu=>cu.id), 0) + 1;
+    CUSTOMERS.push({
+      id: newId, name, kana:'', phone:tel, email,
+      birth:'', address:'', notes:'',
+      source:'web', history:[newReservation]
+    });
+    showToast(`✓ 新規顧客「${name}」を登録しました`);
+  }
+
+  // ── 予約リストにも追加 ──
+  const custId = existing ? existing.id : CUSTOMERS[CUSTOMERS.length-1].id;
+  BOOKINGS.push({
+    id: custId, time: selectedTime, name, menu, channel:'web', status:'confirmed'
+  });
+
+  // ── 完了画面表示 ──
+  document.getElementById('confirmDate').textContent=`${dateStr} ${selectedTime}〜`;
+  document.getElementById('confirmName').textContent=name;
+  document.getElementById('confirmMenu').textContent=menu;
+  document.getElementById('confirmNo').textContent=reservationNo;
+  document.getElementById('formSection').style.display='none';
+  document.getElementById('confirmScreen').classList.add('show');
+
+  // 管理画面も更新
+  renderAdmin();
+}
+
+function resetBooking(){
+  selectedDate=null; selectedTime=null;
+  document.getElementById('fname').value='';
+  document.getElementById('ftel').value='';
+  document.getElementById('femail').value='';
+  document.getElementById('fmenu').value='';
+  document.getElementById('timePanel').style.display='none';
+  document.getElementById('selectedSummary').classList.remove('show');
+  document.getElementById('bookBtn').disabled=true;
+  document.getElementById('formSection').style.display='block';
+  document.getElementById('confirmScreen').classList.remove('show');
+  renderCalendar();
+}
+
+// ─── LINE MOCK ───
+const lineConversations = {
+  start: [{bot:'こんにちは！\nリッチメニューの「予約する」ボタンから、ご希望の日時をお選びください📅'}],
+  reserve: [
+    {bot:'予約を承ります。\nご希望の日程をお選びください。'},
+    {bot:'', quickReplies:['6月15日（土）','6月16日（日）','6月22日（土）','6月23日（日）']},
+  ],
+  date: [
+    {user:'6月15日（土）'},
+    {bot:'6月15日（土）ですね。\n時間帯をお選びください。'},
+    {bot:'', quickReplies:['10:00〜','11:00〜','14:00〜','15:00〜','16:00〜']},
+  ],
+  time: [
+    {user:'14:00〜'},
+    {bot:'6月15日（土）14:00〜で承りました。\nお名前をフルネームでお送りください。'},
+  ],
+  name: [
+    {user:'山田 花子'},
+    {bot:'山田 花子様、ありがとうございます。\n\n📅 6月15日（土）14:00〜\n👤 山田 花子 様\n\n予約を確定しますか？'},
+    {bot:'', quickReplies:['✅ 確定する','🔄 変更する']},
+  ],
+  confirmed: [
+    {user:'✅ 確定する'},
+    {bot:'✅ 予約が確定しました！\n\n予約番号：WLD-58291\n前日にリマインドをお送りします。\nお待ちしております🙏'},
+  ],
+  confirm: [
+    {bot:'現在のご予約状況をお伝えします。\n\n📅 6月15日（土）14:00〜\n予約番号：WLD-58291\n\n変更・キャンセルはこちらからどうぞ。'},
+    {bot:'', quickReplies:['変更する','キャンセルする','閉じる']},
+  ],
+  cancel: [
+    {bot:'キャンセルのご連絡ですね。\nご予約番号をお送りください。'},
+  ],
+};
+
+let lineStep = 'start';
+let chatMessages = [];
+
+function renderChat(){
+  const body = document.getElementById('chatBody');
+  body.innerHTML = chatMessages.map(m=>`
+    <div class="msg ${m.type}">
+      <div class="msg-bubble">${m.text.replace(/\n/g,'<br>')}</div>
+      ${m.qr?`<div class="quick-replies">${m.qr.map(q=>`<button class="qr" onclick="lineQR('${q}')">${q}</button>`).join('')}</div>`:''}
+      <div class="msg-time">${m.time}</div>
+    </div>`).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+function addMessages(msgs){
+  const now = new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  msgs.forEach((m,i)=>{
+    setTimeout(()=>{
+      if(m.bot !== undefined){
+        if(m.bot || m.quickReplies){
+          chatMessages.push({type:'bot', text:m.bot||'', qr:m.quickReplies, time:now});
+          renderChat();
+        }
+      } else if(m.user){
+        chatMessages.push({type:'user', text:m.user, time:now});
+        renderChat();
+      }
+    }, i*600);
+  });
+}
+
+function lineAction(action){
+  // リッチメニューからのアクションはユーザーメッセージなし・botのみ
+  addBotMessages(lineConversations[action]||[]);
+  lineStep = action;
+}
+
+function lineQR(text){
+  const now = new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  // ユーザーメッセージを1回だけ追加（addMessages内のuser行はスキップ）
+  chatMessages.push({type:'user', text, time:now});
+  renderChat();
+  // botの返答のみ追加（skipUser=trueでuser行を無視）
+  if(text.includes('日'))      addBotMessages(lineConversations.date);
+  else if(text.includes(':'))  addBotMessages(lineConversations.time);
+  else if(text.includes('花子')||text.includes('太郎')) addBotMessages(lineConversations.name);
+  else if(text.includes('確定')) addBotMessages(lineConversations.confirmed);
+  else {
+    setTimeout(()=>{
+      chatMessages.push({type:'bot', text:'承りました。ご不明な点はリッチメニューからお選びください。', time:now});
+      renderChat();
+    }, 400);
+  }
+}
+
+// botメッセージのみ追加（user行をスキップ）
+function addBotMessages(msgs){
+  const now = new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  const botMsgs = msgs.filter(m => m.bot !== undefined); // userを除外
+  botMsgs.forEach((m, i) => {
+    setTimeout(() => {
+      if(m.bot || m.quickReplies){
+        chatMessages.push({type:'bot', text: m.bot||'', qr: m.quickReplies, time: now});
+        renderChat();
+      }
+    }, (i+1) * 600);
+  });
+}
+
+// 初期化（startはbotメッセージのみ）
+addBotMessages(lineConversations.start);
+
+// ─── ADMIN ───
+const BOOKINGS = [
+  {id:1, time:'09:30', name:'田中 美咲', menu:'定期メンテナンス', channel:'line', status:'confirmed'},
+  {id:2, time:'10:00', name:'鈴木 健太', menu:'初回カウンセリング', channel:'web', status:'confirmed'},
+  {id:3, time:'11:00', name:'佐藤 由美', menu:'相談・見学', channel:'line', status:'pending'},
+  {id:4, time:'13:30', name:'山田 花子', menu:'定期メンテナンス', channel:'line', status:'confirmed'},
+  {id:5, time:'14:00', name:'高橋 誠', menu:'初回カウンセリング', channel:'web', status:'confirmed'},
+  {id:6, time:'15:00', name:'渡辺 奈々', menu:'定期メンテナンス', channel:'line', status:'cancelled'},
+  {id:7, time:'16:30', name:'伊藤 大輔', menu:'相談・見学', channel:'web', status:'confirmed'},
+];
+
+function renderAdmin(){
+  const d=new Date();
+  document.getElementById('adminDate').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;
+  renderBookingList(BOOKINGS);
+  renderTimeline(BOOKINGS.filter(b=>b.status!=='cancelled'));
+}
+
+function renderBookingList(list){
+  const chMap={line:`<span class="bi-channel line">LINE</span>`,web:`<span class="bi-channel web">WEB</span>`};
+  const stMap={confirmed:`<span class="bi-status status-confirmed">確定</span>`,pending:`<span class="bi-status status-pending">保留</span>`,cancelled:`<span class="bi-status status-cancelled">キャンセル</span>`};
+  document.getElementById('bookingList').innerHTML=list.map(b=>`
+    <div class="booking-item">
+      <div class="bi-time">${b.time}</div>
+      <div class="bi-info" style="flex:1;"><div class="bi-name"><span class="clickable-name" onclick="openCustomerModal(${b.id||1})">${b.name}</span></div><div class="bi-detail">${b.menu}</div></div>
+      ${chMap[b.channel]}
+      ${stMap[b.status]}
+      ${b.status!=='cancelled' ? `<button onclick="cancelBooking(${b.id||1},'${b.name}')"
+        style="background:none;border:1px solid #fca5a5;color:#ef4444;font-size:.65rem;padding:.2rem .5rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0;transition:all .15s;"
+        onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+        キャンセル
+      </button>` : ''}
+    </div>`).join('');
+}
+
+function renderTimeline(list){
+  const colors=['#2d5be3','#06c755','#c8973a','#2d5be3','#06c755','#2d5be3','#c8973a'];
+  document.getElementById('todayTimeline').innerHTML=list.map((b,i)=>`
+    <div class="tl-item">
+      <div class="tl-time">${b.time}</div>
+      <div class="tl-dot" style="background:${colors[i%colors.length]}"></div>
+      <div><div class="tl-name"><span class="clickable-name" onclick="openCustomerModal(${b.id||1})">${b.name}</span></div><div class="tl-sub">${b.menu} / ${b.channel==='line'?'LINE':'WEB'}予約</div></div>
+    </div>`).join('');
+}
+
+function switchListTab(el, type){
+  document.querySelectorAll('.list-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(type==='today') renderBookingList(BOOKINGS);
+  else if(type==='tomorrow') renderBookingList(BOOKINGS.slice(0,4));
+  else renderBookingList([...BOOKINGS,...BOOKINGS.map(b=>({...b,time:b.time.replace('0','1')}))]);
+}
+
+// ─── INIT ───
+renderCalendar();
+renderAdmin();
+document.getElementById('adminDate').textContent;
+
+// ── CUSTOMER DATA（デモ用）──
+const CUSTOMERS = [
+  { id:1, name:'田中 美咲', kana:'タナカ ミサキ', phone:'090-1234-5678', email:'tanaka@example.com', birth:'1985-03-12', address:'東京都渋谷区代官山X-X-X', notes:'アレルギーあり（花粉）。初診時に問診票記入済み。', source:'web',
+    history:[
+      {date:'2025-06-15', time:'14:00', menu:'定期メンテナンス', status:'confirmed', ch:'line'},
+      {date:'2025-05-10', time:'10:00', menu:'定期メンテナンス', status:'done', ch:'web'},
+      {date:'2025-04-20', time:'11:00', menu:'定期メンテナンス', status:'no_show', ch:'line'},
+      {date:'2025-03-08', time:'14:00', menu:'初回カウンセリング', status:'done', ch:'web'},
+    ]},
+  { id:2, name:'鈴木 健太', kana:'スズキ ケンタ', phone:'080-9876-5432', email:'suzuki@example.com', birth:'1990-07-24', address:'東京都新宿区西新宿X-X-X', notes:'',  source:'line',
+    history:[
+      {date:'2025-06-15', time:'10:00', menu:'初回カウンセリング', status:'confirmed', ch:'web'},
+      {date:'2025-05-02', time:'09:30', menu:'相談・見学', status:'done', ch:'line'},
+    ]},
+  { id:3, name:'佐藤 由美', kana:'サトウ ユミ', phone:'070-1111-2222', email:'sato@example.com', birth:'1978-11-05', address:'東京都港区南青山X-X-X', notes:'キャンセルポリシーについて説明済み。', source:'csv',
+    history:[
+      {date:'2025-06-15', time:'11:00', menu:'相談・見学', status:'pending', ch:'line'},
+      {date:'2025-04-15', time:'13:30', menu:'定期メンテナンス', status:'done', ch:'web'},
+      {date:'2025-02-20', time:'10:00', menu:'初回カウンセリング', status:'done', ch:'web'},
+    ]},
+  { id:4, name:'山田 花子', kana:'ヤマダ ハナコ', phone:'090-3333-4444', email:'yamada@example.com', birth:'1995-01-18', address:'東京都豊島区池袋X-X-X', notes:'',  source:'line',
+    history:[
+      {date:'2025-06-15', time:'13:30', menu:'定期メンテナンス', status:'confirmed', ch:'line'},
+    ]},
+  { id:5, name:'高橋 誠', kana:'タカハシ マコト', phone:'080-5555-6666', email:'takahashi@example.com', birth:'1982-09-30', address:'東京都品川区五反田X-X-X', notes:'次回は矯正相談希望とのこと。', source:'web',
+    history:[
+      {date:'2025-06-15', time:'14:00', menu:'初回カウンセリング', status:'confirmed', ch:'web'},
+      {date:'2025-05-20', time:'15:00', menu:'相談・見学', status:'done', ch:'web'},
+      {date:'2025-04-10', time:'11:00', menu:'定期メンテナンス', status:'done', ch:'line'},
+      {date:'2025-03-01', time:'09:00', menu:'初回カウンセリング', status:'done', ch:'web'},
+    ]},
+  { id:6, name:'渡辺 奈々', kana:'ワタナベ ナナ', phone:'070-7777-8888', email:'watanabe@example.com', birth:'2001-04-22', address:'東京都目黒区中目黒X-X-X', notes:'', source:'line',
+    history:[
+      {date:'2025-06-15', time:'15:00', menu:'定期メンテナンス', status:'cancelled', ch:'line'},
+      {date:'2025-05-15', time:'14:00', menu:'定期メンテナンス', status:'done', ch:'line'},
+    ]},
+  { id:7, name:'伊藤 大輔', kana:'イトウ ダイスケ', phone:'090-9999-0000', email:'ito@example.com', birth:'1988-06-14', address:'東京都世田谷区三軒茶屋X-X-X', notes:'法人名義での請求書希望。', source:'csv',
+    history:[
+      {date:'2025-06-15', time:'16:30', menu:'相談・見学', status:'confirmed', ch:'web'},
+    ]},
+];
+
+// ── MODAL FUNCTIONS ──
+function openCustomerModal(customerId) {
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if (!c) return;
+  const statusMap = {confirmed:'✅', done:'✅', no_show:'❌', cancelled:'🔄', pending:'⏳'};
+  const statusLabel = {confirmed:'確定', done:'来院済', no_show:'無断キャンセル', cancelled:'キャンセル', pending:'保留'};
+  const historyHTML = c.history.map(h => `
+    <div class="history-row">
+      <span class="h-status">${statusMap[h.status]||'•'}</span>
+      <span class="h-date">${h.date} ${h.time}〜</span>
+      <span class="h-menu">${h.menu}</span>
+      <span class="h-ch ${h.ch}">${h.ch.toUpperCase()}</span>
+    </div>`).join('');
+  const srcLabel = {web:'WEB', line:'LINE', csv:'CSV移行', manual:'手動登録'}[c.source] || c.source;
+  const age = new Date().getFullYear() - parseInt(c.birth.slice(0,4));
+
+  document.getElementById('modalBox').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div class="modal-name-jp">${c.name}</div>
+        <div class="modal-name-kana">${c.kana}</div>
+        <div class="modal-visit-count">来院 ${c.history.filter(h=>h.status==='done').length}回</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-section-title">基本情報</div>
+        <div class="info-grid">
+          <div class="info-row"><span class="info-icon">📞</span><span class="info-label">電話</span><span class="info-val">${c.phone}</span></div>
+          <div class="info-row"><span class="info-icon">✉️</span><span class="info-label">メール</span><span class="info-val">${c.email}</span></div>
+          <div class="info-row"><span class="info-icon">🎂</span><span class="info-label">生年月日</span><span class="info-val">${c.birth.replace(/-/g,'/')} （${age}歳）</span></div>
+          <div class="info-row"><span class="info-icon">📍</span><span class="info-label">住所</span><span class="info-val">${c.address}</span></div>
+          ${c.notes ? `<div class="info-row"><span class="info-icon">📝</span><span class="info-label">メモ</span><span class="info-val notes">${c.notes}</span></div>` : ''}
+          <div class="info-row"><span class="info-icon">📌</span><span class="info-label">登録経路</span><span class="info-val">${srcLabel}</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="modal-section-title">予約履歴（${c.history.length}件）</div>
+        <div class="history-list">${historyHTML || '<div style="font-size:.8rem;color:var(--ink3);padding:.5rem 0;">予約履歴はありません</div>'}</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="modal-foot-left">ID: ${String(c.id).padStart(5,'0')}</span>
+      <div class="modal-foot-right">
+        <button class="btn-modal-edit" onclick="openEditModal(${c.id})">編集する</button>
+        <button class="btn-modal-book" onclick="showToast('予約追加画面（実装時に有効）')">予約を追加</button>
+      </div>
+    </div>`;
+
+  document.getElementById('modalOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function openEditModal(customerId) {
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if (!c) return;
+  document.getElementById('modalBox').innerHTML = `
+    <div class="modal-head">
+      <div><div class="modal-name-jp">顧客情報を編集</div><div class="modal-name-kana">${c.name}</div></div>
+      <button class="modal-close-btn" onclick="openCustomerModal(${c.id})">←</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-field"><label>氏名</label><input type="text" value="${c.name}" id="edit-name"></div>
+      <div class="edit-field"><label>フリガナ</label><input type="text" value="${c.kana}" id="edit-kana"></div>
+      <div class="edit-field"><label>電話番号</label><input type="tel" value="${c.phone}" id="edit-phone"></div>
+      <div class="edit-field"><label>メールアドレス</label><input type="email" value="${c.email}" id="edit-email"></div>
+      <div class="edit-field"><label>生年月日</label><input type="date" value="${c.birth}" id="edit-birth"></div>
+      <div class="edit-field"><label>住所</label><input type="text" value="${c.address}" id="edit-address"></div>
+      <div class="edit-field"><label>メモ・備考</label><textarea id="edit-notes">${c.notes}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <span class="modal-foot-left" style="color:var(--red);font-size:.7rem;cursor:pointer;" onclick="showToast('削除機能（実装時に有効）')">顧客を削除</span>
+      <div class="modal-foot-right">
+        <button class="btn-modal-edit" onclick="openCustomerModal(${c.id})">キャンセル</button>
+        <button class="btn-modal-book" onclick="saveEdit(${c.id})">保存する</button>
+      </div>
+    </div>`;
+}
+
+function saveEdit(customerId) {
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if (!c) return;
+  c.name    = document.getElementById('edit-name').value;
+  c.kana    = document.getElementById('edit-kana').value;
+  c.phone   = document.getElementById('edit-phone').value;
+  c.email   = document.getElementById('edit-email').value;
+  c.birth   = document.getElementById('edit-birth').value;
+  c.address = document.getElementById('edit-address').value;
+  c.notes   = document.getElementById('edit-notes').value;
+  openCustomerModal(customerId);
+  showToast('✓ 保存しました');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// オーバーレイクリック・ESCで閉じる
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+function showToast(msg) {
+  let t = document.getElementById('demoToast');
+  if (!t) { t = document.createElement('div'); t.id='demoToast'; t.style.cssText='position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--ink);color:white;padding:.75rem 1.5rem;font-size:.82rem;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;font-family:"Noto Sans JP",sans-serif;'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = '1';
+  setTimeout(() => t.style.opacity = '0', 2500);
+}
+
+
+// ── 顧客管理パネル切替 ──
+function toggleCustomerPanel(showCustomer){
+  document.getElementById('customerPanel').style.display = showCustomer ? 'block' : 'none';
+  document.querySelector('.admin-grid').style.display = showCustomer ? 'none' : 'grid';
+  document.getElementById('btnReservation').style.background = showCustomer ? 'var(--bg)' : 'var(--ink)';
+  document.getElementById('btnReservation').style.color = showCustomer ? 'var(--ink2)' : 'white';
+  document.getElementById('btnReservation').style.border = showCustomer ? '1px solid var(--border)' : 'none';
+  document.getElementById('btnCustomer').style.background = showCustomer ? 'var(--ink)' : 'var(--bg)';
+  document.getElementById('btnCustomer').style.color = showCustomer ? 'white' : 'var(--ink2)';
+  document.getElementById('btnCustomer').style.border = showCustomer ? 'none' : '1px solid var(--border)';
+  if(showCustomer) renderCustomerList();
+}
+
+// ── 顧客一覧レンダリング ──
+function renderCustomerList(){
+  const q = (document.getElementById('customerSearch')?.value||'').toLowerCase();
+  const list = CUSTOMERS.filter(cu =>
+    !q || cu.name.toLowerCase().includes(q) ||
+    cu.phone.replace(/-/g,'').includes(q.replace(/-/g,'')) ||
+    cu.email.toLowerCase().includes(q)
+  );
+  document.getElementById('customerCount').textContent = `${list.length}件 / 全${CUSTOMERS.length}件`;
+  const srcColors = {web:'background:#e8eeff;color:#2d5be3;', line:'background:#d4f5df;color:#1a7a3c;', csv:'background:#fef9c3;color:#854d0e;', manual:'background:#f3f4f6;color:#374151;'};
+  document.getElementById('customerListWrap').innerHTML = list.length === 0
+    ? '<div style="padding:2rem;text-align:center;font-size:.82rem;color:var(--ink3);">顧客が見つかりません</div>'
+    : `<table style="min-width:560px;width:100%;border-collapse:collapse;font-size:.8rem;">
+        <thead><tr style="background:var(--bg);border-bottom:1px solid var(--border);">
+          <th style="padding:.6rem .75rem;text-align:left;font-size:.65rem;color:var(--ink3);font-weight:400;white-space:nowrap;">氏名</th>
+          <th style="padding:.6rem .75rem;text-align:left;font-size:.65rem;color:var(--ink3);font-weight:400;white-space:nowrap;">電話番号</th>
+          <th style="padding:.6rem .75rem;text-align:left;font-size:.65rem;color:var(--ink3);font-weight:400;white-space:nowrap;">メール</th>
+          <th style="padding:.6rem .75rem;text-align:left;font-size:.65rem;color:var(--ink3);font-weight:400;white-space:nowrap;">来院</th>
+          <th style="padding:.6rem .75rem;text-align:left;font-size:.65rem;color:var(--ink3);font-weight:400;white-space:nowrap;">登録</th>
+          <th style="padding:.6rem .75rem;text-align:right;font-size:.65rem;color:var(--ink3);font-weight:400;white-space:nowrap;"></th>
+        </tr></thead>
+        <tbody>${list.map(cu=>`
+          <tr style="border-bottom:1px solid var(--border);transition:background .15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+            <td style="padding:.6rem .75rem;white-space:nowrap;">
+              <span class="clickable-name" onclick="openCustomerModal(${cu.id})">${cu.name}</span>
+            </td>
+            <td style="padding:.75rem 1rem;color:var(--ink2);">${cu.phone}</td>
+            <td style="padding:.75rem 1rem;color:var(--ink2);font-size:.75rem;">${cu.email||'—'}</td>
+            <td style="padding:.75rem 1rem;color:var(--ink2);">${cu.history.filter(h=>h.status==='done').length}回</td>
+            <td style="padding:.6rem .75rem;white-space:nowrap;">
+              <span style="font-size:.65rem;padding:.15rem .45rem;${srcColors[cu.source]||srcColors.manual}">${{web:'WEB',line:'LINE',csv:'CSV',manual:'手動'}[cu.source]||cu.source}</span>
+            </td>
+            <td style="padding:.75rem 1rem;text-align:right;">
+              <button onclick="deleteCustomer(${cu.id})"
+                style="background:none;border:1px solid #fca5a5;color:#ef4444;font-size:.7rem;padding:.2rem .6rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .15s;"
+                onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                削除
+              </button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+}
+
+// ── 顧客削除 ──
+function deleteCustomer(id){
+  const cu = CUSTOMERS.find(x=>x.id===id);
+  if(!cu) return;
+  if(!confirm(`「${cu.name}」を削除しますか？\n関連する予約履歴も削除されます。`)) return;
+  const idx = CUSTOMERS.findIndex(x=>x.id===id);
+  CUSTOMERS.splice(idx, 1);
+  // 予約リストからも削除
+  for(let i=BOOKINGS.length-1;i>=0;i--){
+    if(BOOKINGS[i].id===id) BOOKINGS.splice(i,1);
+  }
+  renderCustomerList();
+  renderAdmin();
+  showToast(`「${cu.name}」を削除しました`);
+}
+
+// ── 顧客追加モーダル ──
+function openAddCustomerModal(){
+  document.getElementById('modalBox').innerHTML = `
+    <div class="modal-head">
+      <div><div class="modal-name-jp">新規顧客を追加</div><div class="modal-name-kana">手動登録</div></div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-field"><label>氏名 *</label><input type="text" id="add-name" placeholder="山田 花子"></div>
+      <div class="edit-field"><label>フリガナ</label><input type="text" id="add-kana" placeholder="ヤマダ ハナコ"></div>
+      <div class="edit-field"><label>電話番号 *</label><input type="tel" id="add-phone" placeholder="090-XXXX-XXXX"></div>
+      <div class="edit-field"><label>メールアドレス</label><input type="email" id="add-email" placeholder="mail@example.com"></div>
+      <div class="edit-field"><label>生年月日</label><input type="date" id="add-birth"></div>
+      <div class="edit-field"><label>住所</label><input type="text" id="add-address" placeholder="東京都〇〇区..."></div>
+      <div class="edit-field"><label>メモ</label><textarea id="add-notes" placeholder="備考・注意事項など"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <span class="modal-foot-left"></span>
+      <div class="modal-foot-right">
+        <button class="btn-modal-edit" onclick="closeModal()">キャンセル</button>
+        <button class="btn-modal-book" onclick="addCustomer()">登録する</button>
+      </div>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(()=>document.getElementById('add-name').focus(), 100);
+}
+
+function addCustomer(){
+  const name  = document.getElementById('add-name').value.trim();
+  const phone = document.getElementById('add-phone').value.trim();
+  if(!name||!phone){ showToast('氏名と電話番号は必須です'); return; }
+  // 電話番号重複チェック
+  if(CUSTOMERS.find(cu=>cu.phone.replace(/-/g,'')===phone.replace(/-/g,''))){
+    showToast('この電話番号はすでに登録されています'); return;
+  }
+  const newId = Math.max(...CUSTOMERS.map(cu=>cu.id), 0) + 1;
+  CUSTOMERS.push({
+    id: newId,
+    name,
+    kana:    document.getElementById('add-kana').value.trim(),
+    phone,
+    email:   document.getElementById('add-email').value.trim(),
+    birth:   document.getElementById('add-birth').value,
+    address: document.getElementById('add-address').value.trim(),
+    notes:   document.getElementById('add-notes').value.trim(),
+    source:  'manual',
+    history: []
+  });
+  closeModal();
+  renderCustomerList();
+  showToast(`✓ 「${name}」を登録しました`);
+}
+
+
+// ── ADMIN TAB SWITCHER ──
+function switchAdminTab(tab) {
+  const tabs = {reservation: 'Reservation', customer: 'Customer', csv: 'Csv', remind: 'Remind'};
+  // パネルの表示切替
+  document.getElementById('customerPanel').style.display = tab==='customer' ? 'block' : 'none';
+  document.querySelector('.admin-grid').style.display = tab==='reservation' ? 'grid' : 'none';
+  const csvP = document.getElementById('csvPanel');
+  const remP = document.getElementById('remindPanel');
+  if(csvP) csvP.style.display = tab==='csv' ? 'block' : 'none';
+  if(remP) remP.style.display = tab==='remind' ? 'block' : 'none';
+  // ボタンスタイル切替
+  ['Reservation','Customer','Csv','Remind'].forEach(t=>{
+    const btn = document.getElementById('btn'+t);
+    if(!btn) return;
+    const isActive = t.toLowerCase()===tab;
+    btn.style.background = isActive ? 'var(--ink)' : 'var(--bg)';
+    btn.style.color = isActive ? 'white' : 'var(--ink2)';
+    btn.style.border = isActive ? 'none' : '1px solid var(--border)';
+  });
+  if(tab==='customer') renderCustomerList();
+  if(tab==='remind') renderRemindPanel();
+}
+
+// toggleCustomerPanel を switchAdminTab にリダイレクト
+function toggleCustomerPanel(showCustomer) {
+  switchAdminTab(showCustomer ? 'customer' : 'reservation');
+}
+
+// ── CSV取込 ──
+function handleCsvDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').style.borderColor = 'var(--border)';
+  document.getElementById('dropZone').style.background = 'var(--bg)';
+  const file = e.dataTransfer.files[0];
+  if(file) handleCsvFile(file);
+}
+
+function handleCsvFile(file) {
+  if(!file) return;
+  const validTypes = ['.csv','.xlsx','.xls'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if(!validTypes.includes(ext)) { showToast('対応形式はCSV・Excel(.xlsx/.xls)のみです'); return; }
+
+  // CSVファイルの読み込みシミュレーション
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    // 簡易CSVパース（デモ用）
+    const lines = text.split('\n').filter(l=>l.trim());
+    if(lines.length < 2) { showToast('データが見つかりません'); return; }
+    const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+    // カラムマッピング
+    const colMap = {
+      name: ['氏名','名前','患者名','name','氏　名'],
+      kana: ['フリガナ','カナ','ふりがな','kana'],
+      phone: ['電話番号','電話','tel','TEL','phone','携帯'],
+      email: ['メール','メールアドレス','mail','email','e-mail'],
+      birth: ['生年月日','誕生日','birth','birthday'],
+      address: ['住所','address'],
+      notes: ['備考','メモ','notes','備　考'],
+    };
+    const colIdx = {};
+    Object.entries(colMap).forEach(([key, aliases]) => {
+      const idx = headers.findIndex(h => aliases.some(a => h.includes(a)));
+      if(idx >= 0) colIdx[key] = idx;
+    });
+    if(colIdx.name === undefined) { showToast('「氏名」列が見つかりません'); return; }
+
+    // データ取込
+    let imported = 0, skipped = 0;
+    const newCustomers = [];
+    lines.slice(1).forEach(line => {
+      const cols = line.split(',').map(v=>v.trim().replace(/"/g,''));
+      const name = cols[colIdx.name]||'';
+      if(!name) { skipped++; return; }
+      const phone = (cols[colIdx.phone]||'').replace(/-/g,'');
+      // 重複チェック
+      if(phone && CUSTOMERS.find(cu=>cu.phone.replace(/-/g,'')=== phone)) { skipped++; return; }
+      const newId = Math.max(...CUSTOMERS.map(cu=>cu.id),0) + 1 + imported;
+      CUSTOMERS.push({
+        id: newId, name,
+        kana: cols[colIdx.kana]||'',
+        phone: cols[colIdx.phone]||'',
+        email: cols[colIdx.email]||'',
+        birth: cols[colIdx.birth]||'',
+        address: cols[colIdx.address]||'',
+        notes: cols[colIdx.notes]||'',
+        source: 'csv', history: []
+      });
+      newCustomers.push(name);
+      imported++;
+    });
+
+    // 結果表示
+    const result = document.getElementById('csvResult');
+    result.style.display = 'block';
+    result.innerHTML = `
+      <div style="border:1px solid var(--border);padding:1.25rem;background:${imported>0?'#f0fdf4':'#fef2f2'};">
+        <div style="font-size:.875rem;font-weight:500;color:${imported>0?'var(--green)':'var(--red)'};margin-bottom:.5rem;">
+          ${imported>0 ? '✅ 取込完了' : '⚠️ 取込できませんでした'}
+        </div>
+        <div style="font-size:.8rem;color:var(--ink2);line-height:1.8;">
+          取込成功：<strong>${imported}件</strong><br>
+          スキップ（重複・空白）：<strong>${skipped}件</strong>
+          ${newCustomers.length>0 ? '<br><br><span style="font-size:.72rem;color:var(--ink3);">取込した顧客：'+newCustomers.slice(0,5).join('、')+(newCustomers.length>5?'...他':'')+'</span>' : ''}
+        </div>
+        ${imported>0 ? '<button onclick="switchAdminTab('customer')" style="margin-top:.75rem;background:var(--ink);color:white;border:none;padding:.45rem 1.25rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">顧客管理で確認する →</button>' : ''}
+      </div>`;
+    if(imported > 0) showToast('✓ '+imported+'件の顧客データを取込しました');
+  };
+  if(ext === '.csv') {
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    // xlsxはデモ用に疑似処理
+    showToast('Excelファイルを読み込み中... (デモ：3件取込)');
+    setTimeout(()=>{
+      const demoData = [
+        {id:Math.max(...CUSTOMERS.map(c=>c.id),0)+1, name:'中村 恵子', kana:'ナカムラ ケイコ', phone:'090-1111-2222', email:'nakamura@example.com', birth:'1975-08-20', address:'東京都渋谷区〇〇', notes:'', source:'csv', history:[]},
+        {id:Math.max(...CUSTOMERS.map(c=>c.id),0)+2, name:'小林 翔太', kana:'コバヤシ ショウタ', phone:'080-3333-4444', email:'kobayashi@example.com', birth:'1993-03-15', address:'東京都新宿区〇〇', notes:'', source:'csv', history:[]},
+        {id:Math.max(...CUSTOMERS.map(c=>c.id),0)+3, name:'加藤 美里', kana:'カトウ ミサト', phone:'070-5555-6666', email:'', birth:'1988-11-30', address:'', notes:'要確認', source:'csv', history:[]},
+      ].filter(d=>!CUSTOMERS.find(c=>c.phone.replace(/-/g,'')=== d.phone.replace(/-/g,'')));
+      demoData.forEach(d=>CUSTOMERS.push(d));
+      const result = document.getElementById('csvResult');
+      result.style.display = 'block';
+      result.innerHTML = `<div style="border:1px solid var(--border);padding:1.25rem;background:#f0fdf4;"><div style="font-size:.875rem;font-weight:500;color:var(--green);margin-bottom:.5rem;">✅ 取込完了</div><div style="font-size:.8rem;color:var(--ink2);line-height:1.8;">取込成功：<strong>${demoData.length}件</strong></div><button onclick="switchAdminTab('customer')" style="margin-top:.75rem;background:var(--ink);color:white;border:none;padding:.45rem 1.25rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">顧客管理で確認する →</button></div>`;
+      showToast('✓ '+demoData.length+'件の顧客データを取込しました');
+    }, 1200);
+  }
+}
+
+// ── リマインドパネル ──
+const REMIND_LOG = [
+  {name:'田中 美咲', channel:'LINE', time:'09:00', status:'送信済み', date: new Date().toLocaleDateString('ja-JP')},
+  {name:'高橋 誠', channel:'メール', time:'09:00', status:'送信済み', date: new Date().toLocaleDateString('ja-JP')},
+];
+
+function renderRemindPanel() {
+  // 明日の予約（BOOKINGS から confirmed のみ）
+  const confirmed = BOOKINGS.filter(b=>b.status==='confirmed');
+  const remindList = document.getElementById('remindList');
+  remindList.innerHTML = confirmed.length === 0
+    ? '<div style="font-size:.8rem;color:var(--ink3);padding:.75rem 0;">明日の予約はありません</div>'
+    : confirmed.map(b=>`
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border);">
+        <div style="font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--ink);min-width:48px;">${b.time}</div>
+        <div style="flex:1;">
+          <div style="font-size:.82rem;font-weight:500;color:var(--ink);">${b.name}</div>
+          <div style="font-size:.7rem;color:var(--ink3);">${b.menu}</div>
+        </div>
+        <span style="font-size:.65rem;padding:.15rem .5rem;background:${b.channel==='line'?'var(--line2)':'var(--accent2)'};color:${b.channel==='line'?'var(--green)':'var(--accent)'};">${b.channel==='line'?'LINE':'WEB'}</span>
+        <button onclick="sendReminder('${b.name}','${b.channel}')"
+          style="background:var(--ink);color:white;border:none;padding:.35rem .875rem;font-size:.7rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+          送信
+        </button>
+      </div>`).join('');
+
+  // 送信ログ
+  renderRemindLog();
+}
+
+function renderRemindLog() {
+  document.getElementById('remindLog').innerHTML = REMIND_LOG.length === 0
+    ? '<div style="font-size:.78rem;color:var(--ink3);">送信履歴はありません</div>'
+    : REMIND_LOG.slice(0,10).map(l=>`
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.75rem;">
+        <span style="color:var(--green);font-size:.8rem;">✓</span>
+        <span style="color:var(--ink);font-weight:500;">${l.name}</span>
+        <span style="padding:.1rem .45rem;background:${l.channel==='LINE'?'var(--line2)':'var(--accent2)'};color:${l.channel==='LINE'?'var(--green)':'var(--accent)'};font-size:.65rem;">${l.channel}</span>
+        <span style="color:var(--ink3);">${l.date} ${l.time}</span>
+        <span style="margin-left:auto;color:var(--ink3);">${l.status}</span>
+      </div>`).join('');
+}
+
+function sendReminder(name, channel) {
+  REMIND_LOG.unshift({name, channel: channel==='line'?'LINE':'メール', time: new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}), status:'送信済み', date: new Date().toLocaleDateString('ja-JP')});
+  renderRemindLog();
+  showToast(`✓ ${name}さんにリマインドを送信しました`);
+}
+
+function sendAllReminders() {
+  const confirmed = BOOKINGS.filter(b=>b.status==='confirmed');
+  confirmed.forEach(b=>{
+    REMIND_LOG.unshift({name:b.name, channel:b.channel==='line'?'LINE':'メール', time: new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}), status:'送信済み', date: new Date().toLocaleDateString('ja-JP')});
+  });
+  renderRemindLog();
+  showToast(`✓ ${confirmed.length}件のリマインドを送信しました`);
+}
+
+// ── キャンセル ──
+function cancelBooking(id, name) {
+  if(!confirm(`「${name}」の予約をキャンセルしますか？`)) return;
+  const booking = BOOKINGS.find(b=>b.id===id);
+  if(booking) booking.status = 'cancelled';
+  // 顧客履歴も更新
+  const cu = CUSTOMERS.find(c=>c.id===id);
+  if(cu && cu.history.length > 0) {
+    const latest = cu.history.find(h=>h.status==='confirmed');
+    if(latest) latest.status = 'cancelled';
+  }
+  renderAdmin();
+  showToast(`「${name}」の予約をキャンセルしました`);
+}
+
+// ── JSエフェクト：ボタンのripple effect ──
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('button, .btn-book, .btn-gold, .btn-reset');
+  if(!btn) return;
+  const ripple = document.createElement('span');
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.cssText = `position:absolute;width:${size}px;height:${size}px;
+    left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;
+    background:rgba(255,255,255,0.3);border-radius:50%;
+    transform:scale(0);animation:rippleAnim .5s ease-out;pointer-events:none;`;
+  if(getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(ripple);
+  setTimeout(()=>ripple.remove(), 500);
+});
+
+// ── JSエフェクト：カウントアップ（管理画面統計） ──
+function animateCount(el, target) {
+  let start = 0;
+  const dur = 800;
+  const startTime = performance.now();
+  const step = (now) => {
+    const p = Math.min((now - startTime) / dur, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.floor(ease * target);
+    if(p < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  };
+  requestAnimationFrame(step);
+}
+
+// ── JSエフェクト：スムーズスクロール ──
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if(target) target.scrollIntoView({behavior:'smooth'});
+  });
+});
+
+// CSS追加（rippleアニメーション）
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes rippleAnim { to { transform: scale(2); opacity: 0; } }
+  .booking-item { transition: background 0.2s, transform 0.15s; }
+  .booking-item:hover { transform: translateX(2px); }
+  #dropZone:hover { border-color: var(--accent) !important; background: var(--accent2) !important; }
+`;
+document.head.appendChild(style);
+
+</script>
+</body>
+</html>
