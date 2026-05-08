@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weldex Outreach Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0c1a35; --blue: #1e40af; --blue2: #3b63d4;
+      --white: #fff; --off: #f8f9fc; --border: #e2e8f0;
+      --gray: #64748b; --light: #94a3b8;
+      --green: #16a34a; --red: #dc2626; --yellow: #d97706; --purple: #7c3aed;
+    }
+    body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: var(--off); color: var(--navy); }
+    header {
+      background: var(--navy); color: var(--white); padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.04em; }
+    header span { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+    /* タブ */
+    .tabs { display: flex; gap: 0; background: var(--white); border-bottom: 1px solid var(--border); padding: 0 2rem; }
+    .tab { padding: 0.9rem 1.25rem; font-size: 0.85rem; cursor: pointer; border-bottom: 2px solid transparent; color: var(--gray); transition: all 0.2s; }
+    .tab.active { border-bottom-color: var(--blue); color: var(--blue); font-weight: 500; }
+    .panel { display: none; padding: 1.5rem 2rem; }
+    .panel.active { display: block; }
+
+    /* 統計カード */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1.25rem 1.5rem; }
+    .stat-label { font-size: 0.72rem; color: var(--gray); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.4rem; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--navy); }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.red    { color: var(--red); }
+    .stat-value.yellow { color: var(--yellow); }
+    .stat-value.blue   { color: var(--blue); }
+
+    /* ターゲットテーブル */
+    .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+    .toolbar input, .toolbar select {
+      border: 1px solid var(--border); padding: 0.45rem 0.75rem;
+      font-size: 0.82rem; color: var(--navy); background: var(--white); outline: none;
+    }
+    .toolbar input:focus, .toolbar select:focus { border-color: var(--blue); }
+    .btn {
+      padding: 0.45rem 1rem; font-size: 0.82rem; cursor: pointer;
+      background: var(--blue); color: var(--white); border: none; transition: background 0.2s;
+    }
+    .btn:hover { background: var(--blue2); }
+    .btn.secondary { background: var(--white); color: var(--navy); border: 1px solid var(--border); }
+    .btn.secondary:hover { background: var(--off); }
+
+    table { width: 100%; border-collapse: collapse; background: var(--white); font-size: 0.82rem; }
+    th { background: var(--off); padding: 0.6rem 0.75rem; text-align: left; font-weight: 500; font-size: 0.72rem; color: var(--gray); letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+    td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--navy); vertical-align: top; }
+    tr:hover td { background: #f1f5ff; }
+
+    /* ステータスバッジ */
+    .badge { display: inline-block; font-size: 0.65rem; padding: 0.15rem 0.5rem; font-weight: 600; letter-spacing: 0.04em; }
+    .badge-none      { background: #fee2e2; color: var(--red); }
+    .badge-old       { background: #fef3c7; color: var(--yellow); }
+    .badge-no_mobile { background: #fef3c7; color: var(--yellow); }
+    .badge-phone_only{ background: #ede9fe; color: var(--purple); }
+    .badge-ok        { background: #dcfce7; color: var(--green); }
+    .badge-error     { background: #f1f5f9; color: var(--light); }
+    .badge-unchecked { background: #f1f5f9; color: var(--light); }
+
+    /* ページネーション */
+    .pagination { display: flex; gap: 0.4rem; margin-top: 1rem; align-items: center; font-size: 0.82rem; }
+    .pagination button { padding: 0.3rem 0.7rem; border: 1px solid var(--border); background: var(--white); cursor: pointer; color: var(--navy); }
+    .pagination button.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+    /* ログ */
+    .log-list { background: var(--navy); color: #e2e8f0; font-family: monospace; font-size: 0.78rem; padding: 1rem; height: 60vh; overflow-y: auto; }
+    .log-row { padding: 0.2rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .log-INFO  { color: #93c5fd; }
+    .log-WARN  { color: #fcd34d; }
+    .log-ERROR { color: #f87171; }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .tabs { padding: 0 1rem; }
+      .panel { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Weldex Outreach Dashboard</h1>
+  <span id="updated-at">---</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('dashboard')">ダッシュボード</div>
+  <div class="tab" onclick="showTab('targets')">ターゲットリスト</div>
+  <div class="tab" onclick="showTab('logs')">ログ</div>
+</div>
+
+<!-- ダッシュボード -->
+<div class="panel active" id="panel-dashboard">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">合計</div>
+      <div class="stat-value blue" id="s-total">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">未診断</div>
+      <div class="stat-value" id="s-unchecked">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">サイトなし</div>
+      <div class="stat-value red" id="s-none">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">古い/スマホ非対応</div>
+      <div class="stat-value yellow" id="s-weak">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">電話のみ</div>
+      <div class="stat-value" style="color:var(--purple)" id="s-phone">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">問題なし</div>
+      <div class="stat-value green" id="s-ok">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">メールあり</div>
+      <div class="stat-value blue" id="s-email">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">送信候補</div>
+      <div class="stat-value" id="s-candidate">-</div>
+    </div>
+  </div>
+</div>
+
+<!-- ターゲットリスト -->
+<div class="panel" id="panel-targets">
+  <div class="toolbar">
+    <input type="text" id="kw-input" placeholder="店舗名・住所で検索" style="width:200px;">
+    <select id="status-filter">
+      <option value="">すべてのステータス</option>
+      <option value="none">none（サイトなし）</option>
+      <option value="old">old（古い）</option>
+      <option value="no_mobile">no_mobile（スマホ非対応）</option>
+      <option value="phone_only">phone_only（電話のみ）</option>
+      <option value="ok">ok（問題なし）</option>
+      <option value="unchecked">unchecked（未診断）</option>
+      <option value="error">error</option>
+    </select>
+    <select id="industry-filter">
+      <option value="">すべての業種</option>
+      <option>歯科医院</option><option>クリニック</option><option>美容外科</option>
+      <option>整骨院</option><option>司法書士</option><option>税理士</option>
+      <option>行政書士</option><option>建設会社</option><option>リフォーム</option><option>美容室</option>
+    </select>
+    <button class="btn" onclick="loadTargets(1)">検索</button>
+    <button class="btn secondary" onclick="resetFilters()">リセット</button>
+    <span id="target-count" style="font-size:0.8rem;color:var(--gray);margin-left:auto;"></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>店舗名</th><th>住所</th><th>電話</th><th>ステータス</th>
+        <th>メール</th><th>業種</th><th>収集日</th>
+      </tr>
+    </thead>
+    <tbody id="targets-body"></tbody>
+  </table>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- ログ -->
+<div class="panel" id="panel-logs">
+  <div class="toolbar">
+    <select id="log-level">
+      <option value="">すべてのレベル</option>
+      <option value="INFO">INFO</option>
+      <option value="WARN">WARN</option>
+      <option value="ERROR">ERROR</option>
+    </select>
+    <select id="log-category">
+      <option value="">すべてのカテゴリ</option>
+      <option value="collect">collect</option>
+      <option value="diagnose">diagnose</option>
+      <option value="system">system</option>
+    </select>
+    <button class="btn" onclick="loadLogs()">更新</button>
+  </div>
+  <div class="log-list" id="log-list"></div>
+</div>
+
+<script>
+  // ─── タブ切り替え ───
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const panels = ['dashboard', 'targets', 'logs'];
+      t.classList.toggle('active', panels[i] === name);
+    });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'targets') loadTargets(1);
+    if (name === 'logs') loadLogs();
+  }
+
+  // ─── 統計 ───
+  async function loadStats() {
+    try {
+      const data = await fetch('/api/stats').then(r => r.json());
+      document.getElementById('s-total').textContent     = data.total;
+      document.getElementById('s-unchecked').textContent = data.unchecked;
+      document.getElementById('s-none').textContent      = data.none;
+      document.getElementById('s-weak').textContent      = data.old + data.no_mobile;
+      document.getElementById('s-phone').textContent     = data.phone_only;
+      document.getElementById('s-ok').textContent        = data.ok;
+      document.getElementById('s-email').textContent     = data.with_email;
+      document.getElementById('s-candidate').textContent = data.none + data.old + data.no_mobile + data.phone_only;
+      document.getElementById('updated-at').textContent  = '更新: ' + new Date().toLocaleTimeString('ja-JP');
+    } catch(e) { console.error('stats error', e); }
+  }
+
+  // ─── ターゲットリスト ───
+  let currentPage = 1;
+  async function loadTargets(page = 1) {
+    currentPage = page;
+    const kw       = document.getElementById('kw-input').value;
+    const status   = document.getElementById('status-filter').value;
+    const industry = document.getElementById('industry-filter').value;
+    const params   = new URLSearchParams({ page, per_page: 15 });
+    if (kw)       params.set('keyword', kw);
+    if (status)   params.set('status', status);
+    if (industry) params.set('industry', industry);
+
+    try {
+      const data = await fetch('/api/targets?' + params).then(r => r.json());
+      renderTargets(data);
+    } catch(e) { console.error('targets error', e); }
+  }
+
+  function renderTargets(data) {
+    const tbody = document.getElementById('targets-body');
+    tbody.innerHTML = data.items.map(t => `
+      <tr>
+        <td>${esc(t.name)}</td>
+        <td style="font-size:0.75rem;color:var(--gray)">${esc(t.address || '-')}</td>
+        <td style="white-space:nowrap">${esc(t.phone || '-')}</td>
+        <td><span class="badge badge-${t.site_status}">${t.site_status}</span></td>
+        <td style="font-size:0.75rem">${t.email ? `<a href="mailto:${esc(t.email)}" style="color:var(--blue)">${esc(t.email)}</a>` : '-'}</td>
+        <td>${esc(t.industry || '-')}</td>
+        <td style="font-size:0.72rem;color:var(--light)">${(t.created_at || '').slice(0, 10)}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('target-count').textContent = `${data.total}件`;
+    renderPagination(data.total, data.page, data.per_page);
+  }
+
+  function renderPagination(total, page, perPage) {
+    const pages = Math.ceil(total / perPage);
+    const el = document.getElementById('pagination');
+    if (pages <= 1) { el.innerHTML = ''; return; }
+    let html = `<button onclick="loadTargets(${page - 1})" ${page <= 1 ? 'disabled' : ''}>←</button>`;
+    for (let i = Math.max(1, page - 2); i <= Math.min(pages, page + 2); i++) {
+      html += `<button onclick="loadTargets(${i})" class="${i === page ? 'active' : ''}">${i}</button>`;
+    }
+    html += `<button onclick="loadTargets(${page + 1})" ${page >= pages ? 'disabled' : ''}>→</button>`;
+    el.innerHTML = html;
+  }
+
+  function resetFilters() {
+    document.getElementById('kw-input').value = '';
+    document.getElementById('status-filter').value = '';
+    document.getElementById('industry-filter').value = '';
+    loadTargets(1);
+  }
+
+  // ─── ログ ───
+  async function loadLogs() {
+    const level    = document.getElementById('log-level').value;
+    const category = document.getElementById('log-category').value;
+    const params   = new URLSearchParams({ per_page: 100 });
+    if (level)    params.set('level', level);
+    if (category) params.set('category', category);
+
+    try {
+      const data = await fetch('/api/logs?' + params).then(r => r.json());
+      const el = document.getElementById('log-list');
+      el.innerHTML = data.items.map(l =>
+        `<div class="log-row log-${l.level}">[${l.created_at}] [${l.level}] [${l.category}] ${esc(l.message)}</div>`
+      ).join('');
+      el.scrollTop = el.scrollHeight;
+    } catch(e) { console.error('logs error', e); }
+  }
+
+  // ─── SSEリアルタイムログ ───
+  function startLogStream() {
+    const es = new EventSource('/api/logs/stream');
+    es.onmessage = (e) => {
+      try {
+        const log = JSON.parse(e.data);
+        const el  = document.getElementById('log-list');
+        const div = document.createElement('div');
+        div.className = `log-row log-${log.level}`;
+        div.textContent = `[${log.created_at}] [${log.level}] [${log.category}] ${log.message}`;
+        el.appendChild(div);
+        el.scrollTop = el.scrollHeight;
+      } catch {}
+    };
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── 初期化 ───
+  loadStats();
+  setInterval(loadStats, 30000);
+</script>
+</body>
+</html>
