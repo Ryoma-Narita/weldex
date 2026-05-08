@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com; connect-src https://formspree.io https://www.google-analytics.com https://region1.google-analytics.com; frame-ancestors 'none';">
   <title>Weldex | AIで、あなたの事業の本質を支える。</title>
   <meta name="description" content="WeldexはAIを活用したWEB制作・LINE予約システム・システム開発を、医療・士業・建設など専門業種に特化して提供します。大手の3分の1のコストで本質的なデジタル支援を。">
   <!-- GA4 -->
@@ -325,6 +327,10 @@
     .footer-nav a:hover { color: rgba(255,255,255,0.9); }
     .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; flex-wrap: wrap; gap: 1rem; }
     .footer-copy { font-size: 0.72rem; color: rgba(255,255,255,0.2); font-weight: 300; }
+    .footer-legal-link { font-size: 0.7rem; color: rgba(255,255,255,0.2); text-decoration: none; transition: color 0.2s; }
+    .footer-legal-link:hover { color: rgba(255,255,255,0.6); }
+    .works-overlay { position: absolute; inset: 0; background: rgba(12,26,53,0); transition: background 0.3s; }
+    .works-grid > div:hover .works-overlay { background: rgba(12,26,53,0.35); }
 
     /* ── CTA BAND ── */
     .cta-band { background: var(--navy2); padding: 5rem; text-align: center; }
@@ -1169,8 +1175,8 @@
   <div class="footer-bottom">
     <span class="footer-copy">© 2026 Weldex. All rights reserved.</span>
     <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
-      <a href="#" onclick="showPage('privacy')" style="font-size:0.7rem;color:rgba(255,255,255,0.2);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'">プライバシーポリシー</a>
-      <a href="#" onclick="showPage('tokusho')" style="font-size:0.7rem;color:rgba(255,255,255,0.2);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'">特定商取引法に基づく表記</a>
+      <a href="#" class="footer-legal-link" onclick="showPage('privacy')">プライバシーポリシー</a>
+      <a href="#" class="footer-legal-link" onclick="showPage('tokusho')">特定商取引法に基づく表記</a>
     </div>
   </div>
 </footer>
@@ -1192,16 +1198,12 @@
   }
   function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + id).classList.add('active');
+    const target = document.getElementById('page-' + id);
+    if (!target) return;
+    target.classList.add('active');
     window.scrollTo(0, 0);
     document.body.style.overflow = '';
-    setTimeout(observeReveals, 50);
-  }
-  function observeReveals() {
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
-    }, { threshold: 0.06 });
-    document.querySelectorAll('.reveal:not(.visible)').forEach(r => obs.observe(r));
+    setTimeout(initAnimations, 80);
   }
   // ★ Phase5 STEP1: FORMSPREE_ENDPOINTをformspree.ioで取得したURLに差し替え
   const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mqendgdb';
@@ -1291,12 +1293,6 @@
     countEls.forEach(el => countObserver.observe(el));
   }
 
-  // showPage をラップしてアニメーション再初期化
-  const _origShowPage = showPage;
-  function showPage(id) {
-    _origShowPage(id);
-    setTimeout(initAnimations, 80);
-  }
   initAnimations();
 
 </script>
@@ -1307,7 +1303,7 @@
 
       <div style="background:var(--white);overflow:hidden;cursor:pointer;" onclick="window.open('dental_demo.html','_blank')">
         <div style="aspect-ratio:16/10;background:url('https://images.unsplash.com/photo-1629909615957-be38d48fbbe4?w=600&q=80') center/cover;position:relative;">
-          <div style="position:absolute;inset:0;background:rgba(12,26,53,0);transition:background 0.3s;" onmouseover="this.style.background='rgba(12,26,53,0.35)'" onmouseout="this.style.background='rgba(12,26,53,0)'"></div>
+          <div class="works-overlay"></div>
         </div>
         <div style="padding:1.5rem 1.75rem;">
           <div style="font-size:0.65rem;letter-spacing:0.2em;color:var(--blue);font-weight:500;margin-bottom:0.5rem;">歯科クリニック / WEBサイト制作</div>
@@ -1323,7 +1319,7 @@
 
       <div style="background:var(--white);overflow:hidden;cursor:pointer;" onclick="window.open('aesthetic_demo.html','_blank')">
         <div style="aspect-ratio:16/10;background:url('https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&q=80') center/cover;position:relative;">
-          <div style="position:absolute;inset:0;background:rgba(12,26,53,0);transition:background 0.3s;" onmouseover="this.style.background='rgba(12,26,53,0.35)'" onmouseout="this.style.background='rgba(12,26,53,0)'"></div>
+          <div class="works-overlay"></div>
         </div>
         <div style="padding:1.5rem 1.75rem;">
           <div style="font-size:0.65rem;letter-spacing:0.2em;color:var(--blue);font-weight:500;margin-bottom:0.5rem;">美容外科クリニック / WEBサイト制作</div>
@@ -1339,7 +1335,7 @@
 
       <div style="background:var(--white);overflow:hidden;cursor:pointer;" onclick="window.open('kato_doken.html','_blank')">
         <div style="aspect-ratio:16/10;background:url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80') center/cover;position:relative;">
-          <div style="position:absolute;inset:0;background:rgba(12,26,53,0);transition:background 0.3s;" onmouseover="this.style.background='rgba(12,26,53,0.35)'" onmouseout="this.style.background='rgba(12,26,53,0)'"></div>
+          <div class="works-overlay"></div>
         </div>
         <div style="padding:1.5rem 1.75rem;">
           <div style="font-size:0.65rem;letter-spacing:0.2em;color:var(--blue);font-weight:500;margin-bottom:0.5rem;">建設会社 / WEBサイト制作</div>
