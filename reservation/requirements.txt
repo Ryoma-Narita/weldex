@@ -1,0 +1,9 @@
+fastapi==0.110.0
+uvicorn==0.27.1
+python-dotenv==1.0.1
+sendgrid==6.11.0
+apscheduler==3.10.4
+python-multipart==0.0.9
+pydantic==2.10.6
+openpyxl==3.1.2
+chardet==5.2.0
