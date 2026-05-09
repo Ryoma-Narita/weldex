@@ -136,6 +136,26 @@
       <div class="stat-value" id="s-candidate">-</div>
     </div>
   </div>
+
+  <div style="margin-bottom:0.5rem;font-size:0.72rem;color:var(--gray);letter-spacing:0.06em;font-weight:500;">送信 KPI</div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">キュー待機</div>
+      <div class="stat-value blue" id="s-queued">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">本日送信</div>
+      <div class="stat-value green" id="s-today">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">累計送信</div>
+      <div class="stat-value" id="s-sent">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">失敗 / 配信停止</div>
+      <div class="stat-value red" id="s-failed">-</div>
+    </div>
+  </div>
 </div>
 
 <!-- ターゲットリスト -->
@@ -219,6 +239,10 @@
       document.getElementById('s-ok').textContent        = data.ok;
       document.getElementById('s-email').textContent     = data.with_email;
       document.getElementById('s-candidate').textContent = data.none + data.old + data.no_mobile + data.phone_only;
+      document.getElementById('s-queued').textContent  = data.queued  ?? '-';
+      document.getElementById('s-today').textContent   = data.today   ?? '-';
+      document.getElementById('s-sent').textContent    = data.sent    ?? '-';
+      document.getElementById('s-failed').textContent  = (data.failed ?? 0) + ' / ' + (data.unsubscribes ?? 0);
       document.getElementById('updated-at').textContent  = '更新: ' + new Date().toLocaleTimeString('ja-JP');
     } catch(e) { console.error('stats error', e); }
   }

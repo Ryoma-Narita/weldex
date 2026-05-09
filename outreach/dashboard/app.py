@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 import asyncio
 import json
 
-from db.database import init_db, get_stats, get_conn, write_log
+from db.database import init_db, get_stats, get_send_stats, get_conn, write_log
 
 app = FastAPI(title="Weldex Outreach Dashboard")
 
@@ -38,8 +38,8 @@ def index():
 
 @app.get("/api/stats")
 def api_stats():
-    """統計情報を返す。"""
-    return get_stats()
+    """収集・診断・送信の統計情報をまとめて返す。"""
+    return {**get_stats(), **get_send_stats()}
 
 
 @app.get("/api/targets")
