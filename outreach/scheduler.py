@@ -146,7 +146,7 @@ def cmd_auto() -> None:
     ※送信はしない。毎朝ダッシュボードを確認して手動で python scheduler.py run を実行する。
     """
     from apscheduler.schedulers.blocking import BlockingScheduler
-    from collectors.area_config import INDUSTRY_KEYWORDS, AREA_CONFIG
+    from collectors.area_config import get_random_industry, get_random_area
 
     scheduler = BlockingScheduler(timezone="Asia/Tokyo")
 
@@ -155,13 +155,8 @@ def cmd_auto() -> None:
     def daily_prepare():
         """毎朝6時に収集・診断・キュー構築を自動実行する（送信は手動）。"""
         write_log("INFO", "system", "定期自動準備開始")
-        # 業種・エリアをローテーション
-        import random
-        industry = random.choice(list(INDUSTRY_KEYWORDS.keys()))
-        prefs    = list(AREA_CONFIG.keys())
-        pref     = random.choice(prefs)
-        cities   = AREA_CONFIG[pref]
-        area     = pref + random.choice(cities)
+        industry = get_random_industry()
+        area     = get_random_area()
         print(f"[定期実行] {industry} / {area}")
         cmd_collect_and_prepare(industry, area, limit=20)
 
