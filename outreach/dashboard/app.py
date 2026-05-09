@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 import asyncio
 import json
 
-from db.database import init_db, get_stats, get_send_stats, get_conn, write_log
+from db.database import init_db, get_stats, get_send_stats, get_conn, write_log, add_unsubscribe
 
 app = FastAPI(title="Weldex Outreach Dashboard")
 
@@ -146,3 +146,34 @@ async def api_logs_stream():
             await asyncio.sleep(2)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.get("/unsubscribe", response_class=HTMLResponse)
+def unsubscribe(email: str = Query(None)):
+    """
+    配信停止エンドポイント（特定電子メール法対応）。
+    メール文面のリンクからアクセスされる。
+    """
+    if not email:
+        return HTMLResponse("<h2>メールアドレスが指定されていません</h2>", status_code=400)
+
+    add_unsubscribe(email)
+    write_log("INFO", "system", f"配信停止登録: {email}")
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<title>配信停止完了 | Weldex</title>
+<style>
+  body {{ font-family: sans-serif; display: flex; align-items: center; justify-content: center;
+         min-height: 100vh; background: #f8f9fc; margin: 0; }}
+  .box {{ background: white; padding: 2.5rem 3rem; text-align: center; border: 1px solid #e2e8f0; max-width: 480px; }}
+  h1 {{ font-size: 1.2rem; color: #0c1a35; margin-bottom: 1rem; }}
+  p  {{ font-size: 0.88rem; color: #64748b; line-height: 1.7; }}
+</style>
+</head><body>
+<div class="box">
+  <h1>配信停止が完了しました</h1>
+  <p>{email} への送信を停止しました。<br>今後このメールアドレスへのご連絡はいたしません。</p>
+  <p style="margin-top:1.5rem;font-size:0.78rem;color:#94a3b8;">Weldex（info@weldex.jp）</p>
+</div>
+</body></html>""")
