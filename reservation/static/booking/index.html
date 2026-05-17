@@ -15,6 +15,26 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:0.25rem}
 .step-label{font-size:0.68rem;font-weight:600;letter-spacing:0.1em;color:#c9a84c;text-transform:uppercase;margin-bottom:1rem}
 .card{background:#fff;border:1px solid #e2e8f0;padding:1.5rem;margin-bottom:1rem;border-radius:2px}
 .grid-dates{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem}
+.cal-title{font-weight:600;font-size:0.95rem}
+.cal-nav{background:none;border:1px solid #e2e8f0;width:32px;height:32px;cursor:pointer;border-radius:2px;font-size:1rem;display:flex;align-items:center;justify-content:center}
+.cal-nav:hover{background:#f0f2f5}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{text-align:center;font-size:0.65rem;font-weight:600;color:#94a3b8;padding:0.3rem 0}
+.cal-dow:first-child{color:#dc2626}.cal-dow:last-child{color:#2563eb}
+.cal-day{aspect-ratio:1;border-radius:2px;border:none;font-size:0.78rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.12s;position:relative}
+.cal-day.empty{background:transparent;cursor:default}
+.cal-day.unavailable{background:#f1f5f9;color:#cbd5e1;cursor:not-allowed}
+.cal-day.available{background:#dcfce7;color:#15803d;border:1px solid transparent}
+.cal-day.available:hover{border-color:#16a34a;background:#bbf7d0}
+.cal-day.few{background:#fef9c3;color:#a16207;border:1px solid transparent}
+.cal-day.few:hover{border-color:#ca8a04;background:#fef08a}
+.cal-day.full{background:#fee2e2;color:#b91c1c;cursor:not-allowed}
+.cal-day.selected{outline:2px solid #0c1a35;outline-offset:1px}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:0.6}
+.cal-legend{display:flex;gap:1rem;margin-top:0.75rem;flex-wrap:wrap}
+.cal-legend-item{display:flex;align-items:center;gap:0.3rem;font-size:0.7rem;color:#64748b}
+.cal-legend-dot{width:10px;height:10px;border-radius:2px}
 .grid-times{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem}
 .btn-slot{border:1px solid #e2e8f0;background:#fff;padding:0.6rem 0;font-size:0.82rem;cursor:pointer;border-radius:2px;transition:all 0.15s}
 .btn-slot:hover:not(:disabled){border-color:#0c1a35;background:#f0f2f5}
@@ -59,7 +79,23 @@ input:focus,select:focus,textarea:focus{border-color:#0c1a35}
   <div class="step" id="step2">
     <div class="step-label">Step 2 — 日程を選ぶ</div>
     <div class="card">
-      <div id="date-list"><div class="loading">読み込み中...</div></div>
+      <div class="cal-header">
+        <button class="cal-nav" id="cal-prev" onclick="calNav(-1)">&#8249;</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav" id="cal-next" onclick="calNav(1)">&#8250;</button>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-dow">日</div><div class="cal-dow">月</div><div class="cal-dow">火</div>
+        <div class="cal-dow">水</div><div class="cal-dow">木</div><div class="cal-dow">金</div>
+        <div class="cal-dow">土</div>
+      </div>
+      <div class="cal-grid" id="cal-body"><div class="loading" style="grid-column:1/-1">読み込み中...</div></div>
+      <div class="cal-legend">
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#dcfce7;border:1px solid #86efac"></div>空きあり</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#fef9c3;border:1px solid #fde047"></div>残り少ない</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#fee2e2;border:1px solid #fca5a5"></div>満員</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#f1f5f9;border:1px solid #e2e8f0"></div>予約不可</div>
+      </div>
     </div>
     <div id="err-date" class="err">日程を選択してください</div>
     <button class="btn btn-outline" onclick="goStep(1)">← 戻る</button>
@@ -134,6 +170,7 @@ input:focus,select:focus,textarea:focus{border-color:#0c1a35}
 <script>
 const API = '';
 let sel = { menu: null, date: null, time: null };
+let calYear = 0, calMonth = 0, calCache = {};
 
 async function init() {
   document.title = document.getElementById('app-title').textContent;
@@ -175,26 +212,71 @@ async function goStep(n) {
 }
 
 async function loadDates() {
-  const el = document.getElementById('date-list');
-  el.innerHTML = '<div class="loading">読み込み中...</div>';
-  try {
-    const res = await fetch(API + '/api/booking/available-dates');
-    const data = await res.json();
-    const weekdays = ['日','月','火','水','木','金','土'];
-    el.innerHTML = '<div class="grid-dates">' + data.dates.slice(0, 28).map(d => {
-      const dt = new Date(d); const wd = weekdays[dt.getDay()];
-      const color = dt.getDay()===0?'color:#dc2626':dt.getDay()===6?'color:#2563eb':'';
-      return `<button class="btn-slot" onclick="selectDate('${d}')" data-date="${d}">
-        <span style="font-size:0.7rem;display:block">${d.slice(5).replace('-','/')}</span>
-        <span style="font-size:0.7rem;${color}">${wd}</span>
-      </button>`;
-    }).join('') + '</div>';
-  } catch(e) { el.innerHTML = '<p style="color:#dc2626">読み込みに失敗しました</p>'; }
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth() + 1;
+  calCache = {};
+  await renderCalendar();
+}
+
+async function renderCalendar() {
+  const el = document.getElementById('cal-body');
+  const key = `${calYear}-${calMonth}`;
+  document.getElementById('cal-title').textContent = `${calYear}年 ${calMonth}月`;
+
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 365);
+  const prevBase = new Date(calYear, calMonth - 2, 1);
+  const isPrevDisabled = prevBase < new Date(today.getFullYear(), today.getMonth(), 1);
+  const nextBase = new Date(calYear, calMonth, 1);
+  const isNextDisabled = nextBase > new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+  document.getElementById('cal-prev').disabled = isPrevDisabled;
+  document.getElementById('cal-prev').style.opacity = isPrevDisabled ? '0.3' : '1';
+  document.getElementById('cal-next').disabled = isNextDisabled;
+  document.getElementById('cal-next').style.opacity = isNextDisabled ? '0.3' : '1';
+
+  if (!calCache[key]) {
+    el.innerHTML = '<div class="loading" style="grid-column:1/-1;padding:1rem">読み込み中...</div>';
+    try {
+      const res = await fetch(API + `/api/booking/calendar/${calYear}/${calMonth}`);
+      calCache[key] = await res.json();
+    } catch(e) {
+      el.innerHTML = '<p style="color:#dc2626;grid-column:1/-1;padding:1rem">読み込みに失敗しました</p>';
+      return;
+    }
+  }
+
+  const data = calCache[key];
+  const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+  for (const d of data.days) {
+    const dayNum = parseInt(d.date.slice(8));
+    const isSelected = sel.date === d.date;
+    const isSun = new Date(d.date).getDay() === 0;
+    const isSat = new Date(d.date).getDay() === 6;
+    const dayColor = isSun ? 'color:#dc2626' : isSat ? 'color:#2563eb' : '';
+    const canClick = d.status === 'available' || d.status === 'few';
+    const onclick = canClick ? `onclick="selectDate('${d.date}')"` : '';
+    html += `<div class="cal-day ${d.status}${isSelected?' selected':''}" data-date="${d.date}" ${onclick} style="${dayColor}">
+      <span>${dayNum}</span>
+      ${canClick ? '<div class="cal-dot"></div>' : ''}
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  if (calMonth < 1) { calMonth = 12; calYear--; }
+  renderCalendar();
 }
 
 function selectDate(d) {
   sel.date = d;
-  document.querySelectorAll('#date-list .btn-slot').forEach(b => {
+  document.querySelectorAll('.cal-day').forEach(b => {
     b.classList.toggle('selected', b.dataset.date === d);
   });
   setTimeout(() => goStep(3), 200);

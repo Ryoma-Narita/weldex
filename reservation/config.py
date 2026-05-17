@@ -30,7 +30,7 @@ LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
 SLOT_INTERVAL_MIN = 30          # 予約スロット間隔（分）
 SLOT_START        = "09:00"     # 受付開始時間
 SLOT_END          = "18:00"     # 受付終了時間
-ADVANCE_DAYS      = 30          # 何日先まで予約可能か
+ADVANCE_DAYS      = 365         # 何日先まで予約可能か
 REMIND_HOUR       = 18          # リマインド送信時刻（前日）
 
 # セッション有効期限（時間）

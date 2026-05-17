@@ -1,6 +1,7 @@
 """reservation/routers/booking.py — 患者向け予約受付API"""
 import os
 import sys
+import calendar
 from datetime import date, datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -47,6 +48,41 @@ def available_dates():
         if d not in closed:
             result.append(d)
     return {"dates": result}
+
+
+@router.get("/calendar/{year}/{month}")
+def get_calendar(year: int, month: int):
+    """指定月のカレンダー情報（各日の予約状況）を返す。"""
+    today = date.today()
+    closed = set(get_closed_dates())
+    all_slots = _generate_slots(SLOT_START, SLOT_END, SLOT_INTERVAL_MIN)
+    total_slots = len(all_slots)
+    max_date = today + timedelta(days=ADVANCE_DAYS)
+
+    _, days_in_month = calendar.monthrange(year, month)
+    days = []
+    for day in range(1, days_in_month + 1):
+        try:
+            d = date(year, month, day)
+        except ValueError:
+            continue
+        iso = d.isoformat()
+        is_past = d <= today
+        is_far = d > max_date
+        is_closed = iso in closed
+        if is_past or is_far or is_closed:
+            days.append({"date": iso, "status": "unavailable", "booked": 0, "total": total_slots})
+        else:
+            booked = len(get_reserved_times(iso))
+            if booked >= total_slots:
+                status = "full"
+            elif booked >= total_slots * 0.7:
+                status = "few"
+            else:
+                status = "available"
+            days.append({"date": iso, "status": status, "booked": booked, "total": total_slots})
+
+    return {"year": year, "month": month, "days": days}
 
 
 @router.get("/available-times/{target_date}")
