@@ -3,12 +3,20 @@ outreach/mailers/templates.py
 営業メール文面 A/B/C パターン
 共通：資料請求ベースのCTA・配信停止リンク必須（特定電子メール法）
 """
+import os
 
 UNSUBSCRIBE_URL = "https://weldex.jp/unsubscribe"  # Phase3で実装予定
 
 
+SENDER_ADDRESS = os.environ.get("SENDER_ADDRESS", "※住所は info@weldex.jp までお問い合わせください")
+
+
 def _footer(to_email: str) -> str:
-    """メール共通フッター（特定電子メール法必須事項）。"""
+    """
+    メール共通フッター（特定電子メール法第3条・必須事項）。
+
+    必須記載：送信者氏名・住所・メールアドレス・配信停止手段
+    """
     return f"""
 ──────────────────────────────
 このメールは {to_email} 宛にお送りしています。
@@ -16,6 +24,7 @@ def _footer(to_email: str) -> str:
 
 Weldex（ウェルデックス）
 担当：成田 涼馬
+住所：{SENDER_ADDRESS}
 メール：info@weldex.jp
 サイト：https://weldex.jp
 ──────────────────────────────

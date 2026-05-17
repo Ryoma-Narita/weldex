@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     duration_min  INTEGER DEFAULT 30,
     status        TEXT DEFAULT 'confirmed',  -- confirmed/cancelled/done/no_show/pending
     channel       TEXT DEFAULT 'web',        -- web/line/manual
+    line_user_id  TEXT DEFAULT '',           -- LINE予約の場合のみ設定（リマインド・キャンセル追跡用）
     notes         TEXT DEFAULT '',
     remind_sent   INTEGER DEFAULT 0,         -- 0=未送信 1=送信済み
     cancelled_at  TEXT DEFAULT '',
@@ -167,38 +168,30 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 
 ---
 
-## line_bot/data/reservations.db（LINE予約）
+## LINE予約（reservation.dbに統合済み）
 
-reservation.dbと統合する場合は `channel='line'` で区別する。
-独立させる場合は以下のテーブルのみ使用する。
+`channel='line'` で区別。`line_user_id` カラムで送信者を追跡。
+**独立DBは使わない**（ADR-001 参照）。
+
+追加テーブル：
 
 ```sql
--- LINE予約（reservation.dbと同じ構造）
-CREATE TABLE IF NOT EXISTS reservations (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    line_user_id TEXT NOT NULL,
-    name         TEXT DEFAULT '',
-    date         TEXT NOT NULL,
-    time         TEXT NOT NULL,
-    menu_id      TEXT DEFAULT '',
-    menu_name    TEXT DEFAULT '',
-    status       TEXT DEFAULT 'confirmed',
-    remind_sent  INTEGER DEFAULT 0,
-    created_at   TEXT DEFAULT (datetime('now', 'localtime')),
-    cancelled_at TEXT DEFAULT ''
-);
-
 -- ユーザーセッション（予約フローの状態管理）
+-- reservation/db/database.py の init_db() で自動生成される
 CREATE TABLE IF NOT EXISTS user_sessions (
     line_user_id TEXT PRIMARY KEY,
-    step         TEXT DEFAULT 'idle',        -- idle/select_date/select_time/select_menu/input_name/confirm
+    step         TEXT DEFAULT 'idle',        -- idle/select_date/select_time/select_menu/input_name/confirm/cancel_select
     temp_date    TEXT DEFAULT '',
     temp_time    TEXT DEFAULT '',
-    temp_menu    TEXT DEFAULT '',
+    temp_menu_id TEXT DEFAULT '',            -- ※temp_menu ではなく temp_menu_id（Phase4で修正）
     temp_name    TEXT DEFAULT '',
     updated_at   TEXT DEFAULT (datetime('now', 'localtime'))
 );
 ```
+
+> **注意**: `user_sessions` テーブルは `reservation/db/database.py` の `init_db()` に追加が必要。
+> 現状は line_bot が直接 SQL で INSERT/UPDATE しているが、init_db() 側に
+> `CREATE TABLE IF NOT EXISTS user_sessions ...` を追記することで永続化される。
 
 ---
 

@@ -396,19 +396,10 @@
     }
 
     blockedEl.classList.remove('show');
-    iframe.src = t.website;
+    // プロキシ経由で読み込む（X-Frame-Options を除去）
+    iframe.src = '/proxy?url=' + encodeURIComponent(t.website);
 
-    // iframeがブロックされた場合の検知
-    iframe.onload = () => {
-      try {
-        // 読み込み完了後、ドキュメントへのアクセスを試みる
-        // クロスオリジンでブロックされていてもonloadは発火するため
-        // 実際にはCORSエラーで読み取れないが、空白ページにはなる
-        blockedEl.classList.remove('show');
-      } catch(e) {
-        blockedEl.classList.add('show');
-      }
-    };
+    iframe.onload = () => blockedEl.classList.remove('show');
     iframe.onerror = () => blockedEl.classList.add('show');
   }
 

@@ -9,10 +9,14 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 import asyncio
 import json
+import re
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from db.database import init_db, get_stats, get_send_stats, get_conn, write_log, add_unsubscribe
 
@@ -146,6 +150,65 @@ async def api_logs_stream():
             await asyncio.sleep(2)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.get("/proxy")
+async def proxy_site(url: str = Query(...)):
+    """
+    外部サイトをiframe表示するためのプロキシ。
+    X-Frame-Options / Content-Security-Policy ヘッダーを除去して返す。
+
+    Args:
+        url: 取得する外部URL
+    """
+    import requests as req
+
+    if not url.startswith(("http://", "https://")):
+        return Response(content="Invalid URL", status_code=400)
+
+    def _fetch():
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,*/*;q=0.9",
+            "Accept-Language": "ja,en;q=0.9",
+        }
+        return req.get(url, headers=headers, timeout=10, verify=False, allow_redirects=True)
+
+    try:
+        resp = await asyncio.to_thread(_fetch)
+
+        content_type = resp.headers.get("content-type", "text/html; charset=utf-8")
+        content = resp.content
+
+        # HTMLの場合は<base href>を挿入して相対パスを解決
+        if "text/html" in content_type:
+            try:
+                html = resp.text
+                base_tag = f'<base href="{url}" target="_self">'
+                html = re.sub(
+                    r'(<head[^>]*>)', r'\1' + base_tag, html, count=1, flags=re.IGNORECASE
+                )
+                encoding = resp.encoding or "utf-8"
+                content = html.encode(encoding, errors="replace")
+            except Exception:
+                pass
+
+        return Response(
+            content=content,
+            headers={"Content-Type": content_type, "Access-Control-Allow-Origin": "*"},
+        )
+
+    except Exception as e:
+        error_html = (
+            "<html><body style='font-family:sans-serif;padding:2rem;color:#64748b'>"
+            f"<p>サイトの読み込みに失敗しました</p><p style='font-size:0.75rem'>{str(e)[:120]}</p>"
+            "</body></html>"
+        )
+        return Response(content=error_html, media_type="text/html", status_code=200)
 
 
 @app.get("/unsubscribe", response_class=HTMLResponse)

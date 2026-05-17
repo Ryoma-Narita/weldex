@@ -31,3 +31,6 @@ REMIND_HOUR       = 18          # リマインド送信時刻（前日）
 
 # セッション有効期限（時間）
 SESSION_EXPIRE_HOURS = 8
+
+# メニュー料金表示（true=表示・飲食/美容、false=非表示・医療/歯科デフォルト）
+SHOW_MENU_PRICE = os.environ.get("SHOW_MENU_PRICE", "false").lower() == "true"
