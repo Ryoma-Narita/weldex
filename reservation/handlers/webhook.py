@@ -6,25 +6,27 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
-    ApiClient, Configuration, MessagingApi, ReplyMessageRequest,
+    ApiClient, Configuration, MessagingApi, ReplyMessageRequest, TextMessage,
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, PostbackEvent
 
 from handlers.reservation import handle_message
-from config import LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN
+from config import LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, APP_NAME, APP_URL
 
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 _cfg = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 
+BOOKING_URL = f"{APP_URL}/booking/"
+
 
 def process_webhook(signature: str, body: str) -> None:
-    """署名検証してイベントを処理する。InvalidSignatureErrorを上に投げる。"""
+    """署名検証してイベントを処理する。"""
     handler.handle(body, signature)
 
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def _on_text(event: MessageEvent) -> None:
-    """テキストメッセージを予約ステートマシンに渡して返信する。"""
+    """テキストメッセージを処理して返信する。"""
     line_user_id = event.source.user_id
     text = event.message.text.strip()
     messages = handle_message(line_user_id, text)
@@ -36,7 +38,7 @@ def _on_text(event: MessageEvent) -> None:
 
 @handler.add(PostbackEvent)
 def _on_postback(event: PostbackEvent) -> None:
-    """ポストバック（クイックリプライボタン）を処理する。"""
+    """ポストバック（リッチメニューボタン等）を処理する。"""
     line_user_id = event.source.user_id
     data = event.postback.data
     messages = handle_message(line_user_id, data)
@@ -49,8 +51,6 @@ def _on_postback(event: PostbackEvent) -> None:
 @handler.add(FollowEvent)
 def _on_follow(event: FollowEvent) -> None:
     """友だち追加時のウェルカムメッセージ。"""
-    from linebot.v3.messaging import TextMessage
-    from config import APP_NAME
     with ApiClient(_cfg) as api_client:
         MessagingApi(api_client).reply_message(
             ReplyMessageRequest(
@@ -59,9 +59,9 @@ def _on_follow(event: FollowEvent) -> None:
                     text=(
                         f"🌸 {APP_NAME} の公式LINEへようこそ！\n\n"
                         f"こちらから簡単にご予約いただけます😊\n\n"
-                        f"「予約」→ 新規ご予約\n"
-                        f"「予約確認」→ ご予約の確認・変更・キャンセル\n\n"
-                        f"お気軽にご利用ください✨"
+                        f"📅 ご予約はこちら\n{BOOKING_URL}\n\n"
+                        f"「予約」と送ってもご案内します✨\n"
+                        f"お気軽にご利用ください！"
                     )
                 )]
             )
