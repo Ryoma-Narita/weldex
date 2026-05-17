@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from datetime import date, timedelta
 from linebot.v3.messaging import (
     TextMessage, QuickReply, QuickReplyItem,
-    MessageAction, DatetimePickerAction, FlexMessage, FlexContainer,
+    MessageAction, PostbackAction, DatetimePickerAction,
 )
 from db.database import (
     get_user_session, upsert_user_session,
@@ -55,7 +55,11 @@ def _available_dates() -> list[str]:
 def _menu_qr(menus: list) -> QuickReply:
     """メニュー選択クイックリプライを生成する。"""
     items = [
-        QuickReplyItem(action=MessageAction(label=m["name"][:20], text=f"menu:{m['id']}:{m['name']}:{m['duration_min']}"))
+        QuickReplyItem(action=PostbackAction(
+            label=m["name"][:20],
+            data=f"menu:{m['id']}:{m['name']}:{m['duration_min']}",
+            display_text=m["name"]
+        ))
         for m in menus
     ]
     return QuickReply(items=items)
@@ -64,7 +68,11 @@ def _menu_qr(menus: list) -> QuickReply:
 def _time_qr(slots: list[str]) -> QuickReply:
     """時間選択クイックリプライを生成する（最大13件）。"""
     items = [
-        QuickReplyItem(action=MessageAction(label=s, text=f"time:{s}"))
+        QuickReplyItem(action=PostbackAction(
+            label=s,
+            data=f"time:{s}",
+            display_text=s
+        ))
         for s in slots[:13]
     ]
     return QuickReply(items=items)
@@ -109,7 +117,7 @@ def handle_message(line_user_id: str, text: str) -> list:
                     return [TextMessage(text="現在予約可能な日程がありません。お電話でお問い合わせください。")]
                 # 日付選択クイックリプライ（最大7件表示）
                 items = [
-                    QuickReplyItem(action=MessageAction(label=d[5:], text=f"date:{d}"))
+                    QuickReplyItem(action=PostbackAction(label=d[5:], data=f"date:{d}", display_text=d[5:]))
                     for d in dates[:7]
                 ]
                 return [TextMessage(
@@ -127,7 +135,7 @@ def handle_message(line_user_id: str, text: str) -> list:
             if not slots:
                 dates = _available_dates()
                 items = [
-                    QuickReplyItem(action=MessageAction(label=d[5:], text=f"date:{d}"))
+                    QuickReplyItem(action=PostbackAction(label=d[5:], data=f"date:{d}", display_text=d[5:]))
                     for d in dates[:7]
                 ]
                 return [TextMessage(
@@ -180,14 +188,14 @@ def handle_message(line_user_id: str, text: str) -> list:
             f"「確定」または「キャンセル」で返信してください。"
         )
         items = [
-            QuickReplyItem(action=MessageAction(label="確定", text="確定")),
-            QuickReplyItem(action=MessageAction(label="キャンセル", text="キャンセル")),
+            QuickReplyItem(action=PostbackAction(label="確定", data="confirm:yes", display_text="確定")),
+            QuickReplyItem(action=PostbackAction(label="キャンセル", data="confirm:no", display_text="キャンセル")),
         ]
         return [TextMessage(text=confirm_text, quick_reply=QuickReply(items=items))]
 
     # 確認
     if step == "confirm":
-        if text == "確定":
+        if text in ("確定", "confirm:yes"):
             s = get_user_session(line_user_id)
             phone = s.get("temp_phone", "")
             cid = find_or_create_customer(s["temp_name"], phone, "", source="line")
