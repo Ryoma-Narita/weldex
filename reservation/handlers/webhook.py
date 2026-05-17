@@ -56,7 +56,13 @@ def _on_follow(event: FollowEvent) -> None:
             ReplyMessageRequest(
                 reply_token=event.reply_token,
                 messages=[TextMessage(
-                    text=f"【{APP_NAME}】\nご登録ありがとうございます！\n「予約」と送ると予約を開始できます。"
+                    text=(
+                        f"🌸 {APP_NAME} の公式LINEへようこそ！\n\n"
+                        f"こちらから簡単にご予約いただけます😊\n\n"
+                        f"「予約」→ 新規ご予約\n"
+                        f"「予約確認」→ ご予約の確認・変更・キャンセル\n\n"
+                        f"お気軽にご利用ください✨"
+                    )
                 )]
             )
         )

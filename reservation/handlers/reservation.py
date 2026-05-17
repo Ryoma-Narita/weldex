@@ -3,19 +3,26 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from linebot.v3.messaging import (
     TextMessage, QuickReply, QuickReplyItem,
-    MessageAction, PostbackAction, DatetimePickerAction,
+    MessageAction, PostbackAction,
 )
 from db.database import (
     get_user_session, upsert_user_session,
     get_menus, get_closed_dates, get_reserved_times,
     create_reservation, find_or_create_customer,
     get_reservation_by_id, update_reservation_status,
+    get_reservations_by_date,
 )
 from config import SLOT_START, SLOT_END, SLOT_INTERVAL_MIN, ADVANCE_DAYS, APP_NAME
 from services.mail import send_confirmation, send_admin_notification
+
+
+def _fmt_date(date_str: str) -> str:
+    """2026-05-18 → 5月18日"""
+    d = datetime.strptime(date_str, "%Y-%m-%d")
+    return f"{d.month}月{d.day}日"
 
 
 def _gen_slots(date_str: str) -> list[str]:
@@ -78,28 +85,153 @@ def _time_qr(slots: list[str]) -> QuickReply:
     return QuickReply(items=items)
 
 
+def _date_qr(dates: list[str]) -> QuickReply:
+    """日付選択クイックリプライを生成する（最大7件）。"""
+    items = [
+        QuickReplyItem(action=PostbackAction(
+            label=_fmt_date(d),
+            data=f"date:{d}",
+            display_text=_fmt_date(d)
+        ))
+        for d in dates[:7]
+    ]
+    return QuickReply(items=items)
+
+
+def _find_reservation_by_phone(phone: str) -> dict | None:
+    """電話番号で直近の予約を1件取得する。"""
+    import psycopg2
+    import psycopg2.extras
+    from config import DATABASE_URL
+    normalized = phone.replace("-", "").replace(" ", "")
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT r.* FROM reservations r
+                WHERE REPLACE(REPLACE(r.phone,'-',''),' ','') = %s
+                  AND r.status = 'confirmed'
+                  AND r.date >= %s
+                ORDER BY r.date ASC, r.time ASC
+                LIMIT 1
+            """, (normalized, date.today().isoformat()))
+            row = cur.fetchone()
+    return dict(row) if row else None
+
+
 def handle_message(line_user_id: str, text: str) -> list:
     """LINEメッセージを処理してレスポンスメッセージリストを返す。"""
     sess = get_user_session(line_user_id)
     step = sess.get("step", "idle")
 
     # キャンセルワード（どのステップでも受け付ける）
-    if text in ("キャンセル", "やめる", "cancel", "戻る"):
+    if text in ("キャンセル", "やめる", "cancel", "戻る", "confirm:no"):
         upsert_user_session(line_user_id, step="idle")
-        return [TextMessage(text="予約入力をキャンセルしました。\n「予約」と送ると再開できます。")]
+        return [TextMessage(text="了解です！またいつでもお声がけください😊\n「予約」と送ると予約を開始できます。")]
 
-    # 予約開始
+    # ── 予約確認・変更・キャンセル ──────────────────────
+    if text in ("予約確認", "変更", "予約変更", "予約キャンセル", "my_reservation"):
+        upsert_user_session(line_user_id, step="my_res_phone")
+        return [TextMessage(text="📋 ご予約の確認・変更をします。\n\nご登録の電話番号を入力してください。\n（例：090-1234-5678）")]
+
+    if step == "my_res_phone":
+        phone = text.strip().replace("-", "").replace(" ", "")
+        if len(phone) < 10 or not phone.isdigit():
+            return [TextMessage(text="正しい電話番号を入力してください📱\n（例：090-1234-5678）")]
+        res = _find_reservation_by_phone(text.strip())
+        if not res:
+            upsert_user_session(line_user_id, step="idle")
+            return [TextMessage(text="ご予約が見つかりませんでした😔\n\nご不明な点はお電話でお問い合わせください。")]
+        upsert_user_session(line_user_id, step="my_res_action",
+                            temp_date=str(res["id"]))  # IDをtemp_dateに仮保存
+        items = [
+            QuickReplyItem(action=PostbackAction(label="日程を変更する", data="res:change_date", display_text="日程を変更する")),
+            QuickReplyItem(action=PostbackAction(label="キャンセルする", data="res:cancel", display_text="キャンセルする")),
+            QuickReplyItem(action=PostbackAction(label="戻る", data="キャンセル", display_text="戻る")),
+        ]
+        return [TextMessage(
+            text=(
+                f"📅 ご予約内容\n\n"
+                f"メニュー：{res['menu_name']}\n"
+                f"日時：{_fmt_date(res['date'])} {res['time']}\n"
+                f"お名前：{res['name']}\n\n"
+                f"どうされますか？"
+            ),
+            quick_reply=QuickReply(items=items)
+        )]
+
+    if step == "my_res_action":
+        res_id = int(sess.get("temp_date", "0"))
+        if text == "res:cancel":
+            update_reservation_status(res_id, "cancelled")
+            upsert_user_session(line_user_id, step="idle", temp_date="")
+            return [TextMessage(text="ご予約をキャンセルしました。\nまのご来院をお待ちしております🌸\n\n「予約」でいつでも再予約できます。")]
+        if text == "res:change_date":
+            upsert_user_session(line_user_id, step="my_res_change_date")
+            dates = _available_dates()
+            return [TextMessage(
+                text="新しい日付を選択してください📅",
+                quick_reply=_date_qr(dates)
+            )]
+        return [TextMessage(text="ボタンから選択してください。")]
+
+    if step == "my_res_change_date":
+        if text.startswith("date:"):
+            new_date = text[5:]
+            slots = _gen_slots(new_date)
+            if not slots:
+                dates = _available_dates()
+                return [TextMessage(
+                    text=f"{_fmt_date(new_date)} は満席または休業日です😔\n別の日付を選択してください。",
+                    quick_reply=_date_qr(dates)
+                )]
+            upsert_user_session(line_user_id, step="my_res_change_time", temp_time=new_date)
+            return [TextMessage(
+                text=f"{_fmt_date(new_date)} の空き時間を選択してください⏰",
+                quick_reply=_time_qr(slots)
+            )]
+        return [TextMessage(text="日付をボタンから選択してください。", quick_reply=_date_qr(_available_dates()))]
+
+    if step == "my_res_change_time":
+        if text.startswith("time:"):
+            new_time = text[5:]
+            new_date = sess.get("temp_time", "")
+            res_id = int(sess.get("temp_date", "0"))
+            res = get_reservation_by_id(res_id)
+            if res:
+                import psycopg2
+                from config import DATABASE_URL
+                with psycopg2.connect(DATABASE_URL) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "UPDATE reservations SET date=%s, time=%s WHERE id=%s",
+                            (new_date, new_time, res_id)
+                        )
+                    conn.commit()
+            upsert_user_session(line_user_id, step="idle", temp_date="", temp_time="")
+            return [TextMessage(
+                text=(
+                    f"✅ ご予約を変更しました！\n\n"
+                    f"新しい日時：{_fmt_date(new_date)} {new_time}\n\n"
+                    f"ご来院をお待ちしております🌸"
+                )
+            )]
+        slots = _gen_slots(sess.get("temp_time", ""))
+        return [TextMessage(text="時間をボタンから選択してください。", quick_reply=_time_qr(slots))]
+
+    # ── 新規予約フロー ──────────────────────────────────
     if step == "idle":
-        if text in ("予約", "よやく", "reserve", "booking"):
+        if text in ("予約", "よやく", "reserve", "booking", "予約する"):
             menus = get_menus()
             if not menus:
-                return [TextMessage(text="現在メニューが登録されていません。お電話でお問い合わせください。")]
+                return [TextMessage(text="現在メニューが登録されていません。\nお電話でお問い合わせください🙏")]
             upsert_user_session(line_user_id, step="select_menu")
             return [TextMessage(
-                text=f"【{APP_NAME}】\nご予約を承ります。\nメニューを選択してください。",
+                text=f"✨ ご予約を承ります！\nメニューを選択してください👇",
                 quick_reply=_menu_qr(menus)
             )]
-        return [TextMessage(text="「予約」と送ると予約を開始できます。\n「キャンセル」と送ると入力を中断します。")]
+        return [TextMessage(
+            text="「予約」と送ると予約を開始できます😊\n「予約確認」で予約の確認・変更ができます。"
+        )]
 
     # メニュー選択
     if step == "select_menu":
@@ -114,18 +246,13 @@ def handle_message(line_user_id: str, text: str) -> list:
                 dates = _available_dates()
                 if not dates:
                     upsert_user_session(line_user_id, step="idle")
-                    return [TextMessage(text="現在予約可能な日程がありません。お電話でお問い合わせください。")]
-                # 日付選択クイックリプライ（最大7件表示）
-                items = [
-                    QuickReplyItem(action=PostbackAction(label=d[5:], data=f"date:{d}", display_text=d[5:]))
-                    for d in dates[:7]
-                ]
+                    return [TextMessage(text="現在予約可能な日程がありません😔\nお電話でお問い合わせください。")]
                 return [TextMessage(
-                    text=f"メニュー：{menu_name}\n\n日付を選択してください（キャンセルは「キャンセル」）。",
-                    quick_reply=QuickReply(items=items)
+                    text=f"メニュー：{menu_name} ✅\n\n日付を選択してください📅",
+                    quick_reply=_date_qr(dates)
                 )]
         menus = get_menus()
-        return [TextMessage(text="メニューをボタンから選択してください。", quick_reply=_menu_qr(menus))]
+        return [TextMessage(text="メニューをボタンから選択してください👇", quick_reply=_menu_qr(menus))]
 
     # 日付選択
     if step == "select_date":
@@ -134,66 +261,57 @@ def handle_message(line_user_id: str, text: str) -> list:
             slots = _gen_slots(date_str)
             if not slots:
                 dates = _available_dates()
-                items = [
-                    QuickReplyItem(action=PostbackAction(label=d[5:], data=f"date:{d}", display_text=d[5:]))
-                    for d in dates[:7]
-                ]
                 return [TextMessage(
-                    text=f"{date_str} は満席または休業日です。別の日程を選択してください。",
-                    quick_reply=QuickReply(items=items)
+                    text=f"{_fmt_date(date_str)} は満席または休業日です😔\n別の日付を選択してください。",
+                    quick_reply=_date_qr(dates)
                 )]
             upsert_user_session(line_user_id, step="select_time", temp_date=date_str)
             return [TextMessage(
-                text=f"日付：{date_str}\n\n時間を選択してください。",
+                text=f"日付：{_fmt_date(date_str)} ✅\n\n時間を選択してください⏰",
                 quick_reply=_time_qr(slots)
             )]
-        # 再提示
-        dates = _available_dates()
-        items = [
-            QuickReplyItem(action=MessageAction(label=d[5:], text=f"date:{d}"))
-            for d in dates[:7]
-        ]
-        return [TextMessage(text="日付をボタンから選択してください。", quick_reply=QuickReply(items=items))]
+        return [TextMessage(text="日付をボタンから選択してください📅", quick_reply=_date_qr(_available_dates()))]
 
     # 時間選択
     if step == "select_time":
         if text.startswith("time:"):
             time_str = text[5:]
             upsert_user_session(line_user_id, step="input_name", temp_time=time_str)
-            return [TextMessage(text=f"時間：{time_str}\n\nお名前をフルネームで入力してください。\n（例：山田 太郎）")]
+            return [TextMessage(text=f"時間：{time_str} ✅\n\nお名前をフルネームで入力してください😊\n（例：山田太郎）")]
         slots = _gen_slots(sess.get("temp_date", ""))
-        return [TextMessage(text="時間をボタンから選択してください。", quick_reply=_time_qr(slots))]
+        return [TextMessage(text="時間をボタンから選択してください⏰", quick_reply=_time_qr(slots))]
 
     # 名前入力
     if step == "input_name":
         if len(text.strip()) < 1:
-            return [TextMessage(text="お名前を入力してください。")]
+            return [TextMessage(text="お名前を入力してください😊")]
         upsert_user_session(line_user_id, step="input_phone", temp_name=text.strip())
-        return [TextMessage(text=f"お名前：{text.strip()}\n\nお電話番号を入力してください。\n（例：090-1234-5678）")]
+        return [TextMessage(text=f"お名前：{text.strip()} ✅\n\nお電話番号を入力してください📱\n（例：090-1234-5678）")]
 
     # 電話番号入力
     if step == "input_phone":
         phone = text.strip().replace("-", "").replace(" ", "")
         if len(phone) < 10 or not phone.isdigit():
-            return [TextMessage(text="正しい電話番号を入力してください。\n（例：090-1234-5678）")]
+            return [TextMessage(text="正しい電話番号を入力してください📱\n（例：090-1234-5678）")]
         upsert_user_session(line_user_id, step="confirm", temp_phone=text.strip())
-        # 確認メッセージ（DBから最新セッションを取得）
         s = get_user_session(line_user_id)
         confirm_text = (
-            f"以下の内容で予約しますか？\n\n"
+            f"📋 予約内容の確認\n"
+            f"─────────────\n"
             f"メニュー：{s['temp_menu']}\n"
-            f"日時：{s['temp_date']} {s['temp_time']}\n"
+            f"日時：{_fmt_date(s['temp_date'])} {s['temp_time']}\n"
             f"お名前：{s['temp_name']}\n"
-            f"電話番号：{text.strip()}\n\n"
-            f"「確定」または「キャンセル」で返信してください。"
+            f"電話番号：{text.strip()}\n"
+            f"─────────────\n"
+            f"この内容でよろしいですか？"
         )
         items = [
-            QuickReplyItem(action=PostbackAction(label="確定", data="confirm:yes", display_text="確定")),
-            QuickReplyItem(action=PostbackAction(label="キャンセル", data="confirm:no", display_text="キャンセル")),
+            QuickReplyItem(action=PostbackAction(label="✅ 確定する", data="confirm:yes", display_text="確定する")),
+            QuickReplyItem(action=PostbackAction(label="❌ キャンセル", data="confirm:no", display_text="キャンセル")),
         ]
         return [TextMessage(text=confirm_text, quick_reply=QuickReply(items=items))]
 
-    # 確認
+    # 確認・確定
     if step == "confirm":
         if text in ("確定", "confirm:yes"):
             s = get_user_session(line_user_id)
@@ -222,24 +340,20 @@ def handle_message(line_user_id: str, text: str) -> list:
                 pass
             return [TextMessage(
                 text=(
-                    f"ご予約を承りました！\n\n"
+                    f"🎉 ご予約が完了しました！\n\n"
                     f"予約番号：{rid}\n"
                     f"メニュー：{s['temp_menu']}\n"
-                    f"日時：{s['temp_date']} {s['temp_time']}\n"
+                    f"日時：{_fmt_date(s['temp_date'])} {s['temp_time']}\n"
                     f"お名前：{s['temp_name']}\n\n"
-                    f"ご来院をお待ちしております。\n"
-                    f"変更・キャンセルはお電話にてお願いします。"
+                    f"ご来院をお待ちしております🌸\n"
+                    f"変更・キャンセルは「予約確認」から、またはお電話にてご連絡ください。"
                 )
             )]
-        # 確定以外の返信
         items = [
-            QuickReplyItem(action=MessageAction(label="確定", text="確定")),
-            QuickReplyItem(action=MessageAction(label="キャンセル", text="キャンセル")),
+            QuickReplyItem(action=PostbackAction(label="✅ 確定する", data="confirm:yes", display_text="確定する")),
+            QuickReplyItem(action=PostbackAction(label="❌ キャンセル", data="confirm:no", display_text="キャンセル")),
         ]
-        return [TextMessage(
-            text="「確定」または「キャンセル」で返信してください。",
-            quick_reply=QuickReply(items=items)
-        )]
+        return [TextMessage(text="ボタンから選択してください😊", quick_reply=QuickReply(items=items))]
 
     upsert_user_session(line_user_id, step="idle")
-    return [TextMessage(text="「予約」と送ると予約を開始できます。")]
+    return [TextMessage(text="「予約」と送ると予約を開始できます😊\n「予約確認」で予約の確認・変更ができます。")]
