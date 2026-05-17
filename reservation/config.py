@@ -19,8 +19,12 @@ SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 FROM_EMAIL       = os.environ.get("FROM_EMAIL", "info@weldex.jp")
 FROM_NAME        = os.environ.get("FROM_NAME", APP_NAME)
 
-# DB
-DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'reservation.db')
+# DB (PostgreSQL)
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# LINE
+LINE_CHANNEL_SECRET       = os.environ.get("LINE_CHANNEL_SECRET", "")
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
 
 # 予約設定
 SLOT_INTERVAL_MIN = 30          # 予約スロット間隔（分）

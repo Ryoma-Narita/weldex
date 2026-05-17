@@ -3,13 +3,15 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
+from linebot.v3.exceptions import InvalidSignatureError
 
 from db.database import init_db
 from routers import booking, admin, customers, import_export
+from handlers.webhook import process_webhook
 from services.reminder import run_reminder
 from config import REMIND_HOUR, APP_NAME
 
@@ -40,6 +42,20 @@ def on_startup():
     scheduler.start()
 
 
+@app.post("/line/webhook")
+async def line_webhook(
+    request: Request,
+    x_line_signature: str = Header(...),
+):
+    """LINE Webhook受信エンドポイント。"""
+    body = await request.body()
+    try:
+        process_webhook(x_line_signature, body.decode("utf-8"))
+    except InvalidSignatureError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    return {"status": "ok"}
+
+
 @app.get("/")
 def root():
-    return {"service": APP_NAME, "booking": "/booking/", "admin": "/admin-ui/", "docs": "/api/docs"}
+    return {"service": APP_NAME, "booking": "/booking/", "admin": "/admin-ui/", "docs": "/api/docs", "line_webhook": "/line/webhook"}
