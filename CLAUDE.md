@@ -159,7 +159,11 @@ weldex/
 
 ## 実装ステータス
 
-### Phase 5：Weldexサイト公開 ← 今ここ
+> 凡例：✅ 実施済み（コード完成・本番稼働）／ 🔧 実装済み・設定待ち／ ⬜ 未着手
+
+---
+
+### ✅ Phase 5：Weldexサイト公開（完了）
 ```
 [x] weldex.html 完成（デザイン・コンテンツ・SEO・スマホ対応）
 [x] booking_demo.html 完成
@@ -167,184 +171,134 @@ weldex/
 [x] FAQ・制作フロー 組み込み済み
 [x] OGP・構造化データ 組み込み済み
 [x] ドメイン取得（weldex.jp）
-[x] コピーライト年修正（2026）
-[x] Formspree送信ロジック実装済み（ENDPOINTのID差し替えのみでOK）
-[x] GA4タグ埋め込み済み（コメントアウト解除＋ID差し替えのみでOK）
-[x] Phase5 STEP1：Formspree ENDPOINT差し替え・テスト送信確認（https://formspree.io/f/mqendgdb）
-[x] Phase5 STEP2：GA4タグ有効化（G-643YQLHM8F）
-[x] Phase5 STEP3：Cloudflare Pagesにデプロイ（weldex.pages.dev）
-[x] Phase5 STEP4：カスタムドメイン設定・動作確認（https://weldex.jp）
+[x] Formspree ENDPOINT設定（https://formspree.io/f/mqendgdb）
+[x] GA4タグ有効化（G-643YQLHM8F）
+[x] Cloudflare Pagesデプロイ（weldex.pages.dev）
+[x] カスタムドメイン設定・動作確認（https://weldex.jp）
 # 2026-05-08 Phase5完了：weldex.jp 公開
 ```
 
-### Phase 1：営業自動化（収集・診断）
+---
+
+### ✅ Phase 1：営業自動化 — 収集・診断（完了）
 ```
-[x] STEP1：outreach/requirements.txt 作成
-[x] STEP2：.env ファイル確認
-[x] STEP3：outreach/db/database.py 作成
-[x] STEP4：outreach/config.py 作成
-[x] STEP5：outreach/collectors/area_config.py 作成
-[x] STEP6：outreach/analyzers/email_extractor.py 作成
-[x] STEP7：outreach/analyzers/site_checker.py 作成
-[x] STEP8：outreach/collectors/google_places.py 作成
-[x] STEP9：outreach/main.py 作成
-[x] STEP10：outreach/dashboard/app.py 作成
-[x] STEP11：outreach/dashboard/templates/index.html 作成
-[x] STEP12：Phase1 統合テスト（13件収集・診断完了）
-詳細：docs/outreach.md 参照
-# 2026-05-09 Phase1 STEP1-11完了
+[x] outreach/requirements.txt
+[x] outreach/db/database.py
+[x] outreach/config.py
+[x] outreach/collectors/area_config.py
+[x] outreach/analyzers/email_extractor.py
+[x] outreach/analyzers/site_checker.py
+[x] outreach/collectors/google_places.py
+[x] outreach/main.py
+[x] outreach/dashboard/app.py
+[x] outreach/dashboard/templates/index.html
+[x] 統合テスト（13件収集・診断完了）
+# 2026-05-09 Phase1完了
 ```
 
-### Phase 2：営業自動化（送信・返信）
+---
+
+### ✅ Phase 2：営業自動化 — 送信・返信（完了）
 ```
 [x] mailers/templates.py（A/B/Cパターン・特定電子メール法対応）
 [x] mailers/sender.py（SendGrid）
-[x] replies/checker.py（Gmail API）
+[x] replies/checker.py（Gmail API・自動返信除外ロジック含む）
 [x] scheduler.py（1日50件上限・auto対応）
 [x] send_queue・outreach_log・unsubscribesテーブル追加
 [x] ダッシュボードにKPI追加
-[ ] SendGrid APIキー設定・実送信テスト
-[ ] Gmail API認証設定・返信検知テスト
-# 2026-05-09 Phase2実装完了（APIキー設定待ち）
+[x] outreach/get_gmail_token.py（Gmail OAuth トークン取得スクリプト）
+[x] 営業メールテンプレートフッター（特定電子メール法対応・SENDER_ADDRESS）
+[x] SendGrid APIキー設定・実送信テスト完了
+[x] Gmail API認証設定・返信検知テスト完了
+# 2026-05-09 Phase2実装完了 / 2026-05-18 実送信・返信検知テスト完了
 ```
 
-### Phase 3：予約・顧客管理システム（MVP完了）
+---
+
+### ✅ Phase 3：予約・顧客管理システム（本番稼働中）
 ```
-[x] models/schemas.py（Pydanticスキーマ）
+本番URL：https://earnest-gentleness-production-f682.up.railway.app
+DB：Railway PostgreSQL（同プロジェクト内）
+
+[x] models/schemas.py（Pydanticスキーマ・ハニーポット含む）
 [x] services/mail.py（確認・リマインド・管理者通知メール）
-[x] services/csv_handler.py（CSV/Excel日本語対応・Shift-JIS・BOM付きエクスポート）
+[x] services/csv_handler.py（Shift-JIS・BOM付きエクスポート）
 [x] services/reminder.py（APScheduler 毎日18時リマインド）
-[x] routers/booking.py（患者向け予約API）
-[x] routers/admin.py（管理者API・セッション認証）
+[x] services/data_retention.py（個人情報自動削除・毎月1日0:00）
+[x] services/nurturing.py（問い合わせ自動返信・3日後フォロー・LINEアラート）
+[x] routers/booking.py（患者向け予約API・カレンダーAPI・レートリミット）
+[x] routers/admin.py（管理者API・セッション認証・ログイン試行制限・リマインド手動送信）
 [x] routers/customers.py（顧客CRUD）
 [x] routers/import_export.py（CSVインポート・エクスポート）
 [x] main.py（FastAPIアプリ統合）
-[x] static/booking/index.html（患者向け予約フォーム）
-[x] static/admin/index.html（管理画面・LINE/WEB経路バッジ表示）
-[x] 統合テスト（API全ルート・DB初期化・予約作成・ログイン確認）
-[ ] 本番環境デプロイ（Railway/Render）
-[ ] クライアント向けカスタマイズ（APP_NAME・メール設定）
+[x] static/booking/index.html（フルカレンダーUI・1年先まで・予約状況色分け）
+[x] static/admin/index.html（管理画面・LINE/WEB経路バッジ・統計ダッシュボード・メニュー管理・設定ページ）
+[x] 本番環境デプロイ（Railway・Nixpacksビルダー）
+[x] LINE Webhook統合（reservation/handlers/webhook.py・URLリダイレクト型）
+[x] settingsテーブル（notify_on_booking / notify_on_cancel 等）
+[x] SlowAPI レートリミット・ハニーポット
+# 2026-05-18 本番稼働確認
 詳細：docs/reservation.md 参照
-# 2026-05-09 Phase3実装完了（デプロイ待ち）
-# 2026-05-10 Phase3追加機能 STEP1〜STEP6完了（settings・設定UI・メニュー管理・リマインド・ダッシュボード強化・管理者通知）
-```
 
-### Phase 3 追加機能：設計済み・実装待ち
-```
-[x] settingsテーブル作成（key-value形式）
-[x] 管理画面「設定ページ」新設
-    - 管理者通知メール変更（#008）
-    - パスワード変更（#008）
-    - LINE疎通テストボタン（TODO:本番安定後に削除）
-[x] #010 メニュー管理UI
-    - menusテーブルに price / active / sort_order カラム追加
-    - 追加・編集・非表示・並び順変更
-[x] #009 リマインド手動送信UI
-    - 予約一覧に「リマインド送信」ボタン追加（メールあり予約のみ表示）
-    - 送信前確認ダイアログ
-    - POST /admin/reservations/{id}/remind API追加
-[x] 統計ダッシュボード（管理画面トップ）
-    - 6指標表示：本日・今週・今月・今月キャンセル件数・キャンセル率・累計顧客数
-    - 予約一覧クイックフィルター（今日・明日・今週・すべて）追加
-    - GET /admin/reservations に date_from / date_to パラメータ追加（週範囲対応）
-[x] #018 管理者通知（SendGrid）
-    - WEB予約・LINE予約・患者キャンセルの3イベントで管理者にメール
-    - 管理者が自分でキャンセルした場合は通知なし
-    - notify_on_booking / notify_on_cancel で設定画面からON/OFF切替
-    - LINE予約通知：案A（line_bot/services/mail.py コピー）
-    - テスト用メール：Gmailエイリアス（+weldex）を使用
-[ ] #005 LINE Push上限監視
-    - 月間送信数をDBで管理
-    - 160通でWeldex運用LINEアラート送信
-    - 200通超過でリマインドをメールにフォールバック
+未着手（優先度低）：
+[ ] #005 LINE Push上限監視（月160通アラート→200通でメールフォールバック）
 [ ] #020 WEB予約→LINE紐づけフロー
-    - 予約完了メールにLINE友だち追加URL添付
-    - ウェルカムメッセージで予約番号入力を促す
-    - 予約番号でline_user_idを紐づけ保存
-詳細：docs/decisions.md 参照
+[ ] XSS対策：admin画面のtextContent化確認
+[ ] .env.localと.envの分離
 ```
 
-### インフラ移行
+---
+
+### ✅ Phase 4：LINE予約システム（URLリダイレクト型・本番稼働中）
 ```
-[ ] LINE bot × reservation を1サービスに統合
-[ ] SQLite → PostgreSQL移行（psycopg2）
-[ ] Railway PostgreSQL プロビジョニング
+設計変更：LINEネイティブ予約ステートマシンは廃止。
+          テキスト・ポストバックはすべて /booking/ URLに誘導する方式に変更。
+          reservation/ に統合済み（line_bot/ は旧実装として残存）。
+
+[x] reservation/handlers/webhook.py（LINE Webhook・FollowEvent・TextEvent・PostbackEvent）
+[x] reservation/handlers/reservation.py（キーワード→URL誘導）
+[x] LINE Developer Console設定・Webhook疎通確認（200 OK）
+[x] 実機テスト完了（予約・変更・キャンセルのキーワード反応確認）
+
+未着手（任意）：
+[ ] リッチメニュー画像制作（Weldexで制作）→ LINE Official Account Manager で設定
+# 2026-05-18 本番稼働確認（URLリダイレクト型）
+詳細：docs/line.md 参照
+```
+
+---
+
+### ✅ インフラ移行（完了）
+```
+[x] LINE bot × reservation を1サービスに統合（reservation/ に集約）
+[x] SQLite → PostgreSQL移行（psycopg2 非binary + apt.txt libpq-dev）
+[x] Railway PostgreSQL プロビジョニング（${{Postgres.DATABASE_URL}}）
+[x] Nixpacksビルダー設定（Dockerfile禁止・NIXPACKS_PKGS=postgresql削除）
+
+未着手：
 [ ] Sentry導入（main.pyにsentry_sdk.init()追加）
 [ ] UptimeRobot設定（Ryoma手動作業）
 [ ] 開発用LINEチャネル作成（Ryoma手動作業）
 ```
 
-### セキュリティ
-```
-[x] SlowAPI導入・レートリミット設定
-    POST /booking：5/IP/分・GET /slots：30/IP/分・POST /admin/login：5/IP/分
-[x] ログイン試行制限（5回→10分ソフトロック・login_failed_count / login_locked_until）
-[x] 個人情報自動削除スケジューラー（reservation/services/data_retention.py）
-    毎月1日0:00：完了予約を1年後に匿名化・キャンセルを3ヶ月後に削除
-[ ] XSS対策：admin画面のtextContent化確認・修正
-[ ] LINE webhook署名検証の実装確認
-[x] ハニーポット追加（booking form + schemas.py + booking.py）
-[ ] .env.localと.envの分離設定
-```
+---
 
-### D-1 営業自動化
+### 🔧 Phase 6：Weldex.jp リニューアル（Next.js移行・実装済み・デプロイ待ち）
 ```
-[x] outreach/get_gmail_token.py 作成
-[x] outreach/replies/checker.py 自動返信除外ロジック追加
-[x] 営業メールテンプレートフッター追加（特定電子メール法対応・SENDER_ADDRESS環境変数追加）
-```
+[x] STEP1：Next.js 15 + TypeScript + Tailwind CSS（site-next/）
+[x] STEP2：weldex.htmlをNext.jsコンポーネントに移植
+    Header / Hero / Pillars / AISection / Cases / Process / FAQ / CTABand / Footer
+[x] STEP3：業種別LPテンプレート（data/industries.ts・dental/legal/construction/beauty）
+[x] STEP4：メタデータ・OGP・Schema.org・sitemap.xml・robots.txt
+[x] /works ページ実装
 
-### CMO マーケティング
-```
-[ ] demo.weldex.jp セットアップ（Ryoma手動作業）
-[x] /works ページ実装（site-next/app/works/page.tsx）
-[x] 問い合わせナーチャリング実装（reservation/services/nurturing.py）
-    即時自動返信（SendGrid）・即時RyomaへLINEアラート・3日後フォローアップ
-[ ] outreach/mailers/templates.pyにinquiry_auto_reply / inquiry_followup_1追加（nurturing.pyに実装済み）
-```
-
-### Phase 3 WEB予約ウィザード：設計済み・実装待ち
-```
-[ ] ウィザード形式6ステップに変更（メニュー→日付→時間→情報→確認→完了）
-[ ] schedulesテーブル新設（曜日ごと時間帯・所要時間ブロック）
-[ ] custom_field_definitionsテーブル新設（管理画面から項目追加）
-[ ] reservationsにcustom_fieldsカラム追加（JSON）
-[ ] 時間枠自動ブロック（メニュー所要時間分）
-[ ] 先着順ロジック（同一時間帯の競合対策）
-詳細：docs/decisions.md「WEB予約システム設計」参照
-```
-
-### Phase 4：LINE予約システム（実機テスト済み）
-```
-[x] line_bot/requirements.txt
-[x] line_bot/config.py（APP_NAME追加・reservation/config.pyのスロット設定を共有）
-[x] line_bot/db/database.py（user_sessions CRUD・予約件数チェック）
-[x] line_bot/handlers/messages.py（全ステップ・ウェルカム・キャンセル完了・リマインドQR）
-[x] line_bot/handlers/reservation.py（状態遷移・予約上限チェック・キャンセル後再予約促進）
-[x] line_bot/handlers/reminder.py（LINE Push・キャンセルQR付き）
-[x] line_bot/handlers/webhook.py（署名検証・MessageEvent・FollowEvent対応）
-[x] line_bot/main.py（FastAPI + APScheduler）
-[x] 状態遷移動作テスト（予約フロー・キャンセルフロー・タイムアウト・最初からリセット）
-[x] LINE Developer Console設定・実機テスト完了
-[ ] リッチメニュー画像制作（Weldexで制作）→ LINE Official Account Manager で設定
-[ ] Railway/Renderデプロイ（port 8002）
-詳細：docs/line.md 参照
-# 2026-05-10 Phase4実装・実機テスト完了
-```
-
-### Phase 6：Weldex.jpリニューアル（Next.js移行）：設計済み・未着手
-```
-[x] STEP1：Next.js 15 + TypeScript + Tailwind CSSプロジェクト初期構築（site-next/）
-[x] STEP2：既存weldex.htmlをNext.jsコンポーネントに移植
-    - Header / Hero / Pillars / AISection / Cases / Process / FAQ / CTABand / Footer
-[x] STEP3：業種別LPテンプレート実装（data/industries.ts・dental/legal/construction/beauty）
-[x] STEP4：メタデータ・OGP・Schema.org・sitemap.xml・robots.txt設定
-[x] STEP3-ex：/works ページ実装
-[ ] STEP5：無料診断ツール実装（PageSpeed Insights API）
+未着手：
+[ ] STEP5：無料診断ツール（PageSpeed Insights API）
 [ ] STEP6：Lighthouse計測・docs/seo.mdにスコア記録
 [ ] STEP7：Vercelデプロイ
 [ ] og-image.png 作成（Ryoma手動・1200×630・ネイビー×ゴールド）
-# 2026-05-13 セキュリティ・D-1・CMO・Phase6 STEP3 実装完了
+[ ] demo.weldex.jp セットアップ（Ryoma手動作業）
+# 2026-05-13 実装完了 / デプロイ未実施
 詳細：docs/seo.md 参照
 ```
 
@@ -352,51 +306,29 @@ weldex/
 
 ## ▼ 現在のタスク（ここだけ実行する）
 
-### 【今すぐやること】Phase 3 追加機能（設計済み・実装順）
-
-優先順位：✅①②③完了 → ④ リマインド手動送信 → ⑤ 統計ダッシュボード → ⑥ 管理者通知
-
----
-
-#### STEP4：リマインド手動送信UI
-
+### 現状サマリー（2026-05-18時点）
 ```
-対象ファイル：
-  reservation/routers/admin.py（手動リマインド送信API追加）
-  reservation/static/admin/index.html（予約一覧に「リマインド送信」ボタン追加）
-
-実装内容：
-  - POST /admin/reservations/{id}/remind（手動リマインド送信）
-  - 予約一覧の操作列に「リマインド」ボタン追加
-  - 送信前確認ダイアログ（confirm()）
-  - remind_sentは 0=未送信 / 1=送信済み（2=失敗は将来対応）
-  - メールアドレス未設定の場合はエラーメッセージ表示
-
-詳細：docs/decisions.md #009 参照
-
-完了条件：
-  □ APIルート確認（python3 -c "from routers.admin import router; ..."）
-  □ 管理画面でリマインドボタンが表示される
-  □ 送信確認ダイアログが表示される
+✅ 稼働中：reservation/ → Railway（earnest-gentleness-production-f682.up.railway.app）
+✅ 稼働中：LINE Webhook → URLリダイレクト型（reservation/ に統合）
+✅ 稼働中：weldex.jp（Cloudflare Pages）
+🔧 実装済み・デプロイ未：site-next/（Next.js版サイト）
+⬜ 未着手：Sentry / UptimeRobot / demo.weldex.jp
 ```
 
----
-
-#### STEP5：統計ダッシュボード強化
+### 【次の候補】優先度順
 
 ```
-対象ファイル：
-  reservation/db/database.py（get_dashboard_stats()拡張）
-  reservation/static/admin/index.html（ダッシュボードUI更新）
+① Phase 6 STEP7：Next.jsサイトをVercelにデプロイ（工数：小）
+   → site-next/ は実装完了。Vercelに繋ぐだけで本番公開できる。
 
-追加する指標：
-  - チャネル比率（LINE/WEB/手動/CSV）
-  - キャンセル件数（今月）
-  - 今週の予約件数
+② Phase 6 STEP5：無料診断ツール（PageSpeed Insights API）（工数：中）
+   → 営業トークに使える差別化ツール。Vercelデプロイ後に着手推奨。
 
-完了条件：
-  □ get_dashboard_stats()テスト
-  □ 管理画面ダッシュボードに指標が表示される
+③ インフラ：Sentry + UptimeRobot 設定（工数：小）
+   → 本番障害検知。Railway稼働中なので早めに入れたい。
+
+④ Phase 3 追加：#005 LINE Push上限監視（工数：小）
+   → 月200通超でメールにフォールバック。LINE無料プラン運用時に必要。
 ```
 
 ---
