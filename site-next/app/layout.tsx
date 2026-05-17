@@ -1,68 +1,58 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
-import "./globals.css";
+import Script from "next/script";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SchemaOrg from "@/components/SchemaOrg";
+import "./globals.css";
 
-/* next/font でセルフホスト化（CDN読み込み不要・INP改善） */
 const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
   subsets: ["latin"],
   weight: ["400", "600", "700"],
-  style: ["normal", "italic"],
+  variable: "--font-cormorant",
   display: "swap",
 });
 
 const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500"],
+  variable: "--font-dm-sans",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "Weldex｜AI活用で大手の1/3以下のコストでWEB制作・LINE予約システム",
-    template: "%s | Weldex",
-  },
+  title: "Weldex | 中小企業向けWEB制作・LINE予約システム",
   description:
-    "Weldex（ウェルデックス）は医療・歯科・士業・建設など社内エンジニアを持たない中小企業向けに、AIを活用したWEBサイト制作・LINE予約システム・システム開発を大手の1/3以下のコストで提供します。",
-  metadataBase: new URL("https://weldex.jp"),
-  openGraph: {
-    type: "website",
-    locale: "ja_JP",
-    url: "https://weldex.jp",
-    siteName: "Weldex",
-    title: "Weldex｜AI活用で大手の1/3以下のコストでWEB制作・LINE予約システム",
-    description:
-      "医療・歯科・士業・建設など社内エンジニアを持たない中小企業向けに、AIを活用したWEBサイト制作・LINE予約システムを提供。",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Weldex" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Weldex｜AI活用WEB制作・LINE予約システム",
-    description: "大手の1/3以下のコストでWEBサイト制作・LINE予約システムを提供。",
-    images: ["/og-image.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  alternates: {
-    canonical: "https://weldex.jp",
-  },
+    "医療・歯科・士業・建設など中小企業向けに、ホームページ制作からLINE予約システムまで一社完結で提供。",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     <html lang="ja" className={`${cormorant.variable} ${dmSans.variable}`}>
-      <body className="min-h-screen flex flex-col antialiased">
-        <SchemaOrg />
+      <head>
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
+      </head>
+      <body className="antialiased">
         <Header />
         {children}
         <Footer />

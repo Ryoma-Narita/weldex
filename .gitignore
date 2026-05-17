@@ -30,4 +30,6 @@ env/
 .idea/
 *.swp
 *.swo
-.claude/worktrees/
+
+# Claude Code worktree settings
+.claude/

@@ -9,7 +9,6 @@ export default function Hero() {
       padding: "8rem clamp(1.5rem, 5vw, 6rem) 5rem",
       position: "relative", overflow: "hidden",
     }}>
-      {/* 背景グラデーション */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 0,
         background: "radial-gradient(ellipse 80% 60% at 70% 50%, #162645 0%, #0c1a35 100%)",

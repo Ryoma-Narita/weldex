@@ -1,978 +1,535 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>管理画面</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --navy: #0c1a35; --blue: #1e40af; --blue2: #3b63d4;
-      --white: #fff; --off: #f8f9fc; --border: #e2e8f0;
-      --gray: #64748b; --light: #94a3b8;
-      --green: #16a34a; --red: #dc2626; --yellow: #d97706; --purple: #7c3aed;
-    }
-    body { font-family: -apple-system,'Helvetica Neue',sans-serif; background: var(--off); color: var(--navy); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-    header { background: var(--navy); color: var(--white); padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    header h1 { font-size: 0.95rem; font-weight: 600; }
-    .tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); padding: 0 1.5rem; flex-shrink: 0; }
-    .tab { padding: 0.7rem 1.1rem; font-size: 0.82rem; cursor: pointer; border-bottom: 2px solid transparent; color: var(--gray); transition: all 0.2s; white-space: nowrap; }
-    .tab.active { border-bottom-color: var(--blue); color: var(--blue); font-weight: 500; }
-    .panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
-    .panel.active { display: flex; }
-    .panel-scroll { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; }
-
-    /* ログインフォーム */
-    #login-view { position: fixed; inset: 0; background: var(--off); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .login-box { background: var(--white); border: 1px solid var(--border); padding: 2.5rem 2rem; width: 360px; max-width: 90vw; }
-    .login-box h2 { font-size: 1.1rem; margin-bottom: 1.5rem; text-align: center; }
-    .login-box input { width: 100%; border: 1px solid var(--border); padding: 0.65rem 0.75rem; font-size: 0.9rem; margin-bottom: 1rem; border-radius: 4px; outline: none; }
-    .login-box input:focus { border-color: var(--blue); }
-    .login-error { color: var(--red); font-size: 0.78rem; margin-bottom: 0.75rem; text-align: center; }
-
-    /* 統計カード */
-    .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
-    .btn-quick { padding: 0.3rem 0.75rem; border: 1px solid var(--border); background: var(--white); border-radius: 3px; font-size: 0.78rem; cursor: pointer; color: var(--gray); transition: all 0.15s; }
-    .btn-quick:hover { border-color: var(--blue); color: var(--blue); }
-    .btn-quick.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
-    .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1rem 1.25rem; }
-    .stat-label { font-size: 0.68rem; color: var(--gray); letter-spacing: 0.05em; margin-bottom: 0.3rem; }
-    .stat-value { font-size: 1.6rem; font-weight: 700; color: var(--navy); }
-    .stat-value.green { color: var(--green); }
-    .stat-value.red   { color: var(--red); }
-    .stat-value.blue  { color: var(--blue); }
-
-    /* ツールバー */
-    .toolbar { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--white); border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; flex-shrink: 0; }
-    .toolbar input, .toolbar select { border: 1px solid var(--border); padding: 0.4rem 0.65rem; font-size: 0.8rem; outline: none; border-radius: 3px; }
-    .toolbar input:focus, .toolbar select:focus { border-color: var(--blue); }
-    .btn { padding: 0.4rem 0.85rem; font-size: 0.8rem; cursor: pointer; background: var(--blue); color: var(--white); border: none; border-radius: 3px; white-space: nowrap; }
-    .btn:hover { background: var(--blue2); }
-    .btn.secondary { background: var(--white); color: var(--navy); border: 1px solid var(--border); }
-    .btn.secondary:hover { background: var(--off); }
-    .btn.danger { background: var(--red); }
-    .btn.green-btn { background: var(--green); }
-
-    /* テーブル */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; background: var(--white); font-size: 0.8rem; }
-    th { background: var(--off); padding: 0.5rem 0.75rem; text-align: left; font-size: 0.68rem; font-weight: 500; color: var(--gray); letter-spacing: 0.04em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: #f8faff; }
-    .clickable { cursor: pointer; }
-    .clickable:hover td { background: #eff6ff; }
-
-    /* バッジ */
-    .badge { display: inline-block; font-size: 0.62rem; padding: 0.12rem 0.5rem; font-weight: 600; border-radius: 2px; }
-    .badge-confirmed { background: #dcfce7; color: var(--green); }
-    .badge-cancelled { background: #fee2e2; color: var(--red); }
-    .badge-done      { background: #e0e7ff; color: var(--blue); }
-    .badge-no_show   { background: #fef3c7; color: var(--yellow); }
-    .badge-line      { background: #dcfce7; color: #15803d; }
-    .badge-web       { background: #dbeafe; color: #1d4ed8; }
-    .badge-manual    { background: #f1f5f9; color: var(--gray); }
-
-    /* ページネーション */
-    .pagination { display: flex; gap: 0.3rem; padding: 0.65rem 1rem; align-items: center; font-size: 0.78rem; background: var(--white); border-top: 1px solid var(--border); }
-    .pagination button { padding: 0.25rem 0.6rem; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 0.75rem; border-radius: 3px; }
-    .pagination button.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
-    .pagination button:disabled { opacity: 0.35; cursor: default; }
-    .pagination span { color: var(--gray); font-size: 0.72rem; margin-left: auto; }
-
-    /* モーダル */
-    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
-    .modal-bg.show { display: flex; }
-    .modal { background: var(--white); width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 1.75rem; }
-    .modal h2 { font-size: 1rem; margin-bottom: 1.25rem; }
-    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .form-group { margin-bottom: 0.85rem; }
-    label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--gray); margin-bottom: 0.3rem; }
-    input[type="text"], input[type="email"], input[type="tel"], input[type="date"], select, textarea {
-      width: 100%; border: 1px solid var(--border); padding: 0.55rem 0.7rem;
-      font-size: 0.85rem; font-family: inherit; border-radius: 3px; outline: none;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--blue); }
-    textarea { resize: vertical; min-height: 60px; }
-    .modal-actions { display: flex; gap: 0.65rem; margin-top: 1.25rem; }
-    .modal-actions .btn { flex: 1; }
-    .err { color: var(--red); font-size: 0.78rem; margin-top: 0.5rem; }
-
-    /* 顧客詳細 */
-    .detail-row { display: flex; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
-    .detail-label { color: var(--gray); width: 90px; flex-shrink: 0; font-size: 0.75rem; }
-    .res-history { margin-top: 1rem; }
-    .res-history h3 { font-size: 0.85rem; margin-bottom: 0.6rem; }
-    .res-item { padding: 0.5rem; background: var(--off); border-radius: 3px; font-size: 0.78rem; margin-bottom: 0.4rem; }
-
-    /* ファイルアップロード */
-    .upload-area { border: 2px dashed var(--border); padding: 2rem; text-align: center; cursor: pointer; border-radius: 4px; transition: border-color 0.2s; }
-    .upload-area:hover { border-color: var(--blue); }
-    .upload-result { margin-top: 1rem; font-size: 0.82rem; }
-    .upload-result.ok { color: var(--green); }
-    .upload-result.ng { color: var(--red); }
-
-    @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: repeat(3, 1fr); }
-      .modal-row  { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Helvetica Neue',Arial,'Hiragino Sans',sans-serif;background:#f8f9fc;color:#0c1a35}
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-box{background:#fff;border:1px solid #e2e8f0;padding:2.5rem 2rem;width:340px}
+.login-box h1{font-size:1.3rem;margin-bottom:1.75rem}
+/* Layout */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#0c1a35;color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+.sidebar-logo{padding:1.5rem 1.25rem;font-size:1.1rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.08)}
+.nav-item{padding:0.875rem 1.25rem;cursor:pointer;font-size:0.85rem;color:rgba(255,255,255,0.7);transition:all 0.15s;display:flex;align-items:center;gap:0.75rem}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.08);color:#fff}
+.sidebar-bottom{margin-top:auto;padding:1rem 1.25rem}
+.content{flex:1;overflow:auto}
+.topbar{background:#fff;border-bottom:1px solid #e2e8f0;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.topbar h2{font-size:1rem;font-weight:600}
+.main{padding:2rem}
+/* Cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:#fff;border:1px solid #e2e8f0;padding:1.25rem 1.5rem}
+.stat-val{font-size:2rem;font-weight:700;color:#0c1a35;line-height:1}
+.stat-lbl{font-size:0.72rem;color:#64748b;margin-top:0.4rem;letter-spacing:0.04em}
+/* Table */
+.tbl-wrap{background:#fff;border:1px solid #e2e8f0;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{background:#f8f9fc;padding:0.75rem 1rem;text-align:left;font-size:0.72rem;font-weight:500;color:#64748b;letter-spacing:0.04em;border-bottom:1px solid #e2e8f0}
+td{padding:0.75rem 1rem;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+/* Badges */
+.badge{display:inline-block;font-size:0.68rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:2px;letter-spacing:0.04em}
+.badge-confirmed{background:#dcfce7;color:#16a34a}
+.badge-cancelled{background:#fee2e2;color:#dc2626}
+.badge-done{background:#e0e7ff;color:#4338ca}
+.badge-no_show{background:#fef3c7;color:#d97706}
+/* Forms */
+label{display:block;font-size:0.72rem;font-weight:500;color:#64748b;letter-spacing:0.04em;margin-bottom:0.35rem}
+input,select,textarea{width:100%;border:1px solid #e2e8f0;padding:0.7rem 0.875rem;font-size:0.875rem;color:#0c1a35;outline:none;font-family:inherit;border-radius:2px}
+input:focus,select:focus,textarea:focus{border-color:#0c1a35}
+.field{margin-bottom:1rem}
+.btn{display:inline-block;padding:0.65rem 1.5rem;background:#0c1a35;color:#fff;border:none;font-size:0.82rem;font-weight:500;cursor:pointer;border-radius:2px;transition:opacity 0.15s;font-family:inherit}
+.btn:hover{opacity:0.85}
+.btn-sm{padding:0.4rem 0.875rem;font-size:0.75rem}
+.btn-gold{background:#c9a84c;color:#0c1a35}
+.btn-red{background:#dc2626}
+.btn-outline{background:#fff;color:#0c1a35;border:1px solid #0c1a35}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid #e2e8f0}
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:2rem}
+.modal h3{font-size:1rem;margin-bottom:1.5rem;font-weight:600}
+/* Misc */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.section-header h3{font-size:0.95rem;font-weight:600}
+.msg{font-size:0.82rem;padding:0.75rem 1rem;border-radius:2px;margin-bottom:1rem}
+.msg-ok{background:#dcfce7;color:#16a34a}
+.msg-err{background:#fee2e2;color:#dc2626}
+.search-bar{display:flex;gap:0.75rem;margin-bottom:1.25rem}
+.search-bar input{flex:1}
+.page-nav{display:flex;gap:0.5rem;align-items:center;margin-top:1rem;font-size:0.82rem}
+.date-nav{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem}
+.date-nav input[type=date]{width:auto}
+.hidden{display:none}
+</style>
 </head>
 <body>
 
-<!-- ログインビュー -->
-<div id="login-view">
+<!-- ログイン画面 -->
+<div id="login-screen" class="login-wrap">
   <div class="login-box">
-    <h2>管理画面ログイン</h2>
-    <div class="login-error" id="login-error" style="display:none"></div>
-    <input type="password" id="login-pw" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn" style="width:100%;padding:0.7rem;" onclick="doLogin()">ログイン</button>
+    <h1>管理画面ログイン</h1>
+    <div class="field"><label>パスワード</label><input id="pw-input" type="password" placeholder="パスワードを入力"></div>
+    <div id="login-err" class="msg msg-err hidden">パスワードが正しくありません</div>
+    <button class="btn" style="width:100%" onclick="doLogin()">ログイン</button>
   </div>
 </div>
 
-<header>
-  <h1 id="admin-title">管理画面</h1>
-  <button class="btn secondary" onclick="doLogout()" style="font-size:0.75rem;padding:0.3rem 0.65rem;">ログアウト</button>
-</header>
-
-<div class="tabs">
-  <div class="tab active" onclick="showTab('dashboard')">ダッシュボード</div>
-  <div class="tab" onclick="showTab('reservations')">予約管理</div>
-  <div class="tab" onclick="showTab('customers')">顧客管理</div>
-  <div class="tab" onclick="showTab('menus')">メニュー管理</div>
-  <div class="tab" onclick="showTab('settings')">設定</div>
-</div>
-
-<!-- ダッシュボード -->
-<div class="panel active" id="panel-dashboard">
-  <div class="panel-scroll">
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">本日の予約</div><div class="stat-value blue" id="s-today">-</div></div>
-      <div class="stat-card"><div class="stat-label">今週の予約</div><div class="stat-value" id="s-week">-</div></div>
-      <div class="stat-card"><div class="stat-label">今月の予約</div><div class="stat-value" id="s-month">-</div></div>
-      <div class="stat-card"><div class="stat-label">今月キャンセル</div><div class="stat-value red" id="s-cancel-count">-<span style="font-size:0.9rem;">件</span></div></div>
-      <div class="stat-card"><div class="stat-label">キャンセル率</div><div class="stat-value red" id="s-cancel">-</div></div>
-      <div class="stat-card"><div class="stat-label">累計顧客数</div><div class="stat-value green" id="s-customers">-</div></div>
+<!-- メイン画面 -->
+<div id="main-screen" class="layout hidden">
+  <div class="sidebar">
+    <div class="sidebar-logo">管理画面</div>
+    <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      ダッシュボード
     </div>
-    <div style="font-size:0.78rem;color:var(--gray);margin-top:0.5rem;" id="today-reservations-header">本日の予約</div>
-    <div id="today-reservations" style="margin-top:0.5rem;"></div>
-  </div>
-</div>
-
-<!-- 予約管理 -->
-<div class="panel" id="panel-reservations">
-  <div class="toolbar" style="flex-wrap:wrap;gap:0.5rem;">
-    <div style="display:flex;gap:0.3rem;align-items:center;">
-      <button class="btn-quick active" id="qf-all"      onclick="quickFilter('all')">すべて</button>
-      <button class="btn-quick"        id="qf-today"    onclick="quickFilter('today')">今日</button>
-      <button class="btn-quick"        id="qf-tomorrow" onclick="quickFilter('tomorrow')">明日</button>
-      <button class="btn-quick"        id="qf-week"     onclick="quickFilter('week')">今週</button>
+    <div class="nav-item" data-tab="reservations" onclick="switchTab('reservations')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      予約管理
     </div>
-    <input type="date" id="res-date" onchange="quickFilter('custom')">
-    <select id="res-status" onchange="loadReservations(1)">
-      <option value="">すべてのステータス</option>
-      <option value="confirmed">confirmed</option>
-      <option value="cancelled">cancelled</option>
-      <option value="done">done</option>
-      <option value="no_show">no_show</option>
-    </select>
-    <button class="btn" onclick="openResModal()">+ 予約追加</button>
-    <span id="res-count" style="font-size:0.75rem;color:var(--gray);margin-left:auto;"></span>
-  </div>
-  <div class="table-wrap" style="flex:1;overflow-y:auto;">
-    <table>
-      <thead><tr><th>日時</th><th>氏名</th><th>メニュー</th><th>電話</th><th>経路</th><th>ステータス</th><th>操作</th></tr></thead>
-      <tbody id="res-body"></tbody>
-    </table>
-  </div>
-  <div class="pagination" id="res-pagination"></div>
-</div>
-
-<!-- 顧客管理 -->
-<div class="panel" id="panel-customers">
-  <div class="toolbar">
-    <input type="text" id="cust-kw" placeholder="名前・電話・メールで検索" style="width:200px;" onkeydown="if(event.key==='Enter')loadCustomers(1)">
-    <button class="btn" onclick="loadCustomers(1)">検索</button>
-    <button class="btn secondary" onclick="openCustModal()">+ 顧客追加</button>
-    <button class="btn secondary" onclick="openImportModal()">CSVインポート</button>
-    <button class="btn secondary" onclick="exportCSV()">CSVエクスポート</button>
-    <span id="cust-count" style="font-size:0.75rem;color:var(--gray);margin-left:auto;"></span>
-  </div>
-  <div class="table-wrap" style="flex:1;overflow-y:auto;">
-    <table>
-      <thead><tr><th>氏名</th><th>フリガナ</th><th>電話</th><th>メール</th><th>登録日</th><th>操作</th></tr></thead>
-      <tbody id="cust-body"></tbody>
-    </table>
-  </div>
-  <div class="pagination" id="cust-pagination"></div>
-</div>
-
-<!-- 設定 -->
-<!-- メニュー管理パネル -->
-<div class="panel" id="panel-menus">
-  <div class="toolbar">
-    <button class="btn green-btn" onclick="openMenuModal()">+ メニューを追加</button>
-  </div>
-  <div class="panel-scroll">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>並順</th><th>メニュー名</th><th>所要時間</th>
-            <th id="price-col-head">料金</th><th>状態</th><th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="menu-body"></tbody>
-      </table>
+    <div class="nav-item" data-tab="customers" onclick="switchTab('customers')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      顧客管理
+    </div>
+    <div class="nav-item" data-tab="reminder" onclick="switchTab('reminder')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      リマインド
+    </div>
+    <div class="sidebar-bottom">
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="doLogout()">ログアウト</button>
     </div>
   </div>
-</div>
 
-<div class="panel" id="panel-settings">
-  <div class="panel-scroll">
-    <div style="max-width:480px;display:flex;flex-direction:column;gap:2rem;">
+  <div class="content">
+    <div class="topbar">
+      <h2 id="tab-title">ダッシュボード</h2>
+      <span id="topbar-date" style="font-size:0.8rem;color:#64748b"></span>
+    </div>
+    <div class="main">
 
-      <!-- 通知先メール -->
-      <div>
-        <h2 style="font-size:0.95rem;margin-bottom:1rem;">管理者通知メール</h2>
-        <div style="display:flex;gap:0.5rem;align-items:flex-start;">
-          <input type="email" id="setting-email" placeholder="doctor@example.com"
-            style="flex:1;border:1px solid var(--border);padding:0.5rem 0.75rem;font-size:0.85rem;border-radius:3px;outline:none;">
-          <button class="btn" onclick="saveEmail()">保存</button>
+      <!-- ダッシュボード -->
+      <div id="tab-dashboard">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-val" id="s-today">-</div><div class="stat-lbl">今日の予約</div></div>
+          <div class="stat-card"><div class="stat-val" id="s-month">-</div><div class="stat-lbl">今月の予約</div></div>
+          <div class="stat-card"><div class="stat-val" id="s-cancel">-%</div><div class="stat-lbl">キャンセル率</div></div>
+          <div class="stat-card"><div class="stat-val" id="s-customers">-</div><div class="stat-lbl">総顧客数</div></div>
         </div>
-        <div id="email-msg" style="font-size:0.75rem;margin-top:0.4rem;"></div>
+        <div class="section-header"><h3>今日の予約</h3></div>
+        <div class="tbl-wrap" id="today-reservations-wrap">
+          <div style="padding:2rem;text-align:center;color:#64748b;font-size:0.85rem">読み込み中...</div>
+        </div>
       </div>
 
-      <!-- 通知ON/OFF -->
-      <div>
-        <h2 style="font-size:0.95rem;margin-bottom:1rem;">メール通知設定</h2>
-        <div style="display:flex;flex-direction:column;gap:0.75rem;">
-          <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;cursor:pointer;">
-            <input type="checkbox" id="notify-booking" onchange="saveNotify()"
-              style="width:1rem;height:1rem;cursor:pointer;">
-            予約が入ったときに通知する
+      <!-- 予約管理 -->
+      <div id="tab-reservations" class="hidden">
+        <div class="date-nav">
+          <button class="btn btn-ghost btn-sm" onclick="changeDate(-1)">←</button>
+          <input type="date" id="res-date" onchange="loadReservations()">
+          <button class="btn btn-ghost btn-sm" onclick="changeDate(1)">→</button>
+          <button class="btn btn-sm" onclick="openNewResModal()">＋ 手動追加</button>
+        </div>
+        <div class="tbl-wrap" id="reservations-wrap">
+          <div style="padding:2rem;text-align:center;color:#64748b;font-size:0.85rem">日付を選択してください</div>
+        </div>
+      </div>
+
+      <!-- 顧客管理 -->
+      <div id="tab-customers" class="hidden">
+        <div class="search-bar">
+          <input id="cust-keyword" type="text" placeholder="名前・電話・メールで検索" onkeydown="if(event.key==='Enter')searchCustomers()">
+          <button class="btn btn-sm" onclick="searchCustomers()">検索</button>
+          <button class="btn btn-gold btn-sm" onclick="openNewCustModal()">＋ 追加</button>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-bottom:1.25rem">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+            CSVインポート
+            <input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importCSV(this)">
           </label>
-          <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;cursor:pointer;">
-            <input type="checkbox" id="notify-cancel" onchange="saveNotify()"
-              style="width:1rem;height:1rem;cursor:pointer;">
-            予約がキャンセルされたときに通知する
-          </label>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">CSVエクスポート</button>
         </div>
-        <div id="notify-msg" style="font-size:0.75rem;margin-top:0.4rem;"></div>
+        <div id="import-msg"></div>
+        <div class="tbl-wrap" id="customers-wrap">
+          <div style="padding:2rem;text-align:center;color:#64748b;font-size:0.85rem">読み込み中...</div>
+        </div>
+        <div class="page-nav" id="cust-page-nav"></div>
       </div>
 
-      <!-- パスワード変更 -->
-      <div>
-        <h2 style="font-size:0.95rem;margin-bottom:1rem;">パスワード変更</h2>
-        <div style="display:flex;gap:0.5rem;align-items:flex-start;">
-          <input type="password" id="setting-password" placeholder="新しいパスワード（6文字以上）"
-            style="flex:1;border:1px solid var(--border);padding:0.5rem 0.75rem;font-size:0.85rem;border-radius:3px;outline:none;">
-          <button class="btn" onclick="savePassword()">変更</button>
+      <!-- リマインド -->
+      <div id="tab-reminder" class="hidden">
+        <div class="section-header">
+          <h3>前日リマインド送信</h3>
+          <button class="btn btn-sm" onclick="runReminder()">手動実行</button>
         </div>
-        <div id="password-msg" style="font-size:0.75rem;margin-top:0.4rem;"></div>
-      </div>
-
-      <!-- 休業日設定 -->
-      <div>
-        <h2 style="font-size:0.95rem;margin-bottom:1rem;">休業日設定</h2>
-        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-          <input type="date" id="closed-date-input" style="flex:1;">
-          <input type="text" id="closed-reason-input" placeholder="理由（任意）" style="flex:2;">
-          <button class="btn" onclick="addClosed()">追加</button>
-        </div>
-        <div id="closed-list"></div>
-      </div>
-
-      <!-- LINE疎通テスト（目立たない配置） TODO: 本番安定後に削除 -->
-      <div style="border-top:1px solid var(--border);padding-top:1.5rem;">
-        <p style="font-size:0.72rem;color:var(--light);margin-bottom:0.75rem;">
-          ▼ 開発・オンボーディング用（本番安定後に削除予定）
-        </p>
-        <div style="display:flex;gap:0.5rem;align-items:center;">
-          <button class="btn secondary" style="font-size:0.75rem;" onclick="testLine()">
-            LINE疎通テスト送信
-          </button>
-          <span id="line-test-msg" style="font-size:0.75rem;color:var(--gray);"></span>
-        </div>
+        <p style="font-size:0.85rem;color:#64748b;margin-bottom:1.5rem">明日の予約でメールアドレスが登録されている顧客にリマインドメールを送信します。</p>
+        <div id="reminder-msg"></div>
       </div>
 
     </div>
   </div>
 </div>
 
-<!-- メニュー追加/編集モーダル -->
-<div class="modal-bg" id="menu-modal">
+<!-- 予約詳細モーダル -->
+<div class="overlay" id="res-modal">
   <div class="modal">
-    <h2 id="menu-modal-title">メニューを追加</h2>
-    <input type="hidden" id="menu-edit-id">
-    <div class="form-group"><label>メニュー名 *</label><input type="text" id="menu-name" placeholder="例：初診"></div>
-    <div class="modal-row">
-      <div class="form-group"><label>所要時間（分）*</label><input type="number" id="menu-duration" value="30" min="1"></div>
-      <div class="form-group" id="price-field"><label>料金（円）<span style="font-weight:400;color:var(--gray);">空白=要相談</span></label><input type="number" id="menu-price" placeholder="要相談"></div>
-    </div>
-    <div class="form-group"><label>表示順</label><input type="number" id="menu-sort" value="0" min="0"></div>
-    <div class="err" id="menu-err" style="display:none"></div>
-    <div class="modal-actions">
-      <button class="btn secondary" onclick="closeModal('menu-modal')">キャンセル</button>
-      <button class="btn" onclick="submitMenu()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- 予約追加モーダル -->
-<div class="modal-bg" id="res-modal">
-  <div class="modal">
-    <h2>予約を追加</h2>
-    <div class="modal-row">
-      <div class="form-group"><label>日付 *</label><input type="date" id="rm-date"></div>
-      <div class="form-group"><label>時間 *</label><input type="text" id="rm-time" placeholder="09:00"></div>
-    </div>
-    <div class="form-group"><label>氏名 *</label><input type="text" id="rm-name"></div>
-    <div class="modal-row">
-      <div class="form-group"><label>電話</label><input type="tel" id="rm-phone"></div>
-      <div class="form-group"><label>メール</label><input type="email" id="rm-email"></div>
-    </div>
-    <div class="form-group"><label>メニュー</label><select id="rm-menu"></select></div>
-    <div class="form-group"><label>備考</label><textarea id="rm-notes"></textarea></div>
-    <div class="err" id="rm-err" style="display:none"></div>
-    <div class="modal-actions">
-      <button class="btn secondary" onclick="closeModal('res-modal')">キャンセル</button>
-      <button class="btn" onclick="submitRes()">予約を追加</button>
-    </div>
-  </div>
-</div>
-
-<!-- 顧客追加モーダル -->
-<div class="modal-bg" id="cust-modal">
-  <div class="modal">
-    <h2>顧客を追加</h2>
-    <div class="modal-row">
-      <div class="form-group"><label>氏名 *</label><input type="text" id="cm-name"></div>
-      <div class="form-group"><label>フリガナ</label><input type="text" id="cm-kana"></div>
-    </div>
-    <div class="modal-row">
-      <div class="form-group"><label>電話</label><input type="tel" id="cm-phone"></div>
-      <div class="form-group"><label>メール</label><input type="email" id="cm-email"></div>
-    </div>
-    <div class="modal-row">
-      <div class="form-group"><label>生年月日</label><input type="text" id="cm-birth" placeholder="1985-04-01"></div>
-      <div class="form-group"><label>性別</label><select id="cm-gender"><option value="">-</option><option>男性</option><option>女性</option><option>その他</option></select></div>
-    </div>
-    <div class="form-group"><label>住所</label><input type="text" id="cm-address"></div>
-    <div class="form-group"><label>備考</label><textarea id="cm-notes"></textarea></div>
-    <div class="err" id="cm-err" style="display:none"></div>
-    <div class="modal-actions">
-      <button class="btn secondary" onclick="closeModal('cust-modal')">キャンセル</button>
-      <button class="btn" onclick="submitCust()">追加</button>
+    <h3>予約詳細</h3>
+    <div id="res-modal-body"></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;flex-wrap:wrap">
+      <button class="btn btn-red btn-sm" onclick="changeStatus(currentResId,'cancelled')">キャンセル</button>
+      <button class="btn btn-sm" onclick="changeStatus(currentResId,'done')" style="background:#4338ca">完了</button>
+      <button class="btn btn-sm" onclick="changeStatus(currentResId,'no_show')" style="background:#d97706">無断キャンセル</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('res-modal')" style="margin-left:auto">閉じる</button>
     </div>
   </div>
 </div>
 
 <!-- 顧客詳細モーダル -->
-<div class="modal-bg" id="detail-modal">
+<div class="overlay" id="cust-modal">
   <div class="modal">
-    <h2>顧客詳細</h2>
-    <div id="detail-content"></div>
-    <div class="modal-actions" style="margin-top:1.25rem;">
-      <button class="btn secondary" onclick="closeModal('detail-modal')">閉じる</button>
-      <button class="btn danger" id="detail-delete-btn">削除</button>
+    <h3 id="cust-modal-title">顧客詳細</h3>
+    <div id="cust-modal-body"></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1.5rem">
+      <button class="btn btn-sm" onclick="saveCust()">保存</button>
+      <button class="btn btn-red btn-sm" id="cust-del-btn" onclick="deleteCust()">削除</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('cust-modal')" style="margin-left:auto">閉じる</button>
     </div>
   </div>
 </div>
 
-<!-- CSVインポートモーダル -->
-<div class="modal-bg" id="import-modal">
+<!-- 手動予約モーダル -->
+<div class="overlay" id="new-res-modal">
   <div class="modal">
-    <h2>顧客データCSVインポート</h2>
-    <p style="font-size:0.78rem;color:var(--gray);margin-bottom:1rem;">CSV（.csv）またはExcel（.xlsx）をアップロードしてください。<br>対応列：氏名、フリガナ、電話番号、メールアドレス、生年月日、住所、備考</p>
-    <div class="upload-area" onclick="document.getElementById('import-file').click()">
-      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5" style="margin:0 auto 0.5rem;display:block;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <p style="font-size:0.82rem;color:var(--gray);">クリックしてファイルを選択</p>
-      <input type="file" id="import-file" accept=".csv,.xlsx" style="display:none" onchange="uploadCSV(this)">
-    </div>
-    <div class="upload-result" id="import-result"></div>
-    <div class="modal-actions" style="margin-top:1rem;">
-      <button class="btn secondary" onclick="closeModal('import-modal')">閉じる</button>
+    <h3>手動予約追加</h3>
+    <div class="field"><label>お名前</label><input id="nr-name" type="text"></div>
+    <div class="field"><label>電話番号</label><input id="nr-phone" type="tel"></div>
+    <div class="field"><label>メール</label><input id="nr-email" type="email"></div>
+    <div class="field"><label>日付</label><input id="nr-date" type="date"></div>
+    <div class="field"><label>時間</label><input id="nr-time" type="time" step="1800"></div>
+    <div class="field"><label>メニュー</label><select id="nr-menu"><option value="">選択してください</option></select></div>
+    <div class="field"><label>備考</label><textarea id="nr-notes" rows="2"></textarea></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button class="btn btn-sm" onclick="submitNewRes()">追加</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('new-res-modal')">閉じる</button>
     </div>
   </div>
 </div>
 
 <script>
-  let menus = [];
+const API = '';
+let token = localStorage.getItem('admin_token') || '';
+let currentResId = null, currentCustId = null;
+let custPage = 1, custKeyword = '';
 
-  // ─── 認証 ───
-  async function checkAuth() {
-    try {
-      const res = await fetch('/admin/me');
-      if (res.ok) { document.getElementById('login-view').style.display = 'none'; initApp(); }
-    } catch(e) {}
-  }
+async function api(method, path, body) {
+  const opts = { method, headers: {'X-Token': token, 'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (res.status === 401) { doLogout(); return null; }
+  return res;
+}
 
-  async function doLogin() {
-    const pw = document.getElementById('login-pw').value;
-    const res = await fetch('/admin/login', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({password: pw}),
-    });
-    if (res.ok) {
-      document.getElementById('login-view').style.display = 'none';
-      initApp();
-    } else {
-      const errEl = document.getElementById('login-error');
-      errEl.textContent = 'パスワードが違います';
-      errEl.style.display = '';
-    }
-  }
-
-  async function doLogout() {
-    await fetch('/admin/logout', {method:'POST'});
-    location.reload();
-  }
-
-  async function initApp() {
-    menus = await fetch('/admin/menus').then(r => r.json()).catch(() => []);
-    renderMenuOptions('rm-menu');
-    loadStats();
-    loadTodayReservations();
-  }
-
-  // ─── タブ ───
-  function showTab(name) {
-    const names = ['dashboard','reservations','customers','menus','settings'];
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-'+name).classList.add('active');
-    if (name==='reservations') loadReservations(1);
-    if (name==='customers')    loadCustomers(1);
-    if (name==='menus')        loadMenus();
-    if (name==='settings')     { loadSettings(); loadClosedDates(); }
-  }
-
-  // ─── ダッシュボード ───
-  async function loadStats() {
-    try {
-      const d = await fetch('/admin/stats').then(r => r.json());
-      document.getElementById('s-today').textContent        = d.today;
-      document.getElementById('s-week').textContent         = d.week;
-      document.getElementById('s-month').textContent        = d.month;
-      document.getElementById('s-cancel-count').innerHTML   = `${d.cancel_count}<span style="font-size:0.9rem;">件</span>`;
-      document.getElementById('s-cancel').textContent       = d.cancel_rate + '%';
-      document.getElementById('s-customers').textContent    = d.total_customers;
-    } catch(e) {}
-  }
-
-  async function loadTodayReservations() {
-    const today = new Date().toISOString().slice(0,10);
-    try {
-      const data = await fetch(`/admin/reservations?date=${today}&per_page=50`).then(r => r.json());
-      const el = document.getElementById('today-reservations');
-      if (!data.items.length) { el.textContent = '本日の予約はありません'; return; }
-      el.innerHTML = `<table style="width:100%;border-collapse:collapse;background:var(--white);font-size:0.8rem;">
-        <thead><tr>
-          <th style="padding:0.5rem 0.75rem;background:var(--off);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--gray);text-align:left;">時間</th>
-          <th style="padding:0.5rem 0.75rem;background:var(--off);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--gray);text-align:left;">氏名</th>
-          <th style="padding:0.5rem 0.75rem;background:var(--off);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--gray);text-align:left;">メニュー</th>
-          <th style="padding:0.5rem 0.75rem;background:var(--off);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--gray);text-align:left;">電話</th>
-          <th style="padding:0.5rem 0.75rem;background:var(--off);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--gray);text-align:left;">ステータス</th>
-        </tr></thead>
-        <tbody>${data.items.map(r => `
-          <tr>
-            <td style="padding:0.55rem 0.75rem;border-bottom:1px solid var(--border);font-weight:500;">${r.time}</td>
-            <td style="padding:0.55rem 0.75rem;border-bottom:1px solid var(--border);">${esc(r.name)}</td>
-            <td style="padding:0.55rem 0.75rem;border-bottom:1px solid var(--border);">${esc(r.menu_name||'')}</td>
-            <td style="padding:0.55rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.75rem;">${esc(r.phone||'-')}</td>
-            <td style="padding:0.55rem 0.75rem;border-bottom:1px solid var(--border);">
-              <span class="badge badge-${r.status}">${r.status}</span>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>`;
-    } catch(e) {}
-  }
-
-  // ─── 予約管理 ───
-  let resPage = 1;
-
-  let resDateFrom = null, resDateTo = null;
-
-  function quickFilter(type) {
-    const today = new Date();
-    const fmt   = d => d.toISOString().slice(0,10);
-
-    // アクティブボタン切り替え
-    ['all','today','tomorrow','week'].forEach(k => {
-      document.getElementById(`qf-${k}`)?.classList.remove('active');
-    });
-
-    resDateFrom = null;
-    resDateTo   = null;
-    document.getElementById('res-date').value = '';
-
-    if (type === 'all') {
-      document.getElementById('qf-all').classList.add('active');
-    } else if (type === 'today') {
-      document.getElementById('res-date').value = fmt(today);
-      document.getElementById('qf-today').classList.add('active');
-    } else if (type === 'tomorrow') {
-      const tmr = new Date(today); tmr.setDate(tmr.getDate() + 1);
-      document.getElementById('res-date').value = fmt(tmr);
-      document.getElementById('qf-tomorrow').classList.add('active');
-    } else if (type === 'week') {
-      const mon = new Date(today);
-      mon.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-      resDateFrom = fmt(mon);
-      resDateTo   = fmt(sun);
-      document.getElementById('qf-week').classList.add('active');
-    } else if (type === 'custom') {
-      // 手動入力時はクイックボタンをすべて非アクティブのまま
-    }
-    loadReservations(1);
-  }
-
-  async function loadReservations(page=1) {
-    resPage = page;
-    const params = new URLSearchParams({page, per_page:20});
-    const date   = document.getElementById('res-date').value;
-    const status = document.getElementById('res-status').value;
-    if (date)       params.set('date', date);
-    if (resDateFrom) params.set('date_from', resDateFrom);
-    if (resDateTo)   params.set('date_to', resDateTo);
-    if (status)     params.set('status', status);
-    try {
-      const data = await fetch('/admin/reservations?'+params).then(r => r.json());
-      renderReservations(data);
-    } catch(e) {}
-  }
-
-  function renderReservations(data) {
-    document.getElementById('res-count').textContent = `${data.total}件`;
-    const tbody = document.getElementById('res-body');
-    const chLabel = { line: 'LINE', web: 'WEB', manual: '手動', csv: 'CSV' };
-    tbody.innerHTML = data.items.map(r => `
-      <tr>
-        <td style="white-space:nowrap;">${r.date} ${r.time}</td>
-        <td>${esc(r.name)}</td>
-        <td>${esc(r.menu_name||'')}</td>
-        <td style="font-size:0.75rem;">${esc(r.phone||'-')}</td>
-        <td><span class="badge badge-${r.channel||'web'}">${chLabel[r.channel]||r.channel||'WEB'}</span></td>
-        <td><span class="badge badge-${r.status}">${r.status}</span></td>
-        <td style="white-space:nowrap;">
-          <select style="font-size:0.72rem;border:1px solid var(--border);padding:0.2rem 0.4rem;border-radius:3px;" onchange="changeStatus(${r.id},this.value)">
-            <option value="">変更</option>
-            <option value="confirmed">confirmed</option>
-            <option value="done">done</option>
-            <option value="cancelled">cancelled</option>
-            <option value="no_show">no_show</option>
-          </select>
-          ${r.email ? `<button onclick="sendRemind(${r.id})" style="margin-left:0.4rem;font-size:0.68rem;padding:0.15rem 0.5rem;border:1px solid var(--border);border-radius:3px;background:var(--off);cursor:pointer;" title="リマインドメールを送信">リマインド</button>` : ''}
-        </td>
-      </tr>`).join('');
-    renderPagination('res-pagination', data.total, data.page, 20, loadReservations);
-  }
-
-  async function changeStatus(id, status) {
-    if (!status) return;
-    if (!confirm(`ステータスを「${status}」に変更しますか？`)) return;
-    await fetch(`/admin/reservations/${id}/status`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({status}),
-    });
-    loadReservations(resPage);
-  }
-
-  async function sendRemind(id) {
-    if (!confirm('この予約にリマインドメールを送信しますか？')) return;
-    const res = await fetch(`/admin/reservations/${id}/remind`, { method: 'POST' });
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  const res = await fetch(API + '/admin/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({password: pw})
+  });
+  if (res.ok) {
     const data = await res.json();
-    if (res.ok) {
-      alert(data.message);
-      loadReservations(resPage);
-    } else {
-      alert(`エラー: ${data.detail}`);
-    }
+    token = data.token;
+    localStorage.setItem('admin_token', token);
+    showMain();
+  } else {
+    document.getElementById('login-err').classList.remove('hidden');
   }
+}
 
-  function openResModal() {
-    document.getElementById('rm-date').value = new Date().toISOString().slice(0,10);
-    ['rm-time','rm-name','rm-phone','rm-email','rm-notes'].forEach(id => document.getElementById(id).value='');
-    document.getElementById('rm-err').style.display = 'none';
-    document.getElementById('res-modal').classList.add('show');
-  }
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-  async function submitRes() {
-    const name = document.getElementById('rm-name').value.trim();
-    const date = document.getElementById('rm-date').value;
-    const time = document.getElementById('rm-time').value.trim();
-    if (!name||!date||!time) { showErr('rm-err','氏名・日付・時間は必須です'); return; }
+async function checkAuth() {
+  if (!token) return;
+  const res = await api('GET', '/admin/me');
+  if (res && res.ok) showMain();
+}
 
-    const body = {
-      name, date, time,
-      phone:    document.getElementById('rm-phone').value.trim(),
-      email:    document.getElementById('rm-email').value.trim(),
-      menu_id:  document.getElementById('rm-menu').value,
-      notes:    document.getElementById('rm-notes').value.trim(),
-    };
-    const res = await fetch('/admin/reservations', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body),
+function showMain() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('main-screen').classList.remove('hidden');
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  loadDashboard();
+}
+
+function doLogout() {
+  api('POST', '/admin/logout');
+  token = ''; localStorage.removeItem('admin_token');
+  document.getElementById('main-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+const tabTitles = { dashboard:'ダッシュボード', reservations:'予約管理', customers:'顧客管理', reminder:'リマインド' };
+function switchTab(tab) {
+  document.querySelectorAll('[data-tab]').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  document.getElementById('tab-title').textContent = tabTitles[tab];
+  if (tab === 'reservations') { document.getElementById('res-date').value = today(); loadReservations(); }
+  if (tab === 'customers') loadCustomers();
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+async function loadDashboard() {
+  const res = await api('GET', '/admin/stats');
+  if (!res || !res.ok) return;
+  const d = await res.json();
+  document.getElementById('s-today').textContent = d.today;
+  document.getElementById('s-month').textContent = d.month;
+  document.getElementById('s-cancel').textContent = d.cancel_rate + '%';
+  document.getElementById('s-customers').textContent = d.total_customers;
+
+  const r2 = await api('GET', '/admin/reservations?date=' + today());
+  const d2 = r2 && r2.ok ? await r2.json() : {reservations:[]};
+  renderReservationTable(d2.reservations, 'today-reservations-wrap');
+}
+
+async function loadReservations() {
+  const date = document.getElementById('res-date').value;
+  if (!date) return;
+  const res = await api('GET', '/admin/reservations?date=' + date);
+  if (!res || !res.ok) return;
+  const d = await res.json();
+  renderReservationTable(d.reservations, 'reservations-wrap');
+}
+
+function changeDate(delta) {
+  const inp = document.getElementById('res-date');
+  const d = new Date(inp.value || today());
+  d.setDate(d.getDate() + delta);
+  inp.value = d.toISOString().slice(0,10);
+  loadReservations();
+}
+
+function statusBadge(s) {
+  const map = {confirmed:'確認済み',cancelled:'キャンセル',done:'完了',no_show:'無断キャンセル'};
+  return `<span class="badge badge-${s}">${map[s]||s}</span>`;
+}
+
+function renderReservationTable(rows, containerId) {
+  const el = document.getElementById(containerId);
+  if (!rows.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:#64748b;font-size:0.85rem">予約はありません</div>'; return; }
+  el.innerHTML = `<table><thead><tr>
+    <th>時間</th><th>お名前</th><th>電話番号</th><th>メニュー</th><th>ステータス</th><th></th>
+  </tr></thead><tbody>${rows.map(r => `<tr>
+    <td>${r.time}</td>
+    <td>${r.name}</td>
+    <td>${r.phone||'—'}</td>
+    <td>${r.menu_name||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openResModal(${r.id})">詳細</button></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+async function openResModal(id) {
+  currentResId = id;
+  const res = await api('GET', '/admin/reservations/' + id);
+  if (!res || !res.ok) return;
+  const r = await res.json();
+  document.getElementById('res-modal-body').innerHTML = `
+    <table style="width:100%;font-size:0.875rem"><tbody>
+      <tr><td style="color:#64748b;width:120px;padding:0.5rem 0">予約ID</td><td>#${r.id}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">日時</td><td>${r.date} ${r.time}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">メニュー</td><td>${r.menu_name||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">お名前</td><td>${r.name}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">電話番号</td><td>${r.phone||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">メール</td><td>${r.email||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">備考</td><td>${r.notes||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">経路</td><td>${r.channel}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">ステータス</td><td>${statusBadge(r.status)}</td></tr>
+    </tbody></table>`;
+  openModal('res-modal');
+}
+
+async function changeStatus(id, status) {
+  const res = await api('PATCH', '/admin/reservations/' + id + '/status', {status});
+  if (res && res.ok) { closeModal('res-modal'); loadReservations(); loadDashboard(); }
+}
+
+// 顧客管理
+let custTotalPages = 1;
+async function loadCustomers(page) {
+  custPage = page || 1;
+  const kw = document.getElementById('cust-keyword').value.trim();
+  custKeyword = kw;
+  const res = await api('GET', `/admin/customers?keyword=${encodeURIComponent(kw)}&page=${custPage}&per_page=20`);
+  if (!res || !res.ok) return;
+  const d = await res.json();
+  custTotalPages = Math.ceil(d.total / 20);
+  const el = document.getElementById('customers-wrap');
+  if (!d.items.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:#64748b;font-size:0.85rem">顧客が見つかりません</div>'; return; }
+  el.innerHTML = `<table><thead><tr>
+    <th>ID</th><th>氏名</th><th>電話番号</th><th>メール</th><th>登録元</th><th>登録日</th><th></th>
+  </tr></thead><tbody>${d.items.map(c => `<tr>
+    <td>${c.id}</td>
+    <td><a href="#" onclick="openCustModal(${c.id});return false" style="color:#0c1a35;font-weight:500">${c.name}</a></td>
+    <td>${c.phone||'—'}</td>
+    <td>${c.email||'—'}</td>
+    <td>${c.source}</td>
+    <td>${c.created_at.slice(0,10)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openCustModal(${c.id})">詳細</button></td>
+  </tr>`).join('')}</tbody></table>`;
+  const nav = document.getElementById('cust-page-nav');
+  nav.innerHTML = custTotalPages > 1 ? `
+    <button class="btn btn-ghost btn-sm" ${custPage<=1?'disabled':''} onclick="loadCustomers(${custPage-1})">←</button>
+    <span style="color:#64748b">${custPage} / ${custTotalPages}</span>
+    <button class="btn btn-ghost btn-sm" ${custPage>=custTotalPages?'disabled':''} onclick="loadCustomers(${custPage+1})">→</button>` : '';
+}
+
+function searchCustomers() { loadCustomers(1); }
+
+async function openCustModal(id) {
+  currentCustId = id;
+  const res = await api('GET', '/admin/customers/' + id);
+  if (!res || !res.ok) return;
+  const c = await res.json();
+  document.getElementById('cust-modal-title').textContent = c.name + ' 様';
+  document.getElementById('cust-modal-body').innerHTML = `
+    <div class="field"><label>氏名</label><input id="cm-name" value="${c.name||''}"></div>
+    <div class="field"><label>フリガナ</label><input id="cm-kana" value="${c.name_kana||''}"></div>
+    <div class="field"><label>電話番号</label><input id="cm-phone" value="${c.phone||''}"></div>
+    <div class="field"><label>メール</label><input id="cm-email" value="${c.email||''}"></div>
+    <div class="field"><label>生年月日</label><input id="cm-birth" type="date" value="${c.birthdate||''}"></div>
+    <div class="field"><label>性別</label><select id="cm-gender"><option value="">未選択</option><option ${c.gender==='男性'?'selected':''}>男性</option><option ${c.gender==='女性'?'selected':''}>女性</option><option ${c.gender==='その他'?'selected':''}>その他</option></select></div>
+    <div class="field"><label>住所</label><input id="cm-address" value="${c.address||''}"></div>
+    <div class="field"><label>備考</label><textarea id="cm-notes" rows="2">${c.notes||''}</textarea></div>
+    ${c.reservations&&c.reservations.length?`<h4 style="font-size:0.82rem;font-weight:600;margin:1rem 0 0.5rem">予約履歴</h4>
+    <table style="width:100%;font-size:0.78rem"><thead><tr><th>日時</th><th>メニュー</th><th>ステータス</th></tr></thead>
+    <tbody>${c.reservations.map(r=>`<tr><td>${r.date} ${r.time}</td><td>${r.menu_name||'—'}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody></table>`:''}`;
+  document.getElementById('cust-del-btn').style.display = id ? '' : 'none';
+  openModal('cust-modal');
+}
+
+async function saveCust() {
+  const data = {
+    name: document.getElementById('cm-name').value,
+    name_kana: document.getElementById('cm-kana').value,
+    phone: document.getElementById('cm-phone').value,
+    email: document.getElementById('cm-email').value,
+    birthdate: document.getElementById('cm-birth').value,
+    gender: document.getElementById('cm-gender').value,
+    address: document.getElementById('cm-address').value,
+    notes: document.getElementById('cm-notes').value,
+  };
+  const res = currentCustId
+    ? await api('PUT', '/admin/customers/' + currentCustId, data)
+    : await api('POST', '/admin/customers', data);
+  if (res && res.ok) { closeModal('cust-modal'); loadCustomers(custPage); }
+}
+
+async function deleteCust() {
+  if (!confirm(currentCustId + ' の顧客を削除しますか？')) return;
+  const res = await api('DELETE', '/admin/customers/' + currentCustId);
+  if (res && res.ok) { closeModal('cust-modal'); loadCustomers(custPage); }
+}
+
+function openNewCustModal() {
+  currentCustId = null;
+  document.getElementById('cust-modal-title').textContent = '顧客追加';
+  document.getElementById('cust-modal-body').innerHTML = `
+    <div class="field"><label>氏名 *</label><input id="cm-name"></div>
+    <div class="field"><label>フリガナ</label><input id="cm-kana"></div>
+    <div class="field"><label>電話番号</label><input id="cm-phone" type="tel"></div>
+    <div class="field"><label>メール</label><input id="cm-email" type="email"></div>
+    <div class="field"><label>生年月日</label><input id="cm-birth" type="date"></div>
+    <div class="field"><label>性別</label><select id="cm-gender"><option value="">未選択</option><option>男性</option><option>女性</option><option>その他</option></select></div>
+    <div class="field"><label>住所</label><input id="cm-address"></div>
+    <div class="field"><label>備考</label><textarea id="cm-notes" rows="2"></textarea></div>`;
+  document.getElementById('cust-del-btn').style.display = 'none';
+  openModal('cust-modal');
+}
+
+async function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('file', file);
+  const msg = document.getElementById('import-msg');
+  msg.innerHTML = '<div class="msg">インポート中...</div>';
+  try {
+    const res = await fetch(API + '/admin/import-export/customers/import', {
+      method: 'POST', headers: {'X-Token': token}, body: formData
     });
-    if (res.ok) { closeModal('res-modal'); loadReservations(1); loadStats(); }
-    else { const d = await res.json(); showErr('rm-err', d.detail||'エラー'); }
+    const d = await res.json();
+    msg.innerHTML = `<div class="msg msg-ok">インポート完了：${d.imported}件追加、${d.skipped}件スキップ、${d.errors}件エラー</div>`;
+    loadCustomers(1);
+  } catch(e) {
+    msg.innerHTML = '<div class="msg msg-err">インポートに失敗しました</div>';
   }
+  input.value = '';
+}
 
-  // ─── 顧客管理 ───
-  let custPage = 1;
-  async function loadCustomers(page=1) {
-    custPage = page;
-    const kw = document.getElementById('cust-kw').value;
-    const params = new URLSearchParams({page, per_page:20});
-    if (kw) params.set('keyword', kw);
-    try {
-      const data = await fetch('/admin/customers?'+params).then(r => r.json());
-      renderCustomers(data);
-    } catch(e) {}
+async function exportCSV() {
+  const res = await fetch(API + '/admin/import-export/customers/export', {headers: {'X-Token': token}});
+  if (!res.ok) return;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'customers.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 手動予約
+async function openNewResModal() {
+  const res = await api('GET', '/admin/menus');
+  const menus = res && res.ok ? await res.json() : [];
+  const sel = document.getElementById('nr-menu');
+  sel.innerHTML = '<option value="">選択してください</option>' + menus.map(m => `<option value="${m.id}" data-name="${m.name}" data-dur="${m.duration_min}">${m.name}（${m.duration_min}分）</option>`).join('');
+  document.getElementById('nr-date').value = document.getElementById('res-date').value || today();
+  openModal('new-res-modal');
+}
+
+async function submitNewRes() {
+  const menuSel = document.getElementById('nr-menu');
+  const opt = menuSel.selectedOptions[0];
+  const res = await api('POST', '/admin/reservations', {
+    name: document.getElementById('nr-name').value,
+    phone: document.getElementById('nr-phone').value,
+    email: document.getElementById('nr-email').value,
+    date: document.getElementById('nr-date').value,
+    time: document.getElementById('nr-time').value.slice(0,5),
+    menu_id: menuSel.value,
+    menu_name: opt ? opt.dataset.name : '',
+    duration_min: opt ? parseInt(opt.dataset.dur) : 30,
+    notes: document.getElementById('nr-notes').value,
+  });
+  if (res && res.ok) { closeModal('new-res-modal'); loadReservations(); }
+}
+
+// リマインド
+async function runReminder() {
+  const msg = document.getElementById('reminder-msg');
+  msg.innerHTML = '<div class="msg">送信中...</div>';
+  const res = await api('POST', '/admin/reminder/run');
+  if (res && res.ok) {
+    const d = await res.json();
+    msg.innerHTML = `<div class="msg msg-ok">${d.date} の対象：${d.total}件、送信：${d.sent}件、失敗：${d.failed}件</div>`;
+  } else {
+    msg.innerHTML = '<div class="msg msg-err">実行に失敗しました</div>';
   }
+}
 
-  function renderCustomers(data) {
-    document.getElementById('cust-count').textContent = `${data.total}件`;
-    const tbody = document.getElementById('cust-body');
-    tbody.innerHTML = data.items.map(c => `
-      <tr class="clickable" onclick="openDetail(${c.id})">
-        <td>${esc(c.name)}</td>
-        <td style="font-size:0.75rem;">${esc(c.name_kana||'')}</td>
-        <td style="font-size:0.75rem;">${esc(c.phone||'-')}</td>
-        <td style="font-size:0.75rem;">${esc(c.email||'-')}</td>
-        <td style="font-size:0.72rem;color:var(--light);">${(c.created_at||'').slice(0,10)}</td>
-        <td onclick="event.stopPropagation()">
-          <button class="btn danger" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="deleteCust(${c.id},'${esc(c.name)}')">削除</button>
-        </td>
-      </tr>`).join('');
-    renderPagination('cust-pagination', data.total, data.page, 20, loadCustomers);
-  }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); }));
 
-  async function openDetail(id) {
-    const c = await fetch(`/admin/customers/${id}`).then(r => r.json()).catch(()=>null);
-    if (!c) return;
-    const fields = [
-      ['氏名', c.name], ['フリガナ', c.name_kana], ['電話', c.phone],
-      ['メール', c.email], ['生年月日', c.birthdate], ['性別', c.gender],
-      ['住所', c.address], ['備考', c.notes], ['登録元', c.source],
-      ['登録日', (c.created_at||'').slice(0,10)],
-    ];
-    const resHtml = (c.reservations||[]).length
-      ? (c.reservations||[]).map(r =>
-          `<div class="res-item"><span class="badge badge-${r.status}" style="margin-right:0.5rem;">${r.status}</span>${r.date} ${r.time} ${esc(r.menu_name||'')}</div>`
-        ).join('')
-      : '<div style="color:var(--light);font-size:0.78rem;">予約履歴なし</div>';
-
-    document.getElementById('detail-content').innerHTML =
-      fields.filter(([,v])=>v).map(([l,v]) => `<div class="detail-row"><span class="detail-label">${l}</span><span>${esc(v)}</span></div>`).join('') +
-      `<div class="res-history"><h3>予約履歴（${(c.reservations||[]).length}件）</h3>${resHtml}</div>`;
-
-    document.getElementById('detail-delete-btn').onclick = () => deleteCust(id, c.name, true);
-    document.getElementById('detail-modal').classList.add('show');
-  }
-
-  function openCustModal() {
-    ['cm-name','cm-kana','cm-phone','cm-email','cm-birth','cm-address','cm-notes'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value='';
-    });
-    document.getElementById('cm-gender').value = '';
-    document.getElementById('cm-err').style.display = 'none';
-    document.getElementById('cust-modal').classList.add('show');
-  }
-
-  async function submitCust() {
-    const name = document.getElementById('cm-name').value.trim();
-    if (!name) { showErr('cm-err','氏名は必須です'); return; }
-    const body = {
-      name, name_kana: v('cm-kana'), phone: v('cm-phone'), email: v('cm-email'),
-      birthdate: v('cm-birth'), gender: v('cm-gender'), address: v('cm-address'), notes: v('cm-notes'),
-    };
-    const res = await fetch('/admin/customers', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body),
-    });
-    if (res.ok) { closeModal('cust-modal'); loadCustomers(custPage); }
-    else { const d = await res.json(); showErr('cm-err', d.detail||'エラー'); }
-  }
-
-  async function deleteCust(id, name, closeAfter=false) {
-    if (!confirm(`「${name}」を削除しますか？\n予約履歴は残ります。`)) return;
-    await fetch(`/admin/customers/${id}`, {method:'DELETE'});
-    if (closeAfter) closeModal('detail-modal');
-    loadCustomers(custPage);
-  }
-
-  // ─── CSVインポート・エクスポート ───
-  function openImportModal() {
-    document.getElementById('import-result').innerHTML = '';
-    document.getElementById('import-file').value = '';
-    document.getElementById('import-modal').classList.add('show');
-  }
-
-  async function uploadCSV(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const form = new FormData();
-    form.append('file', file);
-    const resultEl = document.getElementById('import-result');
-    resultEl.className = 'upload-result';
-    resultEl.textContent = 'アップロード中...';
-    try {
-      const res = await fetch('/admin/import-export/customers/import', {method:'POST', body: form});
-      const data = await res.json();
-      if (res.ok) {
-        resultEl.className = 'upload-result ok';
-        resultEl.innerHTML = `インポート完了：${data.imported}件追加` +
-          (data.skipped ? `、${data.skipped}件スキップ` : '') +
-          (data.errors.length ? `<br><small>${data.errors.slice(0,3).map(e => esc(e)).join('<br>')}</small>` : '');
-        loadCustomers(1);
-      } else {
-        resultEl.className = 'upload-result ng';
-        resultEl.textContent = data.detail || 'エラーが発生しました';
-      }
-    } catch(e) {
-      resultEl.className = 'upload-result ng';
-      resultEl.textContent = '通信エラーが発生しました';
-    }
-  }
-
-  function exportCSV() {
-    window.location.href = '/admin/import-export/customers/export';
-  }
-
-  // ─── メニュー管理 ───
-  let _showPrice = false;
-
-  async function loadMenus() {
-    const data = await fetch('/admin/menus').then(r => r.json()).catch(() => ({menus:[], show_price:false}));
-    _showPrice = data.show_price;
-    // 料金列の表示/非表示
-    document.getElementById('price-col-head').style.display = _showPrice ? '' : 'none';
-    document.getElementById('price-field').style.display    = _showPrice ? '' : 'none';
-
-    const tbody = document.getElementById('menu-body');
-    if (!data.menus.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--light);padding:2rem;">メニューがありません</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.menus.map(m => {
-      const priceCell = _showPrice
-        ? `<td>${m.price != null ? m.price.toLocaleString() + '円' : '<span style="color:var(--light)">要相談</span>'}</td>`
-        : '';
-      const activeLabel = m.active
-        ? `<span class="badge badge-confirmed">表示中</span>`
-        : `<span class="badge badge-cancelled">非表示</span>`;
-      return `<tr>
-        <td style="color:var(--light);font-size:0.75rem;">${m.sort_order ?? 0}</td>
-        <td style="font-weight:500;">${esc(m.name)}</td>
-        <td>${m.duration_min}分</td>
-        ${priceCell}
-        <td>${activeLabel}</td>
-        <td style="white-space:nowrap;display:flex;gap:0.4rem;">
-          <button class="btn secondary" style="font-size:0.72rem;padding:0.2rem 0.5rem;"
-            onclick="openMenuModal(${JSON.stringify(m)})">編集</button>
-          <button class="btn ${m.active ? 'danger' : 'secondary'}" style="font-size:0.72rem;padding:0.2rem 0.5rem;"
-            onclick="toggleMenu(${m.id}, ${m.active})">${m.active ? '非表示' : '表示'}</button>
-        </td>
-      </tr>`;
-    }).join('');
-  }
-
-  function openMenuModal(menu) {
-    document.getElementById('menu-err').style.display = 'none';
-    if (menu && typeof menu === 'object') {
-      document.getElementById('menu-modal-title').textContent = 'メニューを編集';
-      document.getElementById('menu-edit-id').value  = menu.id;
-      document.getElementById('menu-name').value     = menu.name;
-      document.getElementById('menu-duration').value = menu.duration_min;
-      document.getElementById('menu-price').value    = menu.price ?? '';
-      document.getElementById('menu-sort').value     = menu.sort_order ?? 0;
-    } else {
-      document.getElementById('menu-modal-title').textContent = 'メニューを追加';
-      document.getElementById('menu-edit-id').value  = '';
-      document.getElementById('menu-name').value     = '';
-      document.getElementById('menu-duration').value = 30;
-      document.getElementById('menu-price').value    = '';
-      document.getElementById('menu-sort').value     = 0;
-    }
-    document.getElementById('menu-modal').classList.add('show');
-  }
-
-  async function submitMenu() {
-    const id   = document.getElementById('menu-edit-id').value;
-    const body = {
-      name:         document.getElementById('menu-name').value.trim(),
-      duration_min: Number(document.getElementById('menu-duration').value),
-      price:        document.getElementById('menu-price').value !== ''
-                    ? Number(document.getElementById('menu-price').value) : null,
-      sort_order:   Number(document.getElementById('menu-sort').value),
-    };
-    const errEl = document.getElementById('menu-err');
-    try {
-      const url    = id ? `/admin/menus/${id}` : '/admin/menus';
-      const method = id ? 'PUT' : 'POST';
-      const res    = await fetch(url, {
-        method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '保存失敗');
-      closeModal('menu-modal');
-      loadMenus();
-    } catch(e) {
-      errEl.textContent = e.message;
-      errEl.style.display = 'block';
-    }
-  }
-
-  async function toggleMenu(id, currentActive) {
-    const action = currentActive ? '非表示' : '表示';
-    if (!confirm(`このメニューを「${action}」にしますか？`)) return;
-    await fetch(`/admin/menus/${id}/active`, {method:'PATCH'});
-    loadMenus();
-  }
-
-  // ─── 設定 ───
-  async function loadSettings() {
-    try {
-      const data = await fetch('/admin/settings').then(r => r.json());
-      document.getElementById('setting-email').value         = data.admin_email || '';
-      document.getElementById('notify-booking').checked      = data.notify_on_booking === '1';
-      document.getElementById('notify-cancel').checked       = data.notify_on_cancel  === '1';
-    } catch(e) {}
-  }
-
-  async function saveNotify() {
-    const msg = document.getElementById('notify-msg');
-    try {
-      const res = await fetch('/admin/settings/notify', {
-        method: 'PUT', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          notify_on_booking: document.getElementById('notify-booking').checked,
-          notify_on_cancel:  document.getElementById('notify-cancel').checked,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '更新失敗');
-      msg.style.color = 'var(--green)';
-      msg.textContent = data.message;
-    } catch(e) {
-      msg.style.color = 'var(--red)';
-      msg.textContent = e.message;
-    }
-    setTimeout(() => msg.textContent = '', 2000);
-  }
-
-  async function saveEmail() {
-    const email = document.getElementById('setting-email').value.trim();
-    const msg   = document.getElementById('email-msg');
-    try {
-      const res  = await fetch('/admin/settings/email', {
-        method:'PUT', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({email}),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '更新失敗');
-      msg.style.color = 'var(--green)';
-      msg.textContent = data.message;
-    } catch(e) {
-      msg.style.color = 'var(--red)';
-      msg.textContent = e.message;
-    }
-    setTimeout(() => msg.textContent = '', 3000);
-  }
-
-  async function savePassword() {
-    const password = document.getElementById('setting-password').value;
-    const msg      = document.getElementById('password-msg');
-    try {
-      const res  = await fetch('/admin/settings/password', {
-        method:'PUT', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({password}),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '更新失敗');
-      document.getElementById('setting-password').value = '';
-      msg.style.color = 'var(--green)';
-      msg.textContent = data.message;
-    } catch(e) {
-      msg.style.color = 'var(--red)';
-      msg.textContent = e.message;
-    }
-    setTimeout(() => msg.textContent = '', 3000);
-  }
-
-  async function testLine() {
-    const msg = document.getElementById('line-test-msg');
-    msg.textContent = '送信中…';
-    try {
-      const res  = await fetch('/admin/settings/test-line', {method:'POST'});
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '送信失敗');
-      msg.style.color = 'var(--green)';
-      msg.textContent = data.message;
-    } catch(e) {
-      msg.style.color = 'var(--red)';
-      msg.textContent = e.message;
-    }
-  }
-
-  // ─── 休業日 ───
-  async function loadClosedDates() {
-    const data = await fetch('/admin/closed-dates').then(r => r.json()).catch(()=>({dates:[]}));
-    const el = document.getElementById('closed-list');
-    if (!data.dates.length) { el.innerHTML = '<div style="color:var(--light);font-size:0.82rem;">休業日なし</div>'; return; }
-    el.innerHTML = data.dates.map(d =>
-      `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
-        <span>${d}</span>
-        <button class="btn danger" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="removeClosed('${d}')">削除</button>
-      </div>`
-    ).join('');
-  }
-
-  async function addClosed() {
-    const date   = document.getElementById('closed-date-input').value;
-    const reason = document.getElementById('closed-reason-input').value;
-    if (!date) { alert('日付を選択してください'); return; }
-    await fetch('/admin/closed-dates', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({date, reason}),
-    });
-    loadClosedDates();
-  }
-
-  async function removeClosed(date) {
-    if (!confirm(`${date} を休業日から削除しますか？`)) return;
-    await fetch(`/admin/closed-dates/${date}`, {method:'DELETE'});
-    loadClosedDates();
-  }
-
-  // ─── ユーティリティ ───
-  function renderMenuOptions(selectId) {
-    const sel = document.getElementById(selectId);
-    sel.innerHTML = '<option value="">メニューを選択</option>' +
-      menus.map(m => `<option value="${m.id}">${esc(m.name)}（${m.duration_min}分）</option>`).join('');
-  }
-
-  function renderPagination(id, total, page, perPage, loadFn) {
-    const pages = Math.ceil(total / perPage);
-    const el    = document.getElementById(id);
-    if (pages <= 1) { el.innerHTML = `<span>${total}件</span>`; return; }
-    let html = `<button onclick="${loadFn.name}(${page-1})" ${page<=1?'disabled':''}>←</button>`;
-    for (let i = Math.max(1,page-2); i <= Math.min(pages,page+2); i++)
-      html += `<button onclick="${loadFn.name}(${i})" class="${i===page?'active':''}">${i}</button>`;
-    html += `<button onclick="${loadFn.name}(${page+1})" ${page>=pages?'disabled':''}>→</button>`;
-    html += `<span>${total}件 / ${pages}ページ</span>`;
-    el.innerHTML = html;
-  }
-
-  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-  function showErr(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = ''; }
-  function v(id) { return (document.getElementById(id)?.value||'').trim(); }
-  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-  checkAuth();
+checkAuth();
 </script>
 </body>
 </html>

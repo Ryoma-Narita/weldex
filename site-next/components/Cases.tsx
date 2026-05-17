@@ -26,7 +26,7 @@ const cases = [
 
 export default function Cases() {
   return (
-    <section style={{ padding: "5rem clamp(1.5rem,5vw,6rem)" }}>
+    <section style={{ padding: "5rem clamp(1.5rem,5vw,6rem)", background: "var(--off)" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <FadeIn style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "3rem" }}>
           <div>
@@ -35,9 +35,9 @@ export default function Cases() {
               数字で見る、改善の実績。
             </h2>
           </div>
-          <Link href="/contact" className="btn btn-outline" style={{ fontSize: "0.8rem" }}>すべての事例を見る →</Link>
+          <Link href="/contact" className="btn btn-outline" style={{ fontSize: "0.8rem" }}>お問い合わせ →</Link>
         </FadeIn>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 2, background: "var(--border)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: "2px", background: "var(--border)" }}>
           {cases.map((c, i) => (
             <FadeIn key={c.industry} delay={0.1 + i * 0.1} style={{ background: "var(--white)", padding: "2rem 1.75rem" }}>
               <div style={{ fontSize: "0.72rem", fontWeight: 500, color: "var(--blue)", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>{c.industry}</div>

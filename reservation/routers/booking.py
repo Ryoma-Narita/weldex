@@ -1,198 +1,147 @@
-"""
-reservation/routers/booking.py
-患者向け予約API（認証不要）
-"""
-import sys
+"""reservation/routers/booking.py — 患者向け予約受付API"""
 import os
+import sys
+import calendar
+from datetime import date, datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from datetime import date, timedelta
-from fastapi import APIRouter, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
-limiter = Limiter(key_func=get_remote_address)
+from fastapi import APIRouter, HTTPException
 from models.schemas import BookingCreate, BookingCancel
 from db.database import (
-    get_reserved_times, get_closed_dates,
-    create_reservation, get_reservation_by_id,
-    update_reservation_status, find_or_create_customer,
-    get_menus,
+    get_closed_dates, get_reserved_times, get_menus,
+    create_reservation, find_or_create_customer,
+    get_reservation_by_id, update_reservation_status,
 )
 from services.mail import send_confirmation, send_admin_notification
-from db.database import get_setting
-from config import (
-    SLOT_START, SLOT_END, SLOT_INTERVAL_MIN, ADVANCE_DAYS, ADMIN_EMAIL
-)
+from config import SLOT_START, SLOT_END, SLOT_INTERVAL_MIN, ADVANCE_DAYS
 
 router = APIRouter(prefix="/api/booking", tags=["booking"])
 
 
-def _generate_slots() -> list[str]:
-    """
-    設定に従って時間スロットを生成する。
-
-    Returns:
-        HH:MM形式の時間リスト
-    """
+def _generate_slots(start: str, end: str, interval: int) -> list[str]:
+    """開始〜終了時間のスロット一覧を生成する。"""
     slots = []
-    h_start, m_start = map(int, SLOT_START.split(":"))
-    h_end,   m_end   = map(int, SLOT_END.split(":"))
-    start_min = h_start * 60 + m_start
-    end_min   = h_end   * 60 + m_end
-
-    cur = start_min
-    while cur < end_min:
-        h, m = divmod(cur, 60)
-        slots.append(f"{h:02d}:{m:02d}")
-        cur += SLOT_INTERVAL_MIN
+    h, m = map(int, start.split(":"))
+    eh, em = map(int, end.split(":"))
+    current = h * 60 + m
+    end_min = eh * 60 + em
+    while current < end_min:
+        slots.append(f"{current // 60:02d}:{current % 60:02d}")
+        current += interval
     return slots
 
 
 @router.get("/menus")
 def list_menus():
-    """予約可能なメニュー一覧を返す。"""
+    """有効なメニュー一覧を返す。"""
     return get_menus()
 
 
 @router.get("/available-dates")
 def available_dates():
-    """
-    予約可能日の一覧を返す（今日から ADVANCE_DAYS 日分）。
-    休業日は除外する。
-
-    Returns:
-        {"dates": ["YYYY-MM-DD", ...]}
-    """
+    """今日から ADVANCE_DAYS 日後までの予約可能日一覧を返す。"""
     closed = set(get_closed_dates())
+    today = date.today()
     result = []
-    today  = date.today()
-
     for i in range(1, ADVANCE_DAYS + 1):
         d = (today + timedelta(days=i)).isoformat()
         if d not in closed:
             result.append(d)
-
     return {"dates": result}
 
 
+@router.get("/calendar/{year}/{month}")
+def get_calendar(year: int, month: int):
+    """指定月のカレンダー情報（各日の予約状況）を返す。"""
+    today = date.today()
+    closed = set(get_closed_dates())
+    all_slots = _generate_slots(SLOT_START, SLOT_END, SLOT_INTERVAL_MIN)
+    total_slots = len(all_slots)
+    max_date = today + timedelta(days=ADVANCE_DAYS)
+
+    _, days_in_month = calendar.monthrange(year, month)
+    days = []
+    for day in range(1, days_in_month + 1):
+        try:
+            d = date(year, month, day)
+        except ValueError:
+            continue
+        iso = d.isoformat()
+        is_past = d <= today
+        is_far = d > max_date
+        is_closed = iso in closed
+        if is_past or is_far or is_closed:
+            days.append({"date": iso, "status": "unavailable", "booked": 0, "total": total_slots})
+        else:
+            booked = len(get_reserved_times(iso))
+            if booked >= total_slots:
+                status = "full"
+            elif booked >= total_slots * 0.7:
+                status = "few"
+            else:
+                status = "available"
+            days.append({"date": iso, "status": status, "booked": booked, "total": total_slots})
+
+    return {"year": year, "month": month, "days": days}
+
+
 @router.get("/available-times/{target_date}")
-@limiter.limit("30/minute")
-def available_times(request: Request, target_date: str):
-    """
-    指定日の予約可能な時間スロットを返す。
-
-    Args:
-        target_date: YYYY-MM-DD
-
-    Returns:
-        {"times": ["HH:MM", ...]}
-    """
-    all_slots  = _generate_slots()
-    reserved   = set(get_reserved_times(target_date))
-    closed     = get_closed_dates()
-
-    if target_date in closed:
-        return {"times": [], "closed": True}
-
-    available = [s for s in all_slots if s not in reserved]
-    return {"times": available, "closed": False}
+def available_times(target_date: str):
+    """指定日の空き時間スロットを返す。"""
+    all_slots = _generate_slots(SLOT_START, SLOT_END, SLOT_INTERVAL_MIN)
+    reserved = set(get_reserved_times(target_date))
+    slots = [{"time": s, "available": s not in reserved} for s in all_slots]
+    return {"date": target_date, "slots": slots}
 
 
 @router.post("/create")
-@limiter.limit("5/minute")
-def create_booking(request: Request, body: BookingCreate):
-    """
-    予約を作成する。
-    重複チェック・顧客紐付け・確認メール送信を行う。
-
-    Args:
-        body: 予約作成リクエスト
-
-    Returns:
-        {"id": 予約ID, "message": "予約を承りました"}
-    """
-    # ハニーポット：ボットが埋めた場合は静かに無視（エラーを返さない）
-    if body.website:
-        return {"id": 0, "message": "予約を承りました"}
-
-    # 重複チェック
+def create_booking(body: BookingCreate):
+    """予約を作成して確認メールを送信する。"""
     reserved = get_reserved_times(body.date)
     if body.time in reserved:
         raise HTTPException(status_code=409, detail="この時間はすでに予約済みです")
 
-    # メニュー情報を付加
-    menu_name    = ""
-    duration_min = 30
-    if body.menu_id:
-        menus = {str(m["id"]): m for m in get_menus()}
-        m = menus.get(str(body.menu_id))
-        if m:
-            menu_name    = m["name"]
-            duration_min = m["duration_min"]
+    closed = get_closed_dates()
+    if body.date in closed:
+        raise HTTPException(status_code=400, detail="この日は休業日です")
 
-    # 顧客を探すか新規作成
-    customer_id = find_or_create_customer(body.name, body.phone, body.email, source="web")
+    customer_id = find_or_create_customer(body.name, body.phone, body.email)
 
-    reservation_data = {
-        "customer_id":  customer_id,
-        "name":         body.name,
-        "phone":        body.phone,
-        "email":        body.email,
-        "date":         body.date,
-        "time":         body.time,
-        "menu_id":      body.menu_id,
-        "menu_name":    menu_name,
-        "duration_min": duration_min,
-        "channel":      "web",
-        "notes":        body.notes,
+    data = {
+        "customer_id": customer_id,
+        "name": body.name,
+        "phone": body.phone,
+        "email": body.email,
+        "date": body.date,
+        "time": body.time,
+        "menu_id": body.menu_id,
+        "menu_name": body.menu_name,
+        "duration_min": body.duration_min,
+        "channel": "web",
+        "notes": body.notes,
     }
+    rid = create_reservation(data)
+    reservation = get_reservation_by_id(rid)
 
-    reservation_id = create_reservation(reservation_data)
-    reservation_data["id"] = reservation_id
+    send_confirmation(reservation)
+    send_admin_notification(reservation)
 
-    # 確認メール・管理者通知（失敗してもエラーにしない）
-    try:
-        send_confirmation(reservation_data)
-        admin_email = get_setting("admin_email") or ADMIN_EMAIL
-        if admin_email and get_setting("notify_on_booking") == "1":
-            send_admin_notification(reservation_data, admin_email)
-    except Exception:
-        pass
-
-    return {"id": reservation_id, "message": "予約を承りました"}
+    return {"id": rid, "message": "予約が完了しました"}
 
 
 @router.delete("/cancel/{reservation_id}")
 def cancel_booking(reservation_id: int, body: BookingCancel):
-    """
-    予約をキャンセルする（電話番号で本人確認）。
-
-    Args:
-        reservation_id: 予約ID
-        body: キャンセルリクエスト（電話番号）
-    """
-    res = get_reservation_by_id(reservation_id)
-    if not res:
+    """電話番号で本人確認してキャンセルする。"""
+    r = get_reservation_by_id(reservation_id)
+    if not r:
         raise HTTPException(status_code=404, detail="予約が見つかりません")
-    if res["status"] == "cancelled":
+    if r["status"] == "cancelled":
         raise HTTPException(status_code=400, detail="すでにキャンセル済みです")
 
-    # 電話番号で本人確認
-    stored_phone  = res.get("phone", "").replace("-", "").replace(" ", "")
-    request_phone = body.phone.replace("-", "").replace(" ", "")
-    if stored_phone and stored_phone != request_phone:
+    phone_input = body.phone.replace("-", "").replace(" ", "")
+    phone_stored = r["phone"].replace("-", "").replace(" ", "")
+    if phone_input != phone_stored:
         raise HTTPException(status_code=403, detail="電話番号が一致しません")
 
     update_reservation_status(reservation_id, "cancelled")
-
-    # 管理者へキャンセル通知（患者自身のキャンセルのみ・管理者操作は除く）
-    try:
-        admin_email = get_setting("admin_email") or ADMIN_EMAIL
-        if admin_email and get_setting("notify_on_cancel") == "1":
-            from services.mail import send_cancel_notification
-            send_cancel_notification(res, admin_email)
-    except Exception:
-        pass
-
-    return {"message": "キャンセルしました"}
+    return {"message": "キャンセルが完了しました"}

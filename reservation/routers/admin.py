@@ -1,481 +1,170 @@
-"""
-reservation/routers/admin.py
-管理者向けAPI（セッション認証必須）
-"""
-import sys
+"""reservation/routers/admin.py — 管理画面API（認証・予約管理・統計）"""
 import os
+import sys
+import secrets
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import secrets
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Cookie, Response, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
-limiter = Limiter(key_func=get_remote_address)
-
-# ログイン試行制限
-LOGIN_MAX_ATTEMPTS = 5
-LOGIN_LOCK_MINUTES = 10
-from models.schemas import AdminLogin, ManualReservation, StatusUpdate, ClosedDateCreate
+from fastapi import APIRouter, HTTPException, Header
+from models.schemas import AdminLogin, ClosedDateAdd, ReservationStatusUpdate
 from db.database import (
     validate_session, create_session, delete_session,
-    get_reservations_by_date, create_reservation,
-    update_reservation_status, get_reservation_by_id,
+    get_dashboard_stats, get_reservations_by_date,
+    get_reservation_by_id, update_reservation_status,
+    create_reservation, find_or_create_customer,
     get_closed_dates, add_closed_date, remove_closed_date,
-    get_dashboard_stats, get_menus, get_all_menus,
-    create_menu, update_menu, toggle_menu_active,
-    find_or_create_customer,
-    get_setting, set_setting,
-    get_conn,
+    get_menus,
 )
-from config import SESSION_EXPIRE_HOURS, SHOW_MENU_PRICE
+from services.reminder import run_reminder
+from config import ADMIN_PASSWORD, SESSION_EXPIRE_HOURS
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-SESSION_COOKIE = "admin_session"
 
-
-def _require_auth(session_token: str | None) -> None:
-    """
-    セッショントークンを検証する。無効な場合は 401 を返す。
-
-    Args:
-        session_token: クッキーのセッショントークン
-    """
-    if not session_token or not validate_session(session_token):
+def _auth(token: str | None):
+    """セッショントークンを検証する。"""
+    if not token or not validate_session(token):
         raise HTTPException(status_code=401, detail="認証が必要です")
 
 
-# ─── 認証 ───────────────────────────────────────
+# ── 認証 ────────────────────────────────────────
 
 @router.post("/login")
-@limiter.limit("5/minute")
-def login(request: Request, body: AdminLogin, response: Response):
-    """
-    管理者ログイン。セッションクッキーを発行する。
-    5回失敗で10分間ソフトロック。
-
-    Args:
-        body: パスワード
-    """
-    # ロック確認
-    locked_until = get_setting("login_locked_until")
-    if locked_until:
-        lock_dt = datetime.fromisoformat(locked_until)
-        if datetime.now() < lock_dt:
-            remaining = int((lock_dt - datetime.now()).total_seconds() / 60) + 1
-            raise HTTPException(status_code=429, detail=f"ログインがロックされています。{remaining}分後に再試行してください")
-        else:
-            set_setting("login_locked_until", "")
-            set_setting("login_failed_count", "0")
-
-    # パスワードはsettingsテーブルから取得（.envは初期値のみ・管理画面で変更可能）
-    if body.password != get_setting("admin_password"):
-        # 失敗カウント更新
-        failed = int(get_setting("login_failed_count") or "0") + 1
-        set_setting("login_failed_count", str(failed))
-        if failed >= LOGIN_MAX_ATTEMPTS:
-            lock_until = (datetime.now() + timedelta(minutes=LOGIN_LOCK_MINUTES)).isoformat()
-            set_setting("login_locked_until", lock_until)
-            set_setting("login_failed_count", "0")
-            raise HTTPException(status_code=429, detail=f"ログイン試行が{LOGIN_MAX_ATTEMPTS}回失敗しました。{LOGIN_LOCK_MINUTES}分間ロックします")
-        raise HTTPException(status_code=401, detail=f"パスワードが違います（残り{LOGIN_MAX_ATTEMPTS - failed}回）")
-
-    # ログイン成功：失敗カウントリセット
-    set_setting("login_failed_count", "0")
-    set_setting("login_locked_until", "")
-
-    token      = secrets.token_hex(32)
+def login(body: AdminLogin):
+    """パスワード認証してセッショントークンを返す。"""
+    if body.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="パスワードが正しくありません")
+    token = secrets.token_urlsafe(32)
     expires_at = (datetime.now() + timedelta(hours=SESSION_EXPIRE_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
     create_session(token, expires_at)
-
-    response.set_cookie(
-        key=SESSION_COOKIE, value=token,
-        httponly=True, samesite="lax",
-        max_age=SESSION_EXPIRE_HOURS * 3600,
-    )
-    return {"message": "ログインしました"}
+    return {"token": token, "expires_at": expires_at}
 
 
 @router.post("/logout")
-def logout(response: Response, admin_session: str | None = Cookie(None)):
-    """管理者ログアウト。セッションを削除する。"""
-    if admin_session:
-        delete_session(admin_session)
-    response.delete_cookie(SESSION_COOKIE)
+def logout(x_token: str | None = Header(default=None)):
+    """セッションを削除する。"""
+    if x_token:
+        delete_session(x_token)
     return {"message": "ログアウトしました"}
 
 
 @router.get("/me")
-def me(admin_session: str | None = Cookie(None)):
-    """セッション有効確認。"""
-    _require_auth(admin_session)
+def me(x_token: str | None = Header(default=None)):
+    """トークンの有効性を確認する。"""
+    _auth(x_token)
     return {"authenticated": True}
 
 
-# ─── ダッシュボード ───────────────────────────────
+# ── ダッシュボード ────────────────────────────────────────
 
 @router.get("/stats")
-def stats(admin_session: str | None = Cookie(None)):
-    """ダッシュボード統計情報を返す。"""
-    _require_auth(admin_session)
+def stats(x_token: str | None = Header(default=None)):
+    """ダッシュボード統計を返す。"""
+    _auth(x_token)
     return get_dashboard_stats()
 
 
-# ─── 予約管理 ──────────────────────────────────
+# ── 予約管理 ────────────────────────────────────────
 
 @router.get("/reservations")
-def list_reservations(
-    date:      str | None = None,
-    date_from: str | None = None,
-    date_to:   str | None = None,
-    status:    str | None = None,
-    page:      int = 1,
-    per_page:  int = 20,
-    admin_session: str | None = Cookie(None),
-):
-    """
-    予約一覧を返す（日付・ステータスでフィルター）。
-
-    Args:
-        date:      日付フィルター（YYYY-MM-DD・完全一致）
-        date_from: 開始日フィルター（YYYY-MM-DD・以上）
-        date_to:   終了日フィルター（YYYY-MM-DD・以下）
-        status:    ステータスフィルター
-        page:      ページ番号
-        per_page:  1ページあたりの件数
-    """
-    _require_auth(admin_session)
-
-    conditions: list[str] = []
-    params: list = []
-
-    if date:
-        conditions.append("date = ?")
-        params.append(date)
-    elif date_from and date_to:
-        conditions.append("date BETWEEN ? AND ?")
-        params.extend([date_from, date_to])
-    elif date_from:
-        conditions.append("date >= ?")
-        params.append(date_from)
-    elif date_to:
-        conditions.append("date <= ?")
-        params.append(date_to)
-    if status:
-        conditions.append("status = ?")
-        params.append(status)
-
-    where  = ("WHERE " + " AND ".join(conditions)) if conditions else ""
-    offset = (page - 1) * per_page
-
-    with get_conn() as conn:
-        total = conn.execute(f"SELECT COUNT(*) FROM reservations {where}", params).fetchone()[0]
-        rows  = conn.execute(
-            f"SELECT * FROM reservations {where} ORDER BY date DESC, time DESC LIMIT ? OFFSET ?",
-            params + [per_page, offset],
-        ).fetchall()
-
-    return {"total": total, "page": page, "items": [dict(r) for r in rows]}
+def list_reservations(date: str = "", x_token: str | None = Header(default=None)):
+    """指定日（省略時は今日）の予約一覧を返す。"""
+    _auth(x_token)
+    from datetime import date as dt
+    target = date or dt.today().isoformat()
+    return {"date": target, "reservations": get_reservations_by_date(target)}
 
 
 @router.get("/reservations/{reservation_id}")
-def get_reservation(reservation_id: int, admin_session: str | None = Cookie(None)):
-    """予約を1件取得する。"""
-    _require_auth(admin_session)
-    res = get_reservation_by_id(reservation_id)
-    if not res:
+def get_reservation(reservation_id: int, x_token: str | None = Header(default=None)):
+    """予約詳細を返す。"""
+    _auth(x_token)
+    r = get_reservation_by_id(reservation_id)
+    if not r:
         raise HTTPException(status_code=404, detail="予約が見つかりません")
-    return res
-
-
-@router.post("/reservations")
-def add_reservation(body: ManualReservation, admin_session: str | None = Cookie(None)):
-    """
-    管理者が手動で予約を追加する。
-
-    Args:
-        body: 予約情報
-    """
-    _require_auth(admin_session)
-
-    # メニュー情報（menu_idがあればDBから取得、なければ空文字）
-    menu_name    = ""
-    duration_min = body.duration_min
-    if body.menu_id:
-        menus = {str(m["id"]): m for m in get_menus()}
-        m = menus.get(str(body.menu_id))
-        if m:
-            menu_name    = m["name"]
-            duration_min = m["duration_min"]
-
-    customer_id = body.customer_id
-    if not customer_id:
-        customer_id = find_or_create_customer(body.name, body.phone, body.email, source="manual")
-
-    data = {
-        "customer_id":  customer_id,
-        "name":         body.name,
-        "phone":        body.phone,
-        "email":        body.email,
-        "date":         body.date,
-        "time":         body.time,
-        "menu_id":      body.menu_id,
-        "menu_name":    menu_name,
-        "duration_min": duration_min,
-        "channel":      "manual",
-        "notes":        body.notes,
-    }
-    reservation_id = create_reservation(data)
-    return {"id": reservation_id, "message": "予約を追加しました"}
-
-
-@router.post("/reservations/{reservation_id}/remind")
-def send_remind(reservation_id: int, admin_session: str | None = Cookie(None)):
-    """
-    管理者が手動でリマインドメールを送信する。
-
-    Args:
-        reservation_id: 予約ID
-
-    Returns:
-        送信結果メッセージ
-    """
-    _require_auth(admin_session)
-    res = get_reservation_by_id(reservation_id)
-    if not res:
-        raise HTTPException(status_code=404, detail="予約が見つかりません")
-    if not res.get("email"):
-        raise HTTPException(status_code=422, detail="メールアドレスが登録されていないため送信できません")
-
-    from services.mail import send_reminder
-    ok = send_reminder(res)
-    if not ok:
-        raise HTTPException(status_code=500, detail="メール送信に失敗しました（SendGrid設定を確認してください）")
-
-    with get_conn() as conn:
-        conn.execute("UPDATE reservations SET remind_sent=1 WHERE id=?", (reservation_id,))
-    return {"message": "リマインドメールを送信しました"}
+    return r
 
 
 @router.patch("/reservations/{reservation_id}/status")
 def change_status(
     reservation_id: int,
-    body: StatusUpdate,
-    admin_session: str | None = Cookie(None),
+    body: ReservationStatusUpdate,
+    x_token: str | None = Header(default=None),
 ):
-    """
-    予約ステータスを更新する。
-
-    Args:
-        reservation_id: 予約ID
-        body: 新しいステータス（confirmed/cancelled/done/no_show）
-    """
-    _require_auth(admin_session)
-    valid_statuses = {"confirmed", "cancelled", "done", "no_show"}
-    if body.status not in valid_statuses:
-        raise HTTPException(status_code=400, detail=f"ステータスは {valid_statuses} のいずれかで指定してください")
+    """予約ステータスを変更する。"""
+    _auth(x_token)
+    allowed = {"confirmed", "cancelled", "done", "no_show"}
+    if body.status not in allowed:
+        raise HTTPException(status_code=400, detail=f"statusは {allowed} のいずれかを指定してください")
     if not get_reservation_by_id(reservation_id):
         raise HTTPException(status_code=404, detail="予約が見つかりません")
     update_reservation_status(reservation_id, body.status)
-    return {"message": "ステータスを更新しました"}
+    return {"message": "更新しました"}
 
 
-# ─── 休業日 ──────────────────────────────────
+@router.post("/reservations")
+def manual_reservation(body: dict, x_token: str | None = Header(default=None)):
+    """手動で予約を追加する。"""
+    _auth(x_token)
+    cid = find_or_create_customer(
+        body.get("name", ""), body.get("phone", ""), body.get("email", ""), source="manual"
+    )
+    data = {
+        "customer_id": cid,
+        "name": body.get("name", ""),
+        "phone": body.get("phone", ""),
+        "email": body.get("email", ""),
+        "date": body.get("date", ""),
+        "time": body.get("time", ""),
+        "menu_id": body.get("menu_id", ""),
+        "menu_name": body.get("menu_name", ""),
+        "duration_min": body.get("duration_min", 30),
+        "channel": "manual",
+        "notes": body.get("notes", ""),
+    }
+    rid = create_reservation(data)
+    return {"id": rid, "message": "予約を追加しました"}
+
+
+# ── 休業日 ────────────────────────────────────────
 
 @router.get("/closed-dates")
-def list_closed_dates(admin_session: str | None = Cookie(None)):
+def list_closed_dates(x_token: str | None = Header(default=None)):
     """休業日一覧を返す。"""
-    _require_auth(admin_session)
+    _auth(x_token)
     return {"dates": get_closed_dates()}
 
 
 @router.post("/closed-dates")
-def add_closed(body: ClosedDateCreate, admin_session: str | None = Cookie(None)):
-    """休業日を登録する。"""
-    _require_auth(admin_session)
+def add_closed(body: ClosedDateAdd, x_token: str | None = Header(default=None)):
+    """休業日を追加する。"""
+    _auth(x_token)
     add_closed_date(body.date, body.reason)
-    return {"message": "休業日を登録しました"}
+    return {"message": "休業日を追加しました"}
 
 
-@router.delete("/closed-dates/{target_date}")
-def remove_closed(target_date: str, admin_session: str | None = Cookie(None)):
+@router.delete("/closed-dates/{date}")
+def remove_closed(date: str, x_token: str | None = Header(default=None)):
     """休業日を削除する。"""
-    _require_auth(admin_session)
-    remove_closed_date(target_date)
+    _auth(x_token)
+    remove_closed_date(date)
     return {"message": "休業日を削除しました"}
 
 
-# ─── メニュー管理 ──────────────────────────────
+# ── リマインド ────────────────────────────────────────
+
+@router.post("/reminder/run")
+def run_reminder_manual(x_token: str | None = Header(default=None)):
+    """リマインドを手動実行する。"""
+    _auth(x_token)
+    result = run_reminder()
+    return result
+
+
+# ── メニュー ────────────────────────────────────────
 
 @router.get("/menus")
-def list_menus(admin_session: str | None = Cookie(None)):
-    """
-    メニュー一覧を返す（管理画面用・非表示含む）。
-    show_price フラグも一緒に返す。
-    """
-    _require_auth(admin_session)
-    return {"menus": get_all_menus(), "show_price": SHOW_MENU_PRICE}
-
-
-@router.post("/menus")
-def add_menu(body: dict, admin_session: str | None = Cookie(None)):
-    """
-    メニューを追加する。
-
-    Args:
-        body: {name, duration_min, price（省略可）, sort_order（省略可）}
-    """
-    _require_auth(admin_session)
-    name         = (body.get("name") or "").strip()
-    duration_min = int(body.get("duration_min") or 30)
-    price        = body.get("price")  # None = 要相談
-    if price is not None:
-        price = int(price)
-    sort_order = int(body.get("sort_order") or 0)
-
-    if not name:
-        raise HTTPException(status_code=422, detail="メニュー名を入力してください")
-    if duration_min < 1:
-        raise HTTPException(status_code=422, detail="所要時間は1分以上で入力してください")
-
-    menu_id = create_menu(name, duration_min, price, sort_order)
-    return {"id": menu_id, "message": "メニューを追加しました"}
-
-
-@router.put("/menus/{menu_id}")
-def edit_menu(menu_id: int, body: dict, admin_session: str | None = Cookie(None)):
-    """
-    メニューを更新する。
-
-    Args:
-        menu_id: メニューID
-        body:    {name, duration_min, price, sort_order}
-    """
-    _require_auth(admin_session)
-    name         = (body.get("name") or "").strip()
-    duration_min = int(body.get("duration_min") or 30)
-    price        = body.get("price")
-    if price is not None:
-        price = int(price)
-    sort_order = int(body.get("sort_order") or 0)
-
-    if not name:
-        raise HTTPException(status_code=422, detail="メニュー名を入力してください")
-
-    update_menu(menu_id, name, duration_min, price, sort_order)
-    return {"message": "メニューを更新しました"}
-
-
-@router.patch("/menus/{menu_id}/active")
-def toggle_menu(menu_id: int, admin_session: str | None = Cookie(None)):
-    """
-    メニューの表示/非表示を切り替える（論理削除）。
-
-    Returns:
-        {"active": 0 or 1}
-    """
-    _require_auth(admin_session)
-    new_active = toggle_menu_active(menu_id)
-    label = "表示" if new_active else "非表示"
-    return {"active": new_active, "message": f"メニューを{label}にしました"}
-
-
-# ─── 設定 ──────────────────────────────────────
-
-@router.get("/settings")
-def get_settings(admin_session: str | None = Cookie(None)):
-    """
-    設定値を返す。パスワードは伏字にして返す。
-    """
-    _require_auth(admin_session)
-    return {
-        "admin_email":       get_setting("admin_email"),
-        "admin_password":    "********",  # 画面には表示しない
-        "notify_on_booking": get_setting("notify_on_booking", "1"),
-        "notify_on_cancel":  get_setting("notify_on_cancel",  "1"),
-    }
-
-
-@router.put("/settings/notify")
-def update_notify(body: dict, admin_session: str | None = Cookie(None)):
-    """
-    メール通知ON/OFFを更新する。
-
-    Args:
-        body: {"notify_on_booking": "1"/"0", "notify_on_cancel": "1"/"0"}
-    """
-    _require_auth(admin_session)
-    set_setting("notify_on_booking", "1" if body.get("notify_on_booking") else "0")
-    set_setting("notify_on_cancel",  "1" if body.get("notify_on_cancel")  else "0")
-    return {"message": "通知設定を更新しました"}
-
-
-@router.put("/settings/email")
-def update_email(body: dict, admin_session: str | None = Cookie(None)):
-    """
-    管理者通知メールを変更する。
-
-    Args:
-        body: {"email": "new@example.com"}
-    """
-    _require_auth(admin_session)
-    email = (body.get("email") or "").strip()
-    if not email or "@" not in email:
-        raise HTTPException(status_code=422, detail="有効なメールアドレスを入力してください")
-    set_setting("admin_email", email)
-    return {"message": "通知先メールを更新しました", "admin_email": email}
-
-
-@router.put("/settings/password")
-def update_password(body: dict, admin_session: str | None = Cookie(None)):
-    """
-    管理者パスワードを変更する。
-
-    Args:
-        body: {"password": "newpassword"}
-    """
-    _require_auth(admin_session)
-    password = (body.get("password") or "").strip()
-    if len(password) < 6:
-        raise HTTPException(status_code=422, detail="パスワードは6文字以上で入力してください")
-    set_setting("admin_password", password)
-    return {"message": "パスワードを更新しました"}
-
-
-@router.post("/settings/test-line")
-def test_line_connection(admin_session: str | None = Cookie(None)):
-    """
-    Weldex運用LINEボットへの疎通テストメッセージを送信する。
-    # TODO: 本番安定後に削除
-
-    Returns:
-        送信結果
-    """
-    _require_auth(admin_session)
-    # Weldex運用ボットのトークンと送信先が設定されていない場合はスキップ
-    import os
-    token   = os.environ.get("WELDEX_LINE_CHANNEL_ACCESS_TOKEN", "")
-    user_id = os.environ.get("ADMIN_LINE_USER_ID", "")
-    if not token or not user_id:
-        raise HTTPException(
-            status_code=503,
-            detail="WELDEX_LINE_CHANNEL_ACCESS_TOKEN または ADMIN_LINE_USER_ID が未設定です"
-        )
-    try:
-        from linebot.v3.messaging import (
-            Configuration, ApiClient, MessagingApi,
-            PushMessageRequest, TextMessage,
-        )
-        config = Configuration(access_token=token)
-        with ApiClient(config) as api_client:
-            MessagingApi(api_client).push_message(
-                PushMessageRequest(
-                    to=user_id,
-                    messages=[TextMessage(text="[Weldex] LINE疎通テスト送信です。正常に受信できています。")],
-                )
-            )
-        return {"message": "テストメッセージを送信しました"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"送信失敗: {e}")
+def list_menus(x_token: str | None = Header(default=None)):
+    """メニュー一覧を返す。"""
+    _auth(x_token)
+    return get_menus()

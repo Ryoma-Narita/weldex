@@ -1,117 +1,70 @@
-"""
-reservation/models/schemas.py
-Pydanticスキーマ定義
-"""
-from pydantic import BaseModel, field_validator
+"""reservation/models/schemas.py — Pydanticスキーマ定義"""
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 import re
 
 
 class BookingCreate(BaseModel):
-    """予約作成リクエスト（患者向けフォーム）。"""
-    name:     str
-    phone:    str = ""
-    email:    str = ""
-    date:     str          # YYYY-MM-DD
-    time:     str          # HH:MM
-    menu_id:  str = ""
-    notes:    str = ""
-    website:  str = ""     # ハニーポット（人間は送信しない・ボット検知用）
+    name: str
+    phone: str
+    email: str = ""
+    date: str
+    time: str
+    menu_id: str = ""
+    menu_name: str = ""
+    duration_min: int = 30
+    notes: str = ""
 
-    @field_validator("name")
+    @field_validator("phone")
     @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        """名前が空でないことを検証する。"""
-        if not v.strip():
-            raise ValueError("名前は必須です")
-        return v.strip()
+    def validate_phone(cls, v: str) -> str:
+        digits = re.sub(r"[\-\s]", "", v)
+        if not re.match(r"^0\d{9,10}$", digits):
+            raise ValueError("電話番号の形式が正しくありません")
+        return v
 
     @field_validator("date")
     @classmethod
-    def date_format(cls, v: str) -> str:
-        """YYYY-MM-DD形式を検証する。"""
+    def validate_date(cls, v: str) -> str:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", v):
             raise ValueError("日付はYYYY-MM-DD形式で入力してください")
         return v
 
     @field_validator("time")
     @classmethod
-    def time_format(cls, v: str) -> str:
-        """HH:MM形式を検証する。"""
+    def validate_time(cls, v: str) -> str:
         if not re.match(r"^\d{2}:\d{2}$", v):
-            raise ValueError("時間はHH:MM形式で入力してください")
+            raise ValueError("時刻はHH:MM形式で入力してください")
         return v
 
 
 class BookingCancel(BaseModel):
-    """予約キャンセルリクエスト。"""
     phone: str
 
 
 class CustomerCreate(BaseModel):
-    """顧客手動登録リクエスト。"""
-    name:      str
+    name: str
     name_kana: str = ""
-    phone:     str = ""
-    email:     str = ""
+    phone: str = ""
+    email: str = ""
     birthdate: str = ""
-    gender:    str = ""
-    address:   str = ""
-    notes:     str = ""
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        """名前が空でないことを検証する。"""
-        if not v.strip():
-            raise ValueError("名前は必須です")
-        return v.strip()
+    gender: str = ""
+    address: str = ""
+    notes: str = ""
 
 
-class CustomerUpdate(BaseModel):
-    """顧客情報更新リクエスト。"""
-    name:      Optional[str] = None
-    name_kana: Optional[str] = None
-    phone:     Optional[str] = None
-    email:     Optional[str] = None
-    birthdate: Optional[str] = None
-    gender:    Optional[str] = None
-    address:   Optional[str] = None
-    notes:     Optional[str] = None
+class CustomerUpdate(CustomerCreate):
+    pass
 
 
 class AdminLogin(BaseModel):
-    """管理者ログインリクエスト。"""
     password: str
 
 
-class ManualReservation(BaseModel):
-    """管理者が手動で予約を追加するリクエスト。"""
-    customer_id:  Optional[int] = None
-    name:         str
-    phone:        str = ""
-    email:        str = ""
-    date:         str
-    time:         str
-    menu_id:      str = ""
-    duration_min: int = 30
-    notes:        str = ""
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        """名前が空でないことを検証する。"""
-        if not v.strip():
-            raise ValueError("名前は必須です")
-        return v.strip()
-
-
-class ClosedDateCreate(BaseModel):
-    """休業日登録リクエスト。"""
-    date:   str
+class ClosedDateAdd(BaseModel):
+    date: str
     reason: str = ""
 
 
-class StatusUpdate(BaseModel):
-    """予約ステータス更新リクエスト。"""
+class ReservationStatusUpdate(BaseModel):
     status: str

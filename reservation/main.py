@@ -1,77 +1,61 @@
-"""
-reservation/main.py
-予約・顧客管理システム FastAPIアプリ
-
-起動: uvicorn main:app --reload --port 8001
-"""
-import sys
+"""reservation/main.py — FastAPIアプリエントリーポイント"""
 import os
+import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, RedirectResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.background import BackgroundScheduler
+from linebot.v3.exceptions import InvalidSignatureError
 
 from db.database import init_db
-from routers.booking       import router as booking_router
-from routers.admin         import router as admin_router
-from routers.customers     import router as customers_router
-from routers.import_export import router as import_export_router
-from services.reminder     import start_scheduler
+from routers import booking, admin, customers, import_export
+from handlers.webhook import process_webhook
+from services.reminder import run_reminder
+from config import REMIND_HOUR, APP_NAME
 
-# レートリミッター（IPアドレスベース）
-limiter = Limiter(key_func=get_remote_address)
+app = FastAPI(title=f"{APP_NAME} 予約システム", docs_url="/api/docs")
 
-app = FastAPI(title="Weldex 予約システム", version="1.0.0")
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# 静的ファイル配信
-_static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=_static_dir), name="static")
+app.include_router(booking.router)
+app.include_router(admin.router)
+app.include_router(customers.router)
+app.include_router(import_export.router)
 
-# ルーター登録
-app.include_router(booking_router)
-app.include_router(admin_router)
-app.include_router(customers_router)
-app.include_router(import_export_router)
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/booking", StaticFiles(directory=os.path.join(static_dir, "booking"), html=True), name="booking")
+app.mount("/admin-ui", StaticFiles(directory=os.path.join(static_dir, "admin"), html=True), name="admin-ui")
 
 
 @app.on_event("startup")
 def on_startup():
-    """アプリ起動時にDB初期化・スケジューラー起動。"""
     init_db()
-    start_scheduler()
+    scheduler = BackgroundScheduler(timezone="Asia/Tokyo")
+    scheduler.add_job(run_reminder, "cron", hour=REMIND_HOUR, minute=0)
+    scheduler.start()
 
 
-# ─── フロントエンドページ ──────────────────────
+@app.post("/line/webhook")
+async def line_webhook(
+    request: Request,
+    x_line_signature: str = Header(...),
+):
+    """LINE Webhook受信エンドポイント。"""
+    body = await request.body()
+    try:
+        process_webhook(x_line_signature, body.decode("utf-8"))
+    except InvalidSignatureError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    return {"status": "ok"}
 
-@app.get("/", response_class=HTMLResponse)
+
+@app.get("/")
 def root():
-    """予約フォームにリダイレクト。"""
-    return RedirectResponse(url="/booking/")
-
-
-@app.get("/booking/", response_class=HTMLResponse)
-def booking_page():
-    """患者向け予約フォームを返す。"""
-    path = os.path.join(_static_dir, "booking", "index.html")
-    try:
-        with open(path, encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return HTMLResponse("<h1>予約フォームが見つかりません</h1>", status_code=404)
-
-
-@app.get("/admin/", response_class=HTMLResponse)
-def admin_page():
-    """管理画面を返す。"""
-    path = os.path.join(_static_dir, "admin", "index.html")
-    try:
-        with open(path, encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return HTMLResponse("<h1>管理画面が見つかりません</h1>", status_code=404)
+    return {"service": APP_NAME, "booking": "/booking/", "admin": "/admin-ui/", "docs": "/api/docs", "line_webhook": "/line/webhook"}

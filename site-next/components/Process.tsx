@@ -21,7 +21,7 @@ export default function Process() {
         </FadeIn>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: "0 2px", background: "var(--border)" }}>
           {steps.map((s, i) => (
-            <FadeIn key={s.num} delay={0.1 + i * 0.08} style={{ background: "var(--white)", padding: "2rem 1.5rem", position: "relative" }}>
+            <FadeIn key={s.num} delay={0.1 + i * 0.08} style={{ background: "var(--white)", padding: "2rem 1.5rem" }}>
               <div style={{
                 width: 44, height: 44, borderRadius: "50%",
                 border: "1.5px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center",
