@@ -295,41 +295,120 @@ DB：Railway PostgreSQL（同プロジェクト内）
 未着手：
 [ ] STEP5：無料診断ツール（PageSpeed Insights API）
 [ ] STEP6：Lighthouse計測・docs/seo.mdにスコア記録
-[ ] STEP7：Vercelデプロイ
+[x] STEP7：Vercelデプロイ（weldex.jp → Vercel、カスタムドメイン設定済み）
 [ ] og-image.png 作成（Ryoma手動・1200×630・ネイビー×ゴールド）
 [ ] demo.weldex.jp セットアップ（Ryoma手動作業）
-# 2026-05-13 実装完了 / デプロイ未実施
+# 2026-05-13 実装完了 / 2026-05-18 Vercelデプロイ・weldex.jp カスタムドメイン設定完了
 詳細：docs/seo.md 参照
 ```
 
 ---
 
-## ▼ 現在のタスク（ここだけ実行する）
+## ▼ 現状サマリー・懸念点・今後のタスク（2026-05-18更新）
 
-### 現状サマリー（2026-05-18時点）
+---
+
+### ✅ 現在稼働中のもの
+
+| サービス | URL | 状態 |
+|---|---|---|
+| Weldex 公式サイト（Next.js） | https://weldex.jp | Vercel 本番稼働 |
+| 予約システム（FastAPI） | https://earnest-gentleness-production-f682.up.railway.app | Railway 本番稼働 |
+| 患者向け予約画面 | /booking/ | フルカレンダーUI・1年先まで予約可 |
+| 管理画面 | /admin/ | ダッシュボード・予約・顧客・メニュー・設定 |
+| LINE Webhook | /line/webhook | URLリダイレクト型・実機確認済み |
+| 営業自動化 | outreach/（ローカル実行） | 収集・送信・返信検知・ダッシュボード |
+
+---
+
+### ⚠️ 懸念点・既知のリスク
+
+**インフラ**
+- 障害検知ゼロ：Sentry（エラー通知）・UptimeRobot（死活監視）未設定。Railway がダウンしても気づけない
+- Railway 無料枠：スリープあり。初回アクセスに数秒遅延する可能性
+- Cloudflare Pages の旧サイトが残存（影響はないが整理推奨）
+
+**予約システム**
+- SendGrid 未設定時：確認メール・リマインドが送信されない（Railway 環境変数に SENDGRID_API_KEY 要設定）
+- XSS 対策：管理画面の innerHTML 部分が未レビュー（textContent 化が必要）
+- `.env` / `.env.local` 分離未実施：本番と開発の環境変数が混在するリスク
+
+**LINE**
+- 無料プランは月 1,000 通上限。Push Message（リマインド）が多いクライアントは有料移行必須
+- LINE Push 上限監視未実装：160 通アラート・200 通でメールフォールバックの仕組みがない
+- リッチメニュー未設定：画像制作・LINE Official Account Manager での設定が残っている
+
+**営業自動化**
+- Gmail API の refresh_token は長期未使用時に期限切れの可能性（再取得が必要になる場合あり）
+- 1日 50 件上限は複数プロセス起動時に超える可能性（現状シングルプロセスなので低リスク）
+
+**サイト（Next.js）**
+- og-image.png 未作成：OGP 画像がなく SNS シェア時に画像なし
+- demo.weldex.jp 未設定：クライアント向けデモ環境がない
+- Lighthouse スコア未計測：SEO・パフォーマンス数値を記録していない
+
+---
+
+### 📋 今後の実装タスク（優先度順）
+
+**すぐやる（工数：小）**
 ```
-✅ 稼働中：reservation/ → Railway（earnest-gentleness-production-f682.up.railway.app）
-✅ 稼働中：LINE Webhook → URLリダイレクト型（reservation/ に統合）
-✅ 稼働中：weldex.jp（Cloudflare Pages）
-🔧 実装済み・デプロイ未：site-next/（Next.js版サイト）
-⬜ 未着手：Sentry / UptimeRobot / demo.weldex.jp
+[ ] Sentry 導入
+    → reservation/requirements.txt に sentry-sdk[fastapi] 追加
+    → reservation/main.py に sentry_sdk.init() 追加
+    → Railway 環境変数に SENTRY_DSN 追加
+
+[ ] UptimeRobot 設定（Ryoma 手動・無料プラン）
+    → Railway サービスの死活監視・ダウン時メール通知
+
+[ ] og-image.png 作成（Ryoma 手動・1200×630・ネイビー×ゴールド）
+    → SNS シェア・OGP に必要
+
+[ ] Phase 6 STEP7 完了マーク（Vercel デプロイ済み）
+    → CLAUDE.md の [ ] STEP7 を [x] に更新
 ```
 
-### 【次の候補】優先度順
-
+**近いうちにやる（工数：小〜中）**
 ```
-① Phase 6 STEP7：Next.jsサイトをVercelにデプロイ（工数：小）
-   → site-next/ は実装完了。Vercelに繋ぐだけで本番公開できる。
+[ ] LINE Push 上限監視（#005）
+    → 月 160 通でアラート・200 通超でリマインドをメールにフォールバック
+    → 対象：reservation/db/database.py・reservation/services/reminder.py
 
-② Phase 6 STEP5：無料診断ツール（PageSpeed Insights API）（工数：中）
-   → 営業トークに使える差別化ツール。Vercelデプロイ後に着手推奨。
+[ ] XSS 対策：管理画面 innerHTML → textContent 化
+    → 対象：reservation/static/admin/index.html
 
-③ インフラ：Sentry + UptimeRobot 設定（工数：小）
-   → 本番障害検知。Railway稼働中なので早めに入れたい。
+[ ] SendGrid ドメイン認証（weldex.jp）
+    → Cloudflare DNS に CNAME レコード追加（docs/decisions.md D-1 参照）
 
-④ Phase 3 追加：#005 LINE Push上限監視（工数：小）
-   → 月200通超でメールにフォールバック。LINE無料プラン運用時に必要。
+[ ] Lighthouse 計測・docs/seo.md にスコア記録
 ```
+
+**余裕があればやる（工数：中）**
+```
+[ ] 無料診断ツール（PageSpeed Insights API）
+    → site-next/ に実装。営業差別化ツール
+
+[ ] demo.weldex.jp セットアップ
+    → Vercel プレビューURL で代替可能
+
+[ ] WEB予約 → LINE 紐づけフロー（#020）
+    → 予約完了メールに LINE 友だち追加 URL を添付
+```
+
+**クライアント獲得後にやる**
+```
+[ ] Railway 環境変数をクライアント別に設定（APP_NAME・APP_URL・ADMIN_EMAIL 等）
+[ ] 管理画面 URL・ADMIN_PASSWORD をクライアントに共有
+[ ] LINE チャネル（クライアント専用）を LINE Developers で作成
+[ ] Railway PostgreSQL の定期バックアップ確認
+[ ] リッチメニュー画像制作・LINE Official Account Manager で設定
+```
+
+---
+
+### 🔧 次に着手するタスク
+
+**Sentry 導入**（工数 30 分・Railway 本番の障害を即時検知）
 
 ---
 
