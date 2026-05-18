@@ -6,7 +6,7 @@ const LINKS = [
   { label: "料金", href: "/pricing" },
   { label: "お問い合わせ", href: "/contact" },
   { label: "プライバシーポリシー", href: "/privacy" },
-  { label: "特定商取引法", href: "/tokusho" },
+  { label: "特定商取引法に基づく表記", href: "/legal" },
 ];
 
 export default function Footer() {
