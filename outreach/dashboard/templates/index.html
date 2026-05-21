@@ -123,18 +123,74 @@
       .targets-left { flex: 0 0 50%; border-right: none; border-bottom: 2px solid var(--border); }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* 送信モードバッジ */
+    .mode-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.6rem; padding: 0.2rem 0.55rem;
+      border-radius: 2px; font-weight: 700; letter-spacing: 0.06em;
+      vertical-align: middle; margin-left: 0.75rem;
+    }
+    .mode-badge.manual { background: #d97706; color: #fff; }
+    .mode-badge.auto   { background: #16a34a; color: #fff; }
+    .mode-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    /* 送信プレビューカード */
+    .preview-card {
+      background: var(--white); border: 1px solid var(--border);
+      margin-bottom: 0.75rem; overflow: hidden;
+    }
+    .preview-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.6rem 1rem; background: var(--off);
+      border-bottom: 1px solid var(--border); gap: 0.75rem; flex-wrap: wrap;
+    }
+    .preview-card-left { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .preview-card-subject {
+      padding: 0.5rem 1rem; font-size: 0.78rem; font-weight: 500;
+      color: var(--navy); border-bottom: 1px solid var(--border);
+    }
+    .preview-card-body { padding: 0.65rem 1rem; }
+    .preview-body-text {
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      font-size: 0.75rem; color: var(--gray);
+      white-space: pre-wrap; line-height: 1.65; margin: 0;
+    }
+    .tmpl-badge {
+      display: inline-block; font-size: 0.62rem; padding: 0.12rem 0.5rem;
+      font-weight: 700; letter-spacing: 0.04em; border-radius: 2px;
+    }
+    .tmpl-A { background: #dbeafe; color: #1e40af; }
+    .tmpl-B { background: #fef3c7; color: #92400e; }
+    .tmpl-C { background: #ede9fe; color: #5b21b6; }
+    .preview-empty-state {
+      text-align: center; padding: 4rem 2rem;
+      color: var(--light); font-size: 0.82rem; line-height: 1.8;
+    }
+    .preview-info-bar {
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      padding: 0.65rem 1rem; font-size: 0.75rem; color: #1e40af;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Weldex Outreach Dashboard</h1>
+  <h1>
+    Weldex Outreach Dashboard
+    <span class="mode-badge manual" id="mode-badge">
+      <span class="mode-dot"></span>
+      手動送信モード
+    </span>
+  </h1>
   <span id="updated-at">---</span>
 </header>
 
 <div class="tabs">
   <div class="tab active" onclick="showTab('dashboard')">ダッシュボード</div>
   <div class="tab" onclick="showTab('targets')">ターゲットリスト</div>
+  <div class="tab" onclick="showTab('preview')">送信プレビュー <span id="preview-count-badge" style="font-size:0.62rem;background:#dbeafe;color:#1e40af;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
   <div class="tab" onclick="showTab('logs')">ログ</div>
 </div>
 
@@ -251,6 +307,21 @@
   </div>
 </div>
 
+<!-- ─── 送信プレビュー ─── -->
+<div class="panel" id="panel-preview">
+  <div class="toolbar" style="justify-content:space-between;">
+    <div style="font-size:0.75rem;color:var(--gray);">
+      収集・診断済みターゲットの<strong>予想送信パターン</strong>を表示します。実際の送信は
+      <code style="background:var(--off);padding:0.1rem 0.35rem;font-size:0.72rem;">python scheduler.py run</code>
+      を手動実行するまで行われません。
+    </div>
+    <button class="btn secondary" onclick="loadPreview()">更新</button>
+  </div>
+  <div class="panel-scroll" id="preview-cards">
+    <div class="preview-empty-state">「更新」を押すと予想メール一覧を表示します</div>
+  </div>
+</div>
+
 <!-- ─── ログ ─── -->
 <div class="panel" id="panel-logs">
   <div class="toolbar">
@@ -275,12 +346,13 @@
 <script>
   // ─── タブ ───
   function showTab(name) {
-    const names = ['dashboard', 'targets', 'logs'];
+    const names = ['dashboard', 'targets', 'preview', 'logs'];
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', names[i] === name));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
     if (name === 'targets') loadTargets(1);
     if (name === 'logs')    loadLogs();
+    if (name === 'preview') loadPreview();
   }
 
   // ─── 統計 ───
@@ -432,6 +504,68 @@
       ).join('');
       el.scrollTop = el.scrollHeight;
     } catch(e) {}
+  }
+
+  // ─── 送信プレビュー ───
+  const TMPL_LABEL = { A: 'パターンA：サイトなし', B: 'パターンB：古い/非対応', C: 'パターンC：電話のみ' };
+  const REASON_LABEL = { none: 'サイトなし', old: '古いサイト', no_mobile: 'スマホ非対応', phone_only: '電話のみ' };
+
+  async function loadPreview() {
+    const el = document.getElementById('preview-cards');
+    el.innerHTML = '<div class="preview-empty-state">読み込み中...</div>';
+    try {
+      const data = await fetch('/api/preview-queue?limit=50').then(r => r.json());
+      const badge = document.getElementById('preview-count-badge');
+      badge.textContent = data.total + '件';
+
+      if (!data.items.length) {
+        el.innerHTML = '<div class="preview-empty-state">送信候補がありません。<br>収集 → 診断 → フィルタリングを実行してください。</div>';
+        return;
+      }
+
+      el.innerHTML = `
+        <div class="preview-info-bar">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          送信候補 ${data.total}件 ／ 実際の送信は
+          <code style="background:#bfdbfe;padding:0.05rem 0.3rem;border-radius:2px;">python scheduler.py run</code>
+          を手動実行するまで行われません
+        </div>
+        ${data.items.map((item, i) => `
+          <div class="preview-card">
+            <div class="preview-card-header">
+              <div class="preview-card-left">
+                <span class="tmpl-badge tmpl-${item.template}">${TMPL_LABEL[item.template] || item.template}</span>
+                <span class="badge badge-${item.site_status}">${REASON_LABEL[item.site_status] || item.site_status}</span>
+                <strong style="font-size:0.85rem;">${esc(item.name)}</strong>
+                <span style="font-size:0.72rem;color:var(--gray);">${esc(item.industry || '')}</span>
+              </div>
+              <span style="font-size:0.72rem;color:var(--light);">${esc(item.email)}</span>
+            </div>
+            <div class="preview-card-subject">件名: ${esc(item.subject)}</div>
+            <div class="preview-card-body">
+              <pre class="preview-body-text" id="pbody-${i}" data-expanded="0">${esc(item.body.slice(0, 200))}${item.body.length > 200 ? '…' : ''}</pre>
+              ${item.body.length > 200 ? `<button class="btn secondary" style="font-size:0.7rem;padding:0.2rem 0.6rem;margin-top:0.5rem;" onclick='togglePreviewBody(${i}, ${JSON.stringify(item.body)})'>全文を見る</button>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      `;
+    } catch(e) {
+      el.innerHTML = '<div class="preview-empty-state" style="color:var(--red);">読み込みエラー。ダッシュボードが起動しているか確認してください。</div>';
+    }
+  }
+
+  function togglePreviewBody(i, fullBody) {
+    const pre = document.getElementById('pbody-' + i);
+    const btn = pre.nextElementSibling;
+    if (pre.dataset.expanded === '1') {
+      pre.textContent = fullBody.slice(0, 200) + '…';
+      pre.dataset.expanded = '0';
+      btn.textContent = '全文を見る';
+    } else {
+      pre.textContent = fullBody;
+      pre.dataset.expanded = '1';
+      btn.textContent = '折りたたむ';
+    }
   }
 
   function esc(s) {

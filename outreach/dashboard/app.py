@@ -211,6 +211,85 @@ async def proxy_site(url: str = Query(...)):
         return Response(content=error_html, media_type="text/html", status_code=200)
 
 
+@app.get("/api/preview-queue")
+def api_preview_queue(limit: int = Query(50)):
+    """
+    送信候補ターゲットの予想メールプレビューを返す。
+    実際の送信はしない。scheduler.py run を実行するまで送信されない。
+
+    Returns:
+        total・items（id/name/email/industry/site_status/template/subject/body）
+    """
+    from mailers.templates import get_template
+
+    TEMPLATE_BY_STATUS = {
+        "none":      "A",
+        "old":       "B",
+        "no_mobile": "B",
+        "phone_only":"C",
+    }
+
+    with get_conn() as conn:
+        # init_db() でマイグレーション済みのカラムのみ使用
+        init_db()
+        rows = conn.execute("""
+            SELECT id, name, email, industry, site_status
+            FROM targets
+            WHERE email IS NOT NULL AND email != ''
+              AND send_status = 'pending'
+              AND site_status IN ('none','old','no_mobile','phone_only')
+            ORDER BY
+              CASE site_status
+                WHEN 'phone_only' THEN 1
+                WHEN 'none'       THEN 2
+                WHEN 'no_mobile'  THEN 3
+                WHEN 'old'        THEN 4
+                ELSE 5
+              END, id ASC
+            LIMIT ?
+        """, (limit,)).fetchall()
+
+    items = []
+    for row in rows:
+        t    = dict(row)
+        tmpl = TEMPLATE_BY_STATUS.get(t["site_status"], "A")
+        try:
+            mail = get_template(
+                tmpl, t["name"], t["email"],
+                industry    = t.get("industry") or "事業者",
+                site_status = t.get("site_status", ""),
+            )
+            items.append({
+                "id":          t["id"],
+                "name":        t["name"],
+                "email":       t["email"],
+                "industry":    t["industry"],
+                "site_status": t["site_status"],
+                "template":    tmpl,
+                "subject":     mail["subject"],
+                "body":        mail["body"],
+            })
+        except Exception:
+            continue
+
+    return {"total": len(items), "items": items}
+
+
+@app.get("/api/send-mode")
+def api_send_mode():
+    """
+    現在の送信モードを返す。
+    auto=False の間は scheduler.py run を手動実行しないと送信されない。
+    """
+    from config import DAILY_SEND_LIMIT
+    return {
+        "mode":        "manual",
+        "auto":        False,
+        "daily_limit": DAILY_SEND_LIMIT,
+        "description": "送信は手動実行のみ（scheduler.py run）",
+    }
+
+
 @app.get("/unsubscribe", response_class=HTMLResponse)
 def unsubscribe(email: str = Query(None)):
     """
