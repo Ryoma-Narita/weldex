@@ -100,3 +100,14 @@ nav a { font-weight: 500; }
   from { transform: translateY(0px); }
   to   { transform: translateY(-18px); }
 }
+
+/* ── ハンバーガーメニュー アニメーション ── */
+@keyframes menuOpenAnim {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes menuItemIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.menu-nav-item:hover { color: #b8960c !important; }
