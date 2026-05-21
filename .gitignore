@@ -33,3 +33,4 @@ env/
 
 # Claude Code worktree settings
 .claude/
+.vercel
