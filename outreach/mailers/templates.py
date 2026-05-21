@@ -1,21 +1,42 @@
 """
 outreach/mailers/templates.py
-営業メール文面 A/B/C パターン
-共通：資料請求ベースのCTA・配信停止リンク必須（特定電子メール法）
+営業メール文面 A/B/C パターン（汎用・多業種対応版）
+
+選択ロジック:
+  A: サイトなし（site_status='none'）        → 集客機会損失を訴求
+  B: 古い・スマホ非対応（'old'/'no_mobile'）→ サイト改善を訴求
+  C: 電話のみ（'phone_only'）               → 24時間WEB予約を訴求
+
+法的要件（特定電子メール法）:
+  - 配信停止リンク必須
+  - 送信者氏名・住所・メールアドレス必須
 """
 import os
 
-UNSUBSCRIBE_URL = "https://weldex.jp/unsubscribe"  # Phase3で実装予定
+UNSUBSCRIBE_URL = "https://weldex.jp/unsubscribe"
+SENDER_ADDRESS  = os.environ.get("SENDER_ADDRESS", "※住所はお問い合わせにてご案内いたします")
+
+# 医療系業種キーワード（「患者様」と呼ぶ業種）
+_MEDICAL_KEYWORDS = {
+    "歯科", "歯医者", "クリニック", "病院", "医院", "診療",
+    "整骨院", "接骨院", "動物病院", "整形外科", "内科", "外科",
+    "皮膚科", "眼科", "耳鼻科", "産婦人科", "美容クリニック",
+}
 
 
-SENDER_ADDRESS = os.environ.get("SENDER_ADDRESS", "※住所は info@weldex.jp までお問い合わせください")
+def _customer_term(industry: str) -> str:
+    """業種に応じた顧客呼称を返す。医療系は「患者様」、それ以外は「お客様」。"""
+    for kw in _MEDICAL_KEYWORDS:
+        if kw in industry:
+            return "患者様"
+    return "お客様"
 
 
 def _footer(to_email: str) -> str:
     """
-    メール共通フッター（特定電子メール法第3条・必須事項）。
+    メール共通フッター（特定電子メール法第3条・必須記載事項）。
 
-    必須記載：送信者氏名・住所・メールアドレス・配信停止手段
+    必須: 送信者氏名・住所・送信者アドレス・配信停止手段
     """
     return f"""
 ──────────────────────────────
@@ -23,7 +44,7 @@ def _footer(to_email: str) -> str:
 配信停止をご希望の方はこちら：{UNSUBSCRIBE_URL}?email={to_email}
 
 Weldex（ウェルデックス）
-担当：成田 涼馬
+担当：成田 涼真
 住所：{SENDER_ADDRESS}
 メール：info@weldex.jp
 サイト：https://weldex.jp
@@ -31,115 +52,140 @@ Weldex（ウェルデックス）
 """
 
 
-def get_template_a(name: str, to_email: str) -> dict:
+def get_template_a(
+    name: str,
+    to_email: str,
+    industry: str = "事業者",
+    **kwargs,
+) -> dict:
     """
     パターンA：サイトなし → WEB集客の機会損失を訴求。
 
     Args:
-        name:     店舗名
+        name:     店舗・会社名
         to_email: 送信先メールアドレス
+        industry: 業種名（例：歯科医院、整骨院、不動産会社）
 
     Returns:
         subject・body を含むdict
     """
-    subject = f"【{name}様へ】WEBサイト無料診断のご案内"
+    customer = _customer_term(industry)
+    subject  = f"【{name}様へ】WEBサイトでの集客強化のご提案"
     body = f"""{name} ご担当者様
 
-はじめてご連絡いたします。
-WEBサイト制作・LINE予約システムを専門とするWeldexの成田と申します。
+突然のご連絡失礼いたします。
+WEBサイト制作・予約システムを提供するWeldexの成田と申します。
 
-現在、{name}様のWEBサイトが確認できていない状況です。
+{industry}をお探しの{customer}の多くは、まずインターネットで検索されます。
+現在、{name}様のWEBサイトが確認できない状況のため、
+その段階で競合他社へ{customer}が流れてしまっている可能性があります。
 
-WEBサイトがない場合、下記のような機会損失が発生しています。
+弊社ではAIを活用することで、大手制作会社の3分の1以下のコストで
+WEBサイト制作・WEB予約システムを一社でご提供しています。
 
-・Googleで検索した新規患者様が競合に流れている
-・24時間の問い合わせ・予約受付ができていない
-・口コミサイトのみに頼った集客になっている
-
-弊社では医療・歯科専門のWEBサイト制作を、
-大手制作会社の3分の1以下のコストで提供しています。
-
-まずは無料診断レポートをお送りすることも可能です。
-ご興味がございましたら、このメールにご返信ください。
+まずは無料で診断レポートをお送りすることも可能です。
+ご興味があれば、このメールにご返信ください。
 
 お忙しいところ恐れ入りますが、ご検討いただけますと幸いです。
 {_footer(to_email)}"""
     return {"subject": subject, "body": body}
 
 
-def get_template_b(name: str, to_email: str, reason: str = "スマホ非対応") -> dict:
+def get_template_b(
+    name: str,
+    to_email: str,
+    industry: str = "事業者",
+    reason: str   = "スマートフォン非対応",
+    **kwargs,
+) -> dict:
     """
-    パターンB：古い・スマホ非対応 → スマホ流入7割・SEO低下を訴求。
+    パターンB：古い・スマホ非対応 → サイト改善・SEO低下リスクを訴求。
 
     Args:
-        name:     店舗名
+        name:     店舗・会社名
         to_email: 送信先メールアドレス
-        reason:   具体的な問題点（"スマホ非対応" or "サイトの更新が必要"）
+        industry: 業種名
+        reason:   具体的な問題点（site_checkerの結果から生成）
 
     Returns:
         subject・body を含むdict
     """
-    subject = f"【{name}様へ】サイト改善で集患力アップのご提案"
+    customer = _customer_term(industry)
+    subject  = f"【{name}様へ】サイト改善で集客力アップのご提案"
     body = f"""{name} ご担当者様
 
-はじめてご連絡いたします。
-WEBサイト制作・LINE予約システムを専門とするWeldexの成田と申します。
+突然のご連絡失礼いたします。
+WEBサイト制作・予約システムを提供するWeldexの成田と申します。
 
 {name}様のWEBサイトを拝見したところ、
 「{reason}」の状態であることを確認しました。
 
-現在、歯科・クリニックへのアクセスの約70%はスマートフォンからです。
-スマホ非対応のサイトはGoogleの検索順位が下がり、
-新規患者様が競合クリニックに流れてしまう可能性があります。
+現在、{industry}を探している{customer}のアクセスの大半はスマートフォンからです。
+スマホ非対応・更新が古いサイトは検索順位が下がりやすく、
+新規の{customer}が競合へ流れやすい状況になっています。
 
-弊社では既存サイトのリニューアルも対応しており、
-スマホ対応・SEO改善・予約システム導入を一括でご提供しています。
+弊社ではAIを活用し、大手の3分の1以下のコストで
+サイトリニューアル・スマホ対応・WEB予約システム導入を一括でご提供しています。
 
-費用・事例について、まず資料をお送りすることも可能です。
-よろしければこのメールにご返信ください。
+費用・導入事例について、資料をお送りすることも可能です。
+ご興味があれば、このメールにご返信ください。
 
 お忙しいところ恐れ入りますが、ご検討いただけますと幸いです。
 {_footer(to_email)}"""
     return {"subject": subject, "body": body}
 
 
-def get_template_c(name: str, to_email: str) -> dict:
+def get_template_c(
+    name: str,
+    to_email: str,
+    industry: str = "事業者",
+    **kwargs,
+) -> dict:
     """
-    パターンC：電話予約のみ → 時間外の取りこぼしを訴求。
+    パターンC：電話のみ → 時間外の機会損失・24時間受付を訴求。
 
     Args:
-        name:     店舗名
+        name:     店舗・会社名
         to_email: 送信先メールアドレス
+        industry: 業種名
 
     Returns:
         subject・body を含むdict
     """
-    subject = f"【{name}様へ】LINE予約導入で時間外の予約取りこぼしを防ぐご提案"
+    customer = _customer_term(industry)
+    subject  = f"【{name}様へ】24時間WEB予約・問い合わせ導入のご提案"
     body = f"""{name} ご担当者様
 
-はじめてご連絡いたします。
-WEBサイト制作・LINE予約システムを専門とするWeldexの成田と申します。
+突然のご連絡失礼いたします。
+WEBサイト制作・予約システムを提供するWeldexの成田と申します。
 
-{name}様では現在、お電話での予約受付をされているかと思います。
+{name}様では現在、お電話での予約・お問い合わせ受付をされているかと存じます。
 
-診察時間外・昼休み中に予約しようとした患者様が、
-電話がつながらず他のクリニックに行ってしまう——
-そのような取りこぼしは、意外と多く発生しています。
+営業時間外や昼休み中に連絡しようとされた{customer}が
+電話につながらず、他社へ流れてしまう——
+そのような機会損失は、想像以上に多く発生しています。
 
-弊社のLINE予約システムを導入いただくと、
+弊社の24時間対応WEB予約・問い合わせシステムを導入いただくと、
 
-・24時間いつでもLINEから予約受付
-・自動リマインドで無断キャンセルを削減
-・既存のLINE公式アカウントにそのまま追加可能
+・時間を問わずWEBから予約・問い合わせを受け付け
+・自動リマインドでキャンセルを削減
+・既存サイトへの追加も対応可能
 
-初期費用80,000円〜、月額費用なしで導入いただけます。
+AIを活用することで、大手の3分の1以下のコストで導入いただいています。
 
-まず資料をお送りすることも可能ですので、
-ご興味がございましたら返信いただけますと幸いです。
+まずは資料をお送りすることも可能ですので、
+ご興味があれば、このメールにご返信ください。
 
+お忙しいところ恐れ入りますが、ご検討いただけますと幸いです。
 {_footer(to_email)}"""
     return {"subject": subject, "body": body}
 
+
+# 診断結果 → テンプレートの reason 文言マップ
+REASON_MAP: dict[str, str] = {
+    "old":       "サイトの情報が古い可能性がある",
+    "no_mobile": "スマートフォン非対応",
+}
 
 # テンプレート選択マップ
 TEMPLATE_MAP = {
@@ -149,14 +195,23 @@ TEMPLATE_MAP = {
 }
 
 
-def get_template(template_key: str, name: str, to_email: str, **kwargs) -> dict:
+def get_template(
+    template_key: str,
+    name: str,
+    to_email: str,
+    industry: str   = "事業者",
+    site_status: str = "",
+    **kwargs,
+) -> dict:
     """
-    テンプレートキー（A/B/C）に対応するメール内容を返す。
+    テンプレートキー（A/B/C）と診断情報からメール内容を返す。
 
     Args:
         template_key: "A" / "B" / "C"
-        name:         店舗名
+        name:         店舗・会社名
         to_email:     送信先メールアドレス
+        industry:     業種名（例：歯科医院）
+        site_status:  診断ステータス（reason生成に使用）
 
     Returns:
         subject・body を含むdict
@@ -164,4 +219,6 @@ def get_template(template_key: str, name: str, to_email: str, **kwargs) -> dict:
     fn = TEMPLATE_MAP.get(template_key.upper())
     if not fn:
         raise ValueError(f"不明なテンプレートキー: {template_key}")
-    return fn(name, to_email, **kwargs)
+
+    reason = REASON_MAP.get(site_status, "改善の余地がある")
+    return fn(name, to_email, industry=industry, reason=reason, **kwargs)

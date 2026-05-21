@@ -26,7 +26,9 @@ COLLECT_INTERVAL_SEC = 1.5     # API呼び出し間隔（秒）
 REQUEST_TIMEOUT_SEC  = 8       # サイト診断タイムアウト（秒）
 
 # メール送信設定
-DAILY_SEND_LIMIT     = 50      # 特定電子メール法：1日上限
+# ウォームアップ推奨：1〜2週目=10件 → 3〜4週目=20件 → 1ヶ月後=30〜50件
+# SendGridレピュテーション安定後に引き上げること
+DAILY_SEND_LIMIT     = 20      # 初期ウォームアップ値（法的上限は50件）
 
 # DB
 DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'outreach.db')

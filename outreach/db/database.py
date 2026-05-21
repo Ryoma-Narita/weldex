@@ -223,7 +223,9 @@ def get_queue_items(limit: int = 50) -> list:
     with get_conn() as conn:
         rows = conn.execute("""
             SELECT q.id as queue_id, q.template, q.priority,
-                   t.id as target_id, t.name, t.email, t.site_status, t.address
+                   t.id as target_id, t.name, t.email,
+                   t.site_status, t.industry, t.address,
+                   t.phone_only, t.has_line, t.has_online_booking
             FROM send_queue q
             JOIN targets t ON q.target_id = t.id
             WHERE q.status = 'waiting'

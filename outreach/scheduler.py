@@ -77,7 +77,11 @@ def cmd_run() -> None:
 
         # テンプレート生成
         try:
-            mail = get_template(template, name, email)
+            mail = get_template(
+                template, name, email,
+                industry    = item.get("industry", "事業者"),
+                site_status = item.get("site_status", ""),
+            )
         except Exception as e:
             mark_queue_failed(queue_id, target_id, email, template, f"テンプレートエラー: {e}")
             failed += 1
