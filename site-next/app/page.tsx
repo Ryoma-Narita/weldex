@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
 import Pillars from "@/components/Pillars";
-import Cases from "@/components/Cases";
 import Process from "@/components/Process";
 import CTABand from "@/components/CTABand";
 
@@ -17,7 +16,6 @@ export default function Home() {
     <main>
       <Hero />
       <Pillars />
-      <Cases />
       <Process />
       <CTABand />
     </main>
