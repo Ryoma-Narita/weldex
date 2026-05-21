@@ -24,8 +24,8 @@ const demos: Demo[] = [
     category: "お客様管理画面",
     title: "予約管理ダッシュボード デモ",
     desc: "お客様のCRM管理業務をまとめて構築します。お客様のご予算に応じた内容のシステム構築をいたしますので、お気軽にご相談ください。",
-    demoUrl: "/dashboard",
-    iframeUrl: "/dashboard",
+    demoUrl: "/demo-dashboard",
+    iframeUrl: "/demo-dashboard",
     tag: "DEMO",
   },
   {
