@@ -16,8 +16,8 @@ const demos: Demo[] = [
     category: "WEB予約システム",
     title: "予約システム デモ",
     desc: "日付・時間・メニュー選択から確認画面まで、患者・顧客の目線で設計した予約フォームです。実際に操作してお試しください。",
-    demoUrl: "https://weldex.jp/booking/",
-    iframeUrl: "https://weldex.jp/booking/",
+    demoUrl: "/booking",
+    iframeUrl: "/booking",
     tag: "DEMO",
   },
   {
