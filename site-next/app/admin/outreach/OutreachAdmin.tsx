@@ -85,8 +85,12 @@ export default function OutreachAdmin() {
   const [history, setHistory] = useState<HistoryRecord[]>([])
   const [hFilter, setHFilter] = useState({ industry: '', period: '', replied: '' })
 
+  // § mounted guard — DnD / recharts はブラウザのみ
+  const [mounted, setMounted] = useState(false)
+
   // § Load from localStorage
   useEffect(() => {
+    setMounted(true)
     try {
       const ind = localStorage.getItem(LS_INDUSTRIES)
       if (ind) setIndustries(JSON.parse(ind))
@@ -276,51 +280,55 @@ export default function OutreachAdmin() {
           <p style={{ fontSize: '0.78rem', color: 'var(--gray)', marginBottom: '1rem' }}>
             ドラッグで優先順位を変更。有効な業種のみ収集・送信対象になります。
           </p>
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="industries">
-              {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}>
-                  {industries.map((ind, index) => (
-                    <Draggable key={ind.id} draggableId={ind.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.6rem 0.75rem', marginBottom: 4,
-                            background: snapshot.isDragging ? '#f0f4ff' : ind.enabled ? '#fff' : '#f8f9fc',
-                            border: '1px solid var(--border)', borderRadius: 2,
-                            opacity: ind.enabled ? 1 : 0.5,
-                            ...provided.draggableProps.style,
-                          }}
-                        >
-                          <span
-                            {...provided.dragHandleProps}
-                            style={{ cursor: 'grab', color: 'var(--light)', fontSize: '1rem', lineHeight: 1 }}
+          {mounted ? (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="industries">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {industries.map((ind, index) => (
+                      <Draggable key={ind.id} draggableId={ind.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '0.75rem',
+                              padding: '0.6rem 0.75rem', marginBottom: 4,
+                              background: snapshot.isDragging ? '#f0f4ff' : ind.enabled ? '#fff' : '#f8f9fc',
+                              border: '1px solid var(--border)', borderRadius: 2,
+                              opacity: ind.enabled ? 1 : 0.5,
+                              ...provided.draggableProps.style,
+                            }}
                           >
-                            ⠿
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--light)', minWidth: 20, textAlign: 'right' }}>
-                            {index + 1}
-                          </span>
-                          <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--navy)' }}>
-                            {ind.label}
-                          </span>
-                          <button
-                            style={toggle(ind.enabled)}
-                            onClick={() => toggleIndustry(ind.id)}
-                            aria-label={ind.enabled ? '無効にする' : '有効にする'}
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                            <span
+                              {...provided.dragHandleProps}
+                              style={{ cursor: 'grab', color: 'var(--light)', fontSize: '1rem', lineHeight: 1 }}
+                            >
+                              ⠿
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--light)', minWidth: 20, textAlign: 'right' }}>
+                              {index + 1}
+                            </span>
+                            <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--navy)' }}>
+                              {ind.label}
+                            </span>
+                            <button
+                              style={toggle(ind.enabled)}
+                              onClick={() => toggleIndustry(ind.id)}
+                              aria-label={ind.enabled ? '無効にする' : '有効にする'}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          ) : (
+            <div style={{ padding: '1rem', color: 'var(--light)', fontSize: '0.875rem' }}>読み込み中…</div>
+          )}
         </div>
 
         {/* ②  HP フィルター */}
@@ -591,7 +599,7 @@ export default function OutreachAdmin() {
             ))}
           </div>
 
-          {industryChartData.length > 0 && (
+          {mounted && industryChartData.length > 0 && (
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ ...label, marginBottom: '0.5rem' }}>業種別返信率</div>
               <ResponsiveContainer width="100%" height={220}>
