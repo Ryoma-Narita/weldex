@@ -64,6 +64,15 @@ export default function OutreachAdmin() {
   // § HP Filter
   const [hpFilter, setHpFilter] = useState<'1' | '12' | '123' | 'all'>('1')
 
+  // § Detail filters
+  const [detailFilter, setDetailFilter] = useState({
+    noLine:          false,
+    phoneOnly:       false,
+    noOnlineBooking: false,
+    noSSL:           false,
+    noContactForm:   false,
+  })
+
   // § Area
   const [prefecture, setPrefecture] = useState('千葉県')
   const [selectedCities, setSelectedCities] = useState<string[]>(['市原市'])
@@ -118,6 +127,14 @@ export default function OutreachAdmin() {
     setIndustries((prev) => prev.map((i) => i.id === id ? { ...i, enabled: !i.enabled } : i))
   }
 
+  const setIndustryLimit = (id: string, limit: number) => {
+    setIndustries((prev) => prev.map((i) => i.id === id ? { ...i, limitPerArea: Math.max(1, Math.min(50, limit)) } : i))
+  }
+
+  const toggleDetail = (key: keyof typeof detailFilter) => {
+    setDetailFilter((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
   // ─── Area ─────────────────────────────────────────────────────────────────
 
   const cities = PREFECTURES[prefecture] ?? []
@@ -146,16 +163,24 @@ export default function OutreachAdmin() {
 
       // Mock result for UI demonstration
       const enabledInds = industries.filter((i) => i.enabled)
+      const mockBase: { hpLevel: 0|1|2|3; hasLine: boolean; hasOnlineBooking: boolean; phoneOnly: boolean; hasSSL: boolean; hasContactForm: boolean }[] = [
+        { hpLevel: 1, hasLine: false, hasOnlineBooking: false, phoneOnly: true,  hasSSL: false, hasContactForm: false },
+        { hpLevel: 2, hasLine: false, hasOnlineBooking: false, phoneOnly: false, hasSSL: true,  hasContactForm: false },
+        { hpLevel: 0, hasLine: true,  hasOnlineBooking: true,  phoneOnly: false, hasSSL: true,  hasContactForm: true  },
+        { hpLevel: 1, hasLine: false, hasOnlineBooking: false, phoneOnly: true,  hasSSL: false, hasContactForm: false },
+        { hpLevel: 3, hasLine: false, hasOnlineBooking: false, phoneOnly: false, hasSSL: true,  hasContactForm: true  },
+        { hpLevel: 2, hasLine: false, hasOnlineBooking: false, phoneOnly: false, hasSSL: false, hasContactForm: false },
+      ]
       const mock: Company[] = enabledInds.slice(0, 6).map((ind, i) => ({
         id: uid(),
         name: `サンプル企業${i + 1}`,
         industryId: ind.id,
         industryLabel: ind.label,
-        website: i % 3 === 0 ? undefined : `https://example${i}.co.jp`,
+        website: mockBase[i].hpLevel === 1 ? undefined : `https://example${i}.co.jp`,
         email: `info@example${i}.co.jp`,
         address: `${prefecture}${selectedCities[0] ?? ''}`,
-        hpLevel: ([1, 2, 0, 1, 3, 2][i] as 0 | 1 | 2 | 3),
-        score: 14 - i,
+        score: 14 - i * 2,
+        ...mockBase[i],
       }))
       setCompanies(mock)
     } finally {
@@ -174,6 +199,11 @@ export default function OutreachAdmin() {
         if (hpFilter === '123') return c.hpLevel <= 3
         return true
       })
+      .filter((c) => !detailFilter.noLine          || c.hasLine === false)
+      .filter((c) => !detailFilter.phoneOnly        || c.phoneOnly === true)
+      .filter((c) => !detailFilter.noOnlineBooking  || c.hasOnlineBooking === false)
+      .filter((c) => !detailFilter.noSSL            || c.hasSSL === false)
+      .filter((c) => !detailFilter.noContactForm    || c.hasContactForm === false)
       .slice(0, sendCount)
     setModalCompanies(filtered.map((c) => ({ ...c, excluded: false })))
     setShowModal(true)
@@ -312,6 +342,17 @@ export default function OutreachAdmin() {
                             <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--navy)' }}>
                               {ind.label}
                             </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ fontSize: '0.68rem', color: 'var(--light)', whiteSpace: 'nowrap' }}>上限</span>
+                              <input
+                                type="number" min={1} max={50}
+                                value={ind.limitPerArea}
+                                onChange={(e) => setIndustryLimit(ind.id, parseInt(e.target.value) || 1)}
+                                style={{ ...input, width: 48, padding: '0.2rem 0.4rem', fontSize: '0.78rem', textAlign: 'center' }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <span style={{ fontSize: '0.68rem', color: 'var(--light)' }}>件</span>
+                            </div>
                             <button
                               style={toggle(ind.enabled)}
                               onClick={() => toggleIndustry(ind.id)}
@@ -345,6 +386,47 @@ export default function OutreachAdmin() {
               {lbl}
             </label>
           ))}
+        </div>
+
+        {/* ②-b  詳細条件フィルター */}
+        <div style={card}>
+          <div style={sectionTitle}>②-b 詳細条件フィルター</div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--gray)', marginBottom: '1rem' }}>
+            チェックした条件に該当する企業のみを送信対象にします（複数選択可・AND条件）。
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem' }}>
+            {([
+              ['noLine',          '📵 LINE公式連携なし',          'LINE公式アカウントをサイトに掲載していない'],
+              ['phoneOnly',       '📞 予約が電話のみ',            'オンライン予約・フォームが一切ない'],
+              ['noOnlineBooking', '🗓 オンライン予約なし',        '予約フォーム・外部予約リンクがない'],
+              ['noContactForm',   '📝 お問い合わせフォームなし',  'フォームページが存在しない'],
+              ['noSSL',           '🔓 HTTPS非対応（HTTP）',       'SSL証明書なし・古いサイト'],
+            ] as const).map(([key, labelText, desc]) => (
+              <label key={key} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
+                padding: '0.75rem', borderRadius: 4, cursor: 'pointer',
+                border: `1px solid ${detailFilter[key] ? 'var(--gold)' : 'var(--border)'}`,
+                background: detailFilter[key] ? '#fffbf0' : '#fff',
+                transition: 'all 0.15s',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={detailFilter[key]}
+                  onChange={() => toggleDetail(key)}
+                  style={{ marginTop: 2, flexShrink: 0 }}
+                />
+                <div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--navy)' }}>{labelText}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--light)', marginTop: 2 }}>{desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+          {Object.values(detailFilter).some(Boolean) && (
+            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500 }}>
+              ✓ {Object.values(detailFilter).filter(Boolean).length}件の条件が有効です
+            </div>
+          )}
         </div>
 
         {/* ③  エリア設定 */}
@@ -476,8 +558,8 @@ export default function OutreachAdmin() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                 <thead>
                   <tr style={{ background: 'var(--off)', borderBottom: '1px solid var(--border)' }}>
-                    {['スコア', '企業名', '業種', 'HP状況', 'メール', '除外'].map((h) => (
-                      <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 500, color: 'var(--gray)' }}>{h}</th>
+                    {['スコア', '企業名', '業種', 'HP状況', 'LINE', '予約', 'SSL', 'メール', '除外'].map((h) => (
+                      <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 500, color: 'var(--gray)', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -488,6 +570,15 @@ export default function OutreachAdmin() {
                       <td style={{ padding: '0.5rem 0.75rem' }}>{c.name}</td>
                       <td style={{ padding: '0.5rem 0.75rem', color: 'var(--gray)' }}>{c.industryLabel}</td>
                       <td style={{ padding: '0.5rem 0.75rem' }}>{hpLabel(c.hpLevel)}</td>
+                      <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
+                        {c.hasLine == null ? '—' : c.hasLine ? '✅' : '❌'}
+                      </td>
+                      <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
+                        {c.hasOnlineBooking == null ? '—' : c.hasOnlineBooking ? '✅' : c.phoneOnly ? '📞' : '❌'}
+                      </td>
+                      <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
+                        {c.hasSSL == null ? '—' : c.hasSSL ? '✅' : '🔓'}
+                      </td>
                       <td style={{ padding: '0.5rem 0.75rem', color: 'var(--gray)' }}>{c.email ?? '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem' }}>
                         <input type="checkbox" checked={!!c.excluded}

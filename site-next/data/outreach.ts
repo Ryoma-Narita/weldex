@@ -18,6 +18,7 @@ export type IndustryConfig = {
   id: string
   label: string
   enabled: boolean
+  limitPerArea: number  // エリアごとの収集上限（デフォルト10）
 }
 
 export type Company = {
@@ -32,6 +33,12 @@ export type Company = {
   hpReason?: string
   score: number
   excluded?: boolean
+  // 詳細サイト診断フラグ
+  hasLine?: boolean           // LINE公式アカウント連携あり
+  hasOnlineBooking?: boolean  // オンライン予約あり
+  phoneOnly?: boolean         // 電話番号のみ（フォームなし・予約なし）
+  hasSSL?: boolean            // HTTPS対応
+  hasContactForm?: boolean    // お問い合わせフォームあり
 }
 
 export type HistoryRecord = {
@@ -47,20 +54,20 @@ export type HistoryRecord = {
 }
 
 export const DEFAULT_INDUSTRIES: IndustryConfig[] = [
-  { id: 'physiotherapist',    label: '整骨院・接骨院',       enabled: true  },
-  { id: 'beauty_salon',       label: 'エステ・美容サロン',   enabled: true  },
-  { id: 'real_estate_agency', label: '不動産会社',           enabled: true  },
-  { id: 'moving_company',     label: '引越し業者',           enabled: true  },
-  { id: 'dentist',            label: '歯科クリニック',       enabled: true  },
-  { id: 'doctor',             label: '整形外科・内科',       enabled: true  },
-  { id: 'beauty_clinic',      label: '美容クリニック',       enabled: true  },
-  { id: 'general_contractor', label: '建設・工務店',         enabled: true  },
-  { id: 'veterinary_care',    label: '動物病院',             enabled: true  },
-  { id: 'school',             label: '学習塾',               enabled: true  },
-  { id: 'lawyer',             label: '士業（弁護士・税理士）', enabled: true },
-  { id: 'child_care',         label: '保育園・幼稚園',       enabled: false },
-  { id: 'nail_salon',         label: 'ネイルサロン',         enabled: false },
-  { id: 'home_goods_store',   label: 'リフォーム会社',       enabled: false },
+  { id: 'physiotherapist',    label: '整骨院・接骨院',         enabled: true,  limitPerArea: 10 },
+  { id: 'beauty_salon',       label: 'エステ・美容サロン',     enabled: true,  limitPerArea: 10 },
+  { id: 'real_estate_agency', label: '不動産会社',             enabled: true,  limitPerArea: 10 },
+  { id: 'moving_company',     label: '引越し業者',             enabled: true,  limitPerArea: 10 },
+  { id: 'dentist',            label: '歯科クリニック',         enabled: true,  limitPerArea: 10 },
+  { id: 'doctor',             label: '整形外科・内科',         enabled: true,  limitPerArea: 10 },
+  { id: 'beauty_clinic',      label: '美容クリニック',         enabled: true,  limitPerArea: 10 },
+  { id: 'general_contractor', label: '建設・工務店',           enabled: true,  limitPerArea: 10 },
+  { id: 'veterinary_care',    label: '動物病院',               enabled: true,  limitPerArea: 10 },
+  { id: 'school',             label: '学習塾',                 enabled: true,  limitPerArea: 10 },
+  { id: 'lawyer',             label: '士業（弁護士・税理士）', enabled: true,  limitPerArea: 10 },
+  { id: 'child_care',         label: '保育園・幼稚園',         enabled: false, limitPerArea: 10 },
+  { id: 'nail_salon',         label: 'ネイルサロン',           enabled: false, limitPerArea: 10 },
+  { id: 'home_goods_store',   label: 'リフォーム会社',         enabled: false, limitPerArea: 10 },
 ]
 
 const SIGNATURE = `
