@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
+import BrandSection from "@/components/BrandSection";
 import Pillars from "@/components/Pillars";
 import Process from "@/components/Process";
 import CTABand from "@/components/CTABand";
@@ -15,6 +16,7 @@ export default function Home() {
   return (
     <main>
       <Hero />
+      <BrandSection />
       <Pillars />
       <Process />
       <CTABand />

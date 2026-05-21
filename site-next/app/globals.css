@@ -79,3 +79,9 @@ h1, h2, h3 {
   .resp-2col { grid-template-columns: 1fr !important; gap: 2rem !important; }
   .resp-hide { display: none !important; }
 }
+
+/* ── ブランドセクション フロートアニメーション ── */
+@keyframes float-brand {
+  from { transform: translateY(0px); }
+  to   { transform: translateY(-18px); }
+}
