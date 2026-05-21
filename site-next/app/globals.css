@@ -144,3 +144,91 @@ nav a { font-weight: 500; }
   .footer-nav { gap: 32px; }
   .footer-bottom { flex-direction: column; align-items: flex-start; }
 }
+
+/* ─── Loading Screen ─── */
+.loader-eyebrow {
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  color: rgba(201, 168, 76, 0.55);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  font-family: 'DM Sans', sans-serif;
+  animation: loaderFadeUp 0.5s ease 0.1s both;
+}
+
+.loader-logo-base,
+.loader-logo-reveal {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.loader-logo-base {
+  color: rgba(255, 255, 255, 0.1);
+}
+
+.loader-logo-reveal {
+  color: rgba(255, 255, 255, 0.95);
+  animation: loaderRevealLR 1.55s cubic-bezier(0.25, 0, 0.1, 1) 0.4s both;
+}
+
+.loader-bar {
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.65));
+  animation: loaderBarGrow 2.3s ease-out 0.2s both;
+}
+
+@keyframes loaderRevealLR {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0%   0 0); }
+}
+
+@keyframes loaderBarGrow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+@keyframes loaderFadeUp {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── About Page ─── */
+@keyframes slowSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes aboutHeroIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.about-ring-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.about-ring-outer {
+  position: absolute;
+  width: min(680px, 90vw);
+  height: min(680px, 90vw);
+  border-radius: 50%;
+  border: 1px solid rgba(201, 168, 76, 0.09);
+  animation: slowSpin 42s linear infinite;
+}
+
+.about-ring-inner {
+  position: absolute;
+  width: min(430px, 60vw);
+  height: min(430px, 60vw);
+  border-radius: 50%;
+  border: 1px dashed rgba(201, 168, 76, 0.06);
+  animation: slowSpin 26s linear infinite reverse;
+}
