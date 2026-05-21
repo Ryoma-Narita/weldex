@@ -1,12 +1,16 @@
 """
 outreach/analyzers/site_checker.py
-サイト診断：モバイル対応・Copyright年・予約システム有無などを判定する
+サイト診断：モバイル対応・Copyright年・予約システム・LINE・フォーム有無などを判定する
 
-改善点：
-- リトライ（最大2回）でタイムアウトによる取りこぼしを削減
-- contactページ巡回でメール抽出率を改善
-- SSL証明書エラーを "old" として営業対象に含める
-- Copyright年未検出の場合はスキップ（判定しない）
+返却フィールド:
+    status          : "none" / "old" / "no_mobile" / "phone_only" / "ok" / "error"
+    email           : 抽出したメールアドレス（なければNone）
+    detail          : 診断詳細メッセージ
+    has_line        : LINE公式連携あり（bool | None）
+    has_online_booking: オンライン予約あり（bool | None）
+    phone_only      : 電話のみ（bool）
+    has_ssl         : HTTPS対応（bool）
+    has_contact_form: お問い合わせフォームあり（bool | None）
 """
 import re
 import sys
@@ -25,6 +29,20 @@ OLD_YEAR_THRESHOLD = datetime.now().year - 5
 BOOKING_KEYWORDS = [
     '予約', 'ご予約', 'web予約', 'ネット予約', 'オンライン予約',
     'online', 'booking', 'reserve', 'appointment',
+    'hotpepper', 'airリザーブ', 'coubic', 'mindbody', 'reserva',
+    'じゃらん', '楽天ビューティー', 'ビューティーナビ',
+]
+
+LINE_KEYWORDS = [
+    'line.me/ti/p/', 'line.me/r/', 'lin.ee/',
+    'line-scdn.net', 'line_url', 'line公式',
+    'line@', 'lineで予約',
+]
+
+FORM_KEYWORDS = [
+    '<form', 'お問い合わせフォーム', 'contact form',
+    'formspree', 'googleフォーム', 'typeform',
+    'お問い合わせはこちら', '問い合わせフォーム',
 ]
 
 HEADERS = {
@@ -80,7 +98,6 @@ def _fetch_with_retry(url: str, retries: int = 2) -> requests.Response | None:
                 verify=True
             )
         except requests.exceptions.SSLError:
-            # SSL証明書エラーは verify=False で再試行
             try:
                 return requests.get(
                     url, timeout=REQUEST_TIMEOUT_SEC,
@@ -110,20 +127,75 @@ def _detect_copyright_year(html: str) -> int | None:
     return max(years) if years else None
 
 
+def _detect_line(html_lower: str) -> bool:
+    """LINE公式アカウントへのリンクがあるか確認する。"""
+    return any(kw in html_lower for kw in LINE_KEYWORDS)
+
+
+def _detect_online_booking(html_lower: str) -> bool:
+    """オンライン予約システムへの言及があるか確認する。"""
+    return any(kw in html_lower for kw in BOOKING_KEYWORDS)
+
+
+def _detect_contact_form(html: str, url: str) -> bool:
+    """
+    お問い合わせフォームがあるか確認する。
+    トップページになければ /contact 等を巡回する。
+    """
+    html_lower = html.lower()
+    if any(kw.lower() in html_lower for kw in FORM_KEYWORDS):
+        return True
+
+    # contactページも確認
+    if not url:
+        return False
+    base = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+    for path in ['/contact', '/inquiry', '/form', '/contact.html', '/inquiry.html']:
+        try:
+            res = requests.get(
+                urljoin(base, path), timeout=5,
+                headers=HEADERS, allow_redirects=True
+            )
+            if res.status_code == 200:
+                contact_html = _decode_html(res.content).lower()
+                if '<form' in contact_html or 'formspree' in contact_html:
+                    return True
+        except Exception:
+            continue
+    return False
+
+
 def check_site(url: str) -> dict:
     """
     URLのサイトを診断し、結果dictを返す。
 
     Returns dict:
-        status: "none" / "old" / "no_mobile" / "phone_only" / "ok" / "error"
-        email:  抽出したメールアドレス（なければNone）
-        detail: 診断詳細メッセージ
+        status          : "none" / "old" / "no_mobile" / "phone_only" / "ok" / "error"
+        email           : 抽出したメールアドレス（なければNone）
+        detail          : 診断詳細メッセージ
+        has_line        : LINE公式連携あり（bool | None）
+        has_online_booking: オンライン予約あり（bool | None）
+        phone_only      : 電話のみ（bool）
+        has_ssl         : HTTPS対応（bool）
+        has_contact_form: お問い合わせフォームあり（bool | None）
     """
-    result = {"status": "none", "email": None, "detail": ""}
+    result: dict = {
+        "status": "none",
+        "email": None,
+        "detail": "",
+        "has_line": None,
+        "has_online_booking": None,
+        "phone_only": False,
+        "has_ssl": False,
+        "has_contact_form": None,
+    }
 
     if not url or not url.strip():
         result["detail"] = "URLなし"
         return result
+
+    # SSL確認（URLがhttpsかどうか）
+    result["has_ssl"] = url.startswith("https://")
 
     # robots.txtチェック
     if not _check_robots(url):
@@ -145,11 +217,21 @@ def check_site(url: str) -> dict:
         result["detail"] = f"HTTPエラー: {res.status_code}"
         return result
 
-    html = _decode_html(res.content)
+    html      = _decode_html(res.content)
+    html_lower = html.lower()
 
-    # SSL確認（verify=Falseで取得できた = SSL証明書エラー）
-    is_https = url.startswith("https://")
-    had_ssl_error = is_https and not getattr(res, '_verified', True)
+    # SSL証明書エラーの確認（verify=Falseで取得成功 = 証明書エラー）
+    had_ssl_error = result["has_ssl"] and (getattr(res, 'url', url).startswith('http://'))
+    if had_ssl_error:
+        result["has_ssl"] = False
+
+    # ── 詳細診断フラグ ────────────────────────────────────
+    result["has_line"]           = _detect_line(html_lower)
+    result["has_online_booking"] = _detect_online_booking(html_lower)
+    result["has_contact_form"]   = _detect_contact_form(html, url)
+    result["phone_only"]         = (
+        not result["has_online_booking"] and not result["has_contact_form"]
+    )
 
     # メールアドレス抽出（contactページも巡回）
     result["email"] = extract_email_with_contact_page(html, url)
@@ -158,27 +240,23 @@ def check_site(url: str) -> dict:
     has_viewport    = bool(re.search(r'<meta[^>]+name=["\']viewport["\']', html, re.IGNORECASE))
     has_media_query = '@media' in html
 
-    # 予約システム確認
-    html_lower = html.lower()
-    has_booking = any(kw in html_lower for kw in BOOKING_KEYWORDS)
-
     # Copyright年確認
-    copyright_year  = _detect_copyright_year(html)
+    copyright_year   = _detect_copyright_year(html)
     is_old_copyright = (copyright_year is not None and copyright_year < OLD_YEAR_THRESHOLD)
 
-    # ステータス判定（優先度順）
-    if not is_https or had_ssl_error:
+    # ── ステータス判定（優先度順）────────────────────────
+    if not result["has_ssl"]:
         result["status"] = "old"
-        result["detail"] = "SSL未対応（HTTP）" if not is_https else "SSL証明書エラー"
+        result["detail"] = "SSL未対応（HTTP）" if not url.startswith("https://") else "SSL証明書エラー"
     elif is_old_copyright:
         result["status"] = "old"
         result["detail"] = f"Copyright {copyright_year}年（{datetime.now().year - copyright_year}年前）"
     elif not has_viewport and not has_media_query:
         result["status"] = "no_mobile"
         result["detail"] = "スマホ非対応（viewport/media queryなし）"
-    elif not has_booking:
+    elif result["phone_only"]:
         result["status"] = "phone_only"
-        result["detail"] = "ネット予約なし（電話のみと推定）"
+        result["detail"] = "ネット予約・フォームなし（電話のみと推定）"
     else:
         result["status"] = "ok"
         result["detail"] = "問題なし"
