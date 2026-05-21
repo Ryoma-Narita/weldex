@@ -111,3 +111,36 @@ nav a { font-weight: 500; }
   to   { opacity: 1; transform: translateY(0); }
 }
 .menu-nav-item:hover { color: #b8960c !important; }
+
+/* ── フッター ── */
+.site-footer { background: #fff; border-top: 1px solid #f1f3f5; font-family: 'DM Sans', 'Noto Sans JP', sans-serif; }
+.footer-inner { max-width: 960px; margin: 0 auto; padding: 48px clamp(20px, 5vw, 80px) 36px; }
+.footer-top { display: flex; justify-content: space-between; gap: 32px; margin-bottom: 36px; flex-wrap: wrap; }
+
+.footer-logo { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.footer-logo-icon { width: 30px; height: 30px; background: #1a2540; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; font-family: 'DM Sans', sans-serif; flex-shrink: 0; }
+.footer-logo-text { font-size: 15px; font-weight: 700; color: #1a2540; letter-spacing: .08em; font-family: 'DM Sans', sans-serif; }
+.footer-logo-dot { color: #b8960c; font-size: 8px; margin-left: 2px; }
+.footer-desc { font-size: 12px; color: #9ca3af; line-height: 1.8; max-width: 240px; }
+
+.footer-nav { display: flex; gap: 48px; }
+.footer-nav-col { display: flex; flex-direction: column; gap: 12px; }
+.footer-nav-link { font-size: 13px; font-weight: 500; color: #374151; text-decoration: none; font-family: 'DM Sans', sans-serif; transition: color .2s; }
+.footer-nav-link:hover { color: #1a2540; }
+
+.footer-contact-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #9ca3af; margin-bottom: 8px; font-family: 'DM Sans', sans-serif; }
+.footer-contact-email { font-size: 13px; color: #374151; display: block; margin-bottom: 4px; text-decoration: none; font-family: 'DM Sans', sans-serif; transition: color .2s; }
+.footer-contact-email:hover { color: #1a2540; }
+.footer-contact-note { font-size: 11px; color: #9ca3af; }
+
+.footer-bottom { padding-top: 20px; border-top: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.footer-copy { font-size: 11px; color: #9ca3af; font-family: 'DM Sans', sans-serif; }
+.footer-legal { display: flex; gap: 20px; }
+.footer-legal-link { font-size: 11px; color: #9ca3af; text-decoration: none; cursor: pointer; transition: color .2s; }
+.footer-legal-link:hover { color: #374151; }
+
+@media (max-width: 640px) {
+  .footer-top { flex-direction: column; }
+  .footer-nav { gap: 32px; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; }
+}

@@ -1,131 +1,56 @@
 import Link from "next/link";
 
-const LINKS = [
-  { label: "ホーム", href: "/" },
-  { label: "サービス", href: "/services" },
-  { label: "料金", href: "/pricing" },
-  { label: "お問い合わせ", href: "/contact" },
-  { label: "プライバシーポリシー", href: "/privacy" },
-  { label: "特定商取引法に基づく表記", href: "/legal" },
-];
-
 export default function Footer() {
   return (
-    <footer
-      style={{
-        background: "#0c1a35",
-        color: "rgba(255,255,255,0.6)",
-        padding: "4rem clamp(1.5rem,5vw,5rem) 2.5rem",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        {/* Top row */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            gap: "2rem",
-            marginBottom: "3rem",
-          }}
-        >
-          {/* Brand */}
-          <div>
-            <p
-              style={{
-                fontFamily: "var(--font-cormorant)",
-                fontSize: "1.4rem",
-                fontWeight: 700,
-                color: "#fff",
-                letterSpacing: "0.04em",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Weldex
-              <span
-                style={{
-                  display: "inline-block",
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: "#c9a84c",
-                  marginLeft: 3,
-                  verticalAlign: "middle",
-                  marginBottom: 4,
-                }}
-              />
-            </p>
-            <p
-              style={{
-                fontSize: "0.8rem",
-                fontWeight: 300,
-                lineHeight: 1.7,
-                maxWidth: 260,
-              }}
-            >
-              中小企業向けWEB制作・LINE予約システム
-              <br />
+    <footer className="site-footer">
+      <div className="footer-inner">
+        <div className="footer-top">
+          {/* ブランド */}
+          <div className="footer-brand">
+            <div className="footer-logo">
+              <div className="footer-logo-icon">W</div>
+              <span className="footer-logo-text">
+                WELDEX<span className="footer-logo-dot">•</span>
+              </span>
+            </div>
+            <p className="footer-desc">
+              中小企業向けWEB制作・LINE予約システム<br />
               一社完結でDXを支援します。
             </p>
           </div>
 
-          {/* Nav links */}
-          <nav>
-            <ul
-              style={{
-                listStyle: "none",
-                margin: 0,
-                padding: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.7rem",
-              }}
-            >
-              {LINKS.map(({ label, href }) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    style={{
-                      fontSize: "0.82rem",
-                      color: "rgba(255,255,255,0.55)",
-                      textDecoration: "none",
-                      fontWeight: 300,
-                    }}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          {/* ナビリンク */}
+          <div className="footer-nav">
+            <div className="footer-nav-col">
+              <Link href="/services" className="footer-nav-link">Service</Link>
+              <Link href="/works" className="footer-nav-link">Works &amp; Demo</Link>
+              <Link href="/about" className="footer-nav-link">About</Link>
+            </div>
+            <div className="footer-nav-col">
+              <Link href="/news" className="footer-nav-link">News &amp; Blog</Link>
+              <Link href="/contact" className="footer-nav-link">Contact</Link>
+            </div>
+          </div>
 
-          {/* Contact */}
-          <div style={{ fontSize: "0.82rem", fontWeight: 300, lineHeight: 1.8 }}>
-            <p style={{ color: "#c9a84c", fontWeight: 500, marginBottom: "0.5rem" }}>
-              お問い合わせ
-            </p>
-            <p>
-              <a
-                href="mailto:info@weldex.jp"
-                style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none" }}
-              >
-                info@weldex.jp
-              </a>
-            </p>
-            <p style={{ marginTop: "0.3rem" }}>返信：通常1営業日以内</p>
+          {/* 連絡先 */}
+          <div className="footer-contact">
+            <div className="footer-contact-label">CONTACT</div>
+            <a href="mailto:info@weldex.jp" className="footer-contact-email">
+              info@weldex.jp
+            </a>
+            <div className="footer-contact-note">返信：通常1営業日以内</div>
           </div>
         </div>
 
-        {/* Bottom */}
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            paddingTop: "1.5rem",
-            fontSize: "0.75rem",
-            fontWeight: 300,
-          }}
-        >
-          © {new Date().getFullYear()} Weldex. All rights reserved.
+        {/* ボトム */}
+        <div className="footer-bottom">
+          <span className="footer-copy">
+            © {new Date().getFullYear()} Weldex. All rights reserved.
+          </span>
+          <div className="footer-legal">
+            <Link href="/privacy" className="footer-legal-link">プライバシーポリシー</Link>
+            <Link href="/tokusho" className="footer-legal-link">特定商取引法</Link>
+          </div>
         </div>
       </div>
     </footer>
