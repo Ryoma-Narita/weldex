@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PainPoints from "@/components/PainPoints";
+import ComparisonTable from "@/components/ComparisonTable";
 
 export const metadata: Metadata = {
   title: "WEBサイト制作 | Weldex",
@@ -189,6 +190,9 @@ export default function WebServicePage() {
             </div>
           </div>
         </section>
+
+        {/* ─── ComparisonTable ─── */}
+        <ComparisonTable />
 
         {/* ─── ③ 比較表 ─── */}
         <section className="ws-section" style={{ background: "#fff" }}>
