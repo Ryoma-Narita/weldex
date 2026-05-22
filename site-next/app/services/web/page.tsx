@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import PainPoints from "@/components/PainPoints";
 
 export const metadata: Metadata = {
   title: "WEBサイト制作 | Weldex",
@@ -147,6 +148,9 @@ export default function WebServicePage() {
             </div>
           </div>
         </section>
+
+        {/* ─── お悩みセクション ─── */}
+        <PainPoints />
 
         {/* ─── ② 技術 ─── */}
         <section className="ws-section" style={{ background: BG_L }}>

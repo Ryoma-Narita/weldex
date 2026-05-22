@@ -232,3 +232,13 @@ nav a { font-weight: 500; }
   border: 1px dashed rgba(201, 168, 76, 0.06);
   animation: slowSpin 26s linear infinite reverse;
 }
+
+/* ── PainPoints アニメーション ── */
+@keyframes dot {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-4px); }
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

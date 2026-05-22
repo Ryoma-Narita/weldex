@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
+import PainPoints from "@/components/PainPoints";
 import BrandSection from "@/components/BrandSection";
 import Pillars from "@/components/Pillars";
 import Process from "@/components/Process";
@@ -18,6 +19,7 @@ export default function Home() {
     <main>
       <LoadingScreen />
       <Hero />
+      <PainPoints />
       <BrandSection />
       <Pillars />
       <Process />
