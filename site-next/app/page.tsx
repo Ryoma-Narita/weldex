@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
 import BrandSection from "@/components/BrandSection";
 import Pillars from "@/components/Pillars";
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main>
+      <LoadingScreen />
       <Hero />
       <BrandSection />
       <Pillars />
