@@ -19,8 +19,8 @@ export default function Home() {
     <main>
       <LoadingScreen />
       <Hero />
-      <PainPoints />
       <BrandSection />
+      <PainPoints />
       <Pillars />
       <Process />
       <CTABand />
