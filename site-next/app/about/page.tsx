@@ -135,10 +135,10 @@ export default function AboutPage() {
                 lineHeight: 1.78,
                 letterSpacing: "-0.01em",
               }}>
-                "技術を安売りせず、<br />
+                &ldquo;技術を安売りせず、<br />
                 誠実に向き合う。<br />
                 それがWeldexの<br />
-                存在理由です。"
+                存在理由です。&rdquo;
               </p>
               <footer style={{
                 marginTop: "1.25rem",
