@@ -49,7 +49,7 @@ export default function Footer() {
           </span>
           <div className="footer-legal">
             <Link href="/privacy" className="footer-legal-link">プライバシーポリシー</Link>
-            <Link href="/tokusho" className="footer-legal-link">特定商取引法</Link>
+            <Link href="/legal" className="footer-legal-link">特定商取引法</Link>
           </div>
         </div>
       </div>

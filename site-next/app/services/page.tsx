@@ -18,6 +18,7 @@ const services = [
     tag: "HP / LP",
     desc: "集客・信頼・問い合わせ増加を目的とした、業種特化のWebサイトを制作します。SEO対応・スマホ最適化・お問い合わせフォームまで含みます。",
     features: ["業種特化デザイン", "SEO対応", "スマホ最適化", "Formspreeフォーム設置", "公開後1ヶ月サポート"],
+    detailHref: "/services/web",
   },
   {
     num: "02",
@@ -97,6 +98,18 @@ export default function ServicesPage() {
                   </li>
                 ))}
               </ul>
+              {"detailHref" in s && (
+                <div style={{ marginTop: "1.5rem" }}>
+                  <Link href={(s as typeof s & { detailHref: string }).detailHref} style={{
+                    fontSize: "0.8rem", fontWeight: 500, color: "var(--navy)",
+                    textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
+                    borderBottom: "1px solid var(--navy)", paddingBottom: 2,
+                    transition: "opacity 0.15s",
+                  }}>
+                    詳細・料金を見る →
+                  </Link>
+                </div>
+              )}
             </FadeIn>
           ))}
         </div>
