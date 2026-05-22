@@ -19,14 +19,14 @@ export default function ContactPage() {
             <div className="sec-label">Contact</div>
             <h1 style={{
               fontFamily: "var(--font-cormorant)",
-              fontSize: "clamp(2rem,4vw,3rem)",
-              fontWeight: 700, color: "var(--navy)",
-              lineHeight: 1.2, letterSpacing: "-0.01em",
+              fontSize: "clamp(30px,4vw,52px)",
+              fontWeight: 900, color: "var(--navy)",
+              lineHeight: 1.2, letterSpacing: "-0.02em",
               marginBottom: "1.5rem",
             }}>
               まずは、<br />話を聞いてみる。
             </h1>
-            <p style={{ fontSize: "0.875rem", color: "var(--gray)", fontWeight: 300, lineHeight: 1.85, marginBottom: "3rem" }}>
+            <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0, marginBottom: "3rem" }}>
               費用・納期・進め方など、どんなことでも構いません。<br />
               返信は通常1営業日以内です。
             </p>
@@ -41,7 +41,7 @@ export default function ContactPage() {
                   <div style={{ fontSize: "0.7rem", color: "var(--gold)", fontWeight: 500, letterSpacing: "0.1em", marginBottom: "0.3rem" }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--navy)", fontWeight: 400 }}>{item.value}</div>
+                  <div style={{ fontSize: "0.9375rem", color: "var(--navy)", fontWeight: 500 }}>{item.value}</div>
                 </div>
               ))}
             </div>

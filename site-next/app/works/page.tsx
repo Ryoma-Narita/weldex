@@ -27,16 +27,16 @@ export default function WorksPage() {
           <div className="sec-label" style={{ justifyContent: "center" }}>Works &amp; Demo</div>
           <h1 style={{
             fontFamily: "var(--font-cormorant)",
-            fontSize: "clamp(2rem,4vw,3rem)",
-            fontWeight: 700, color: "var(--navy)",
-            lineHeight: 1.2, letterSpacing: "-0.01em",
+            fontSize: "clamp(30px,4vw,52px)",
+            fontWeight: 900, color: "var(--navy)",
+            lineHeight: 1.2, letterSpacing: "-0.02em",
             marginBottom: "0.75rem",
           }}>
             制作実績・デモ
           </h1>
           <p style={{
-            fontSize: "0.9rem", color: "var(--gray)", fontWeight: 300,
-            lineHeight: 1.85, maxWidth: 440, margin: "0 auto",
+            fontSize: "0.9375rem", color: "var(--gray)",
+            lineHeight: 2.0, maxWidth: 440, margin: "0 auto",
           }}>
             実際に動くデモをご用意しています。<br />
             気になる方はお気軽にお試しください。
@@ -53,14 +53,14 @@ export default function WorksPage() {
           <div style={{ borderTop: "1px solid var(--border)", paddingTop: "4rem" }}>
             <div className="sec-label">Industries</div>
             <h2 style={{
-              fontSize: "clamp(1.4rem,2.5vw,2rem)",
-              fontWeight: 700, color: "var(--navy)", marginBottom: "0.75rem",
+              fontSize: "clamp(22px,2.5vw,36px)",
+              fontWeight: 900, color: "var(--navy)", lineHeight: 1.25, marginBottom: "0.75rem",
             }}>
               業種別の導入事例
             </h2>
             <p style={{
-              fontSize: "0.9rem", color: "var(--gray)", fontWeight: 300,
-              lineHeight: 1.8, marginBottom: "2rem",
+              fontSize: "0.9375rem", color: "var(--gray)",
+              lineHeight: 2.0, marginBottom: "2rem",
             }}>
               業種ごとの課題・解決策・よくあるご質問をまとめています。
             </p>

@@ -46,16 +46,16 @@ export default function ServicesPage() {
           <div className="sec-label">Services</div>
           <h1 style={{
             fontFamily: "var(--font-cormorant)",
-            fontSize: "clamp(2rem,4vw,3rem)",
-            fontWeight: 700, color: "var(--navy)",
-            lineHeight: 1.2, letterSpacing: "-0.01em",
+            fontSize: "clamp(30px,4vw,52px)",
+            fontWeight: 900, color: "var(--navy)",
+            lineHeight: 1.2, letterSpacing: "-0.02em",
             marginBottom: "0.75rem",
           }}>
             サービス一覧
           </h1>
           <p style={{
-            fontSize: "0.9rem", color: "var(--gray)", fontWeight: 300,
-            lineHeight: 1.85, marginBottom: "4rem", maxWidth: 480,
+            fontSize: "0.9375rem", color: "var(--gray)",
+            lineHeight: 2.0, marginBottom: "4rem", maxWidth: 480,
           }}>
             制作から運用まで一社完結。<br />
             業種・規模に合わせてご提案します。
@@ -73,7 +73,7 @@ export default function ServicesPage() {
                   }}>{s.num}</span>
                   <div>
                     <div style={{ fontSize: "0.7rem", color: "var(--gold)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: "0.25rem" }}>{s.tag}</div>
-                    <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--navy)" }}>{s.title}</h2>
+                    <h2 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)", lineHeight: 1.3 }}>{s.title}</h2>
                   </div>
                 </div>
                 <span style={{
@@ -84,7 +84,7 @@ export default function ServicesPage() {
                 </span>
               </div>
 
-              <p style={{ fontSize: "0.875rem", color: "var(--gray)", fontWeight: 300, lineHeight: 1.8, marginBottom: "1.5rem", maxWidth: 640 }}>
+              <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0, marginBottom: "1.5rem", maxWidth: 640 }}>
                 {s.desc}
               </p>
 

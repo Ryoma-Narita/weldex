@@ -96,10 +96,9 @@ const sections: { title: string; content: React.ReactNode }[] = [
 ];
 
 const pStyle: React.CSSProperties = {
-  fontSize: "0.875rem",
+  fontSize: "0.9375rem",
   color: "var(--gray)",
-  fontWeight: 300,
-  lineHeight: 1.9,
+  lineHeight: 2.0,
 };
 
 export default function PrivacyPage() {
@@ -118,10 +117,10 @@ export default function PrivacyPage() {
           <h1
             style={{
               fontFamily: "var(--font-cormorant)",
-              fontSize: "clamp(1.8rem,3.5vw,2.5rem)",
-              fontWeight: 700,
+              fontSize: "clamp(22px,3.5vw,36px)",
+              fontWeight: 900,
               color: "var(--navy)",
-              lineHeight: 1.2,
+              lineHeight: 1.25,
             }}
           >
             プライバシーポリシー
@@ -138,9 +137,10 @@ export default function PrivacyPage() {
                 <h2
                   style={{
                     fontFamily: "var(--font-cormorant)",
-                    fontSize: "1.15rem",
+                    fontSize: "clamp(17px, 2vw, 22px)",
                     color: "var(--navy)",
                     fontWeight: 700,
+                    lineHeight: 1.35,
                     marginBottom: "0.75rem",
                     paddingBottom: "0.5rem",
                     borderBottom: "1px solid var(--border)",

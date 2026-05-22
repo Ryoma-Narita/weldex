@@ -83,14 +83,14 @@ export default function PricingPage() {
           <div className="sec-label">Pricing</div>
           <h1 style={{
             fontFamily: "var(--font-cormorant)",
-            fontSize: "clamp(2rem,4vw,3rem)",
-            fontWeight: 700, color: "var(--navy)",
-            lineHeight: 1.2, letterSpacing: "-0.01em",
+            fontSize: "clamp(30px,4vw,52px)",
+            fontWeight: 900, color: "var(--navy)",
+            lineHeight: 1.2, letterSpacing: "-0.02em",
             marginBottom: "0.75rem",
           }}>
             料金プラン
           </h1>
-          <p style={{ fontSize: "0.9rem", color: "var(--gray)", fontWeight: 300, lineHeight: 1.85, maxWidth: 520 }}>
+          <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0, maxWidth: 520 }}>
             AIを活用した効率化により、大手制作会社の3分の1以下のコストで
             同等以上のアウトプットを実現します。
           </p>
@@ -106,13 +106,13 @@ export default function PricingPage() {
                 <div className="sec-label" style={{ color: "var(--gold)" }}>Why Low Cost</div>
                 <h2 style={{
                   fontFamily: "var(--font-cormorant)",
-                  fontSize: "clamp(1.6rem,3vw,2.4rem)",
-                  fontWeight: 700, color: "var(--white)",
-                  lineHeight: 1.3, marginBottom: "1rem",
+                  fontSize: "clamp(22px,3vw,36px)",
+                  fontWeight: 900, color: "var(--white)",
+                  lineHeight: 1.25, marginBottom: "1rem",
                 }}>
                   AIを活用するから、<br />この価格が実現できる。
                 </h2>
-                <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.65)", fontWeight: 300, lineHeight: 1.85 }}>
+                <p style={{ fontSize: "0.9375rem", color: "rgba(255,255,255,0.75)", lineHeight: 2.0 }}>
                   文章・デザイン・コード・SEO分析をAIが高速処理し、
                   人間はその品質チェックと戦略判断に集中。
                   大手の3分の1以下のコストで、本質的なアウトプットを届けます。
@@ -120,9 +120,9 @@ export default function PricingPage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, background: "rgba(255,255,255,0.08)" }}>
                 {aiPoints.map((p) => (
-                  <div key={p.title} style={{ background: "rgba(255,255,255,0.04)", padding: "1.5rem 1.25rem" }}>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 500, color: "var(--gold)", marginBottom: "0.4rem" }}>{p.title}</div>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", fontWeight: 300, lineHeight: 1.6 }}>{p.desc}</div>
+                  <div key={p.title} style={{ background: "rgba(255,255,255,0.04)", padding: "1.25rem 1.5rem" }}>
+                    <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--gold)", marginBottom: "0.4rem" }}>{p.title}</div>
+                    <div style={{ fontSize: "0.8125rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.9 }}>{p.desc}</div>
                   </div>
                 ))}
               </div>
@@ -136,7 +136,7 @@ export default function PricingPage() {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn style={{ marginBottom: "3rem" }}>
             <div className="sec-label">Plans</div>
-            <h2 style={{ fontSize: "clamp(1.6rem,3vw,2.4rem)", fontWeight: 700, color: "var(--navy)", lineHeight: 1.2 }}>
+            <h2 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 900, color: "var(--navy)", lineHeight: 1.25 }}>
               3つのプラン
             </h2>
           </FadeIn>
@@ -172,12 +172,12 @@ export default function PricingPage() {
                   }}>{p.price}</span>
                   <span style={{ fontSize: "0.75rem", color: p.featured ? "rgba(255,255,255,0.5)" : "var(--light)", marginLeft: 6 }}>{p.unit}</span>
                 </div>
-                <p style={{ fontSize: "0.8rem", color: p.featured ? "rgba(255,255,255,0.65)" : "var(--gray)", fontWeight: 300, lineHeight: 1.75, marginBottom: "1.5rem" }}>
+                <p style={{ fontSize: "0.9375rem", color: p.featured ? "rgba(255,255,255,0.75)" : "var(--gray)", lineHeight: 2.0, marginBottom: "1.5rem" }}>
                   {p.desc}
                 </p>
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 2rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                   {p.features.map((f) => (
-                    <li key={f} style={{ display: "flex", gap: "0.5rem", fontSize: "0.8rem", color: p.featured ? "rgba(255,255,255,0.75)" : "var(--gray)", fontWeight: 300 }}>
+                    <li key={f} style={{ display: "flex", gap: "0.5rem", fontSize: "0.875rem", color: p.featured ? "rgba(255,255,255,0.8)" : "var(--gray)" }}>
                       <span style={{ color: "var(--gold)", flexShrink: 0 }}>→</span>
                       {f}
                     </li>
@@ -201,16 +201,16 @@ export default function PricingPage() {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn style={{ marginBottom: "2.5rem" }}>
             <div className="sec-label">Options</div>
-            <h2 style={{ fontSize: "clamp(1.4rem,2.5vw,2rem)", fontWeight: 700, color: "var(--navy)" }}>
+            <h2 style={{ fontSize: "clamp(22px,2.5vw,36px)", fontWeight: 900, color: "var(--navy)", lineHeight: 1.25 }}>
               オプションサービス
             </h2>
           </FadeIn>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 2, background: "var(--border)" }}>
             {options.map((o, i) => (
-              <FadeIn key={o.label} delay={i * 0.08} style={{ background: "var(--white)", padding: "1.75rem 1.5rem" }}>
-                <div style={{ fontSize: "0.72rem", color: "var(--light)", fontWeight: 300, letterSpacing: "0.05em", marginBottom: "0.3rem" }}>{o.label}</div>
+              <FadeIn key={o.label} delay={i * 0.08} style={{ background: "var(--white)", padding: "1.25rem 1.5rem" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--light)", fontWeight: 600, letterSpacing: "0.08em", marginBottom: "0.4rem" }}>{o.label}</div>
                 <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.5rem", fontWeight: 700, color: "var(--navy)", marginBottom: "0.4rem" }}>{o.price}</div>
-                <div style={{ fontSize: "0.78rem", color: "var(--gray)", fontWeight: 300 }}>{o.desc}</div>
+                <div style={{ fontSize: "0.875rem", color: "var(--gray)" }}>{o.desc}</div>
               </FadeIn>
             ))}
           </div>

@@ -105,10 +105,10 @@ export default function LegalPage() {
           <h1
             style={{
               fontFamily: "var(--font-cormorant)",
-              fontSize: "clamp(1.8rem,3.5vw,2.5rem)",
-              fontWeight: 700,
+              fontSize: "clamp(22px,3.5vw,36px)",
+              fontWeight: 900,
               color: "var(--navy)",
-              lineHeight: 1.2,
+              lineHeight: 1.25,
             }}
           >
             特定商取引法に基づく表記
@@ -123,9 +123,8 @@ export default function LegalPage() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: "0.875rem",
-              lineHeight: 1.8,
-              fontWeight: 300,
+              fontSize: "0.9375rem",
+              lineHeight: 2.0,
             }}
           >
             <tbody>

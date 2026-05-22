@@ -93,11 +93,10 @@ export default function AboutPage() {
           </h1>
 
           <p style={{
-            fontSize: "clamp(0.875rem, 1.5vw, 1rem)",
-            color: "rgba(255,255,255,0.62)",
-            lineHeight: 1.95,
+            fontSize: "clamp(0.9375rem, 1.5vw, 1.05rem)",
+            color: "rgba(255,255,255,0.72)",
+            lineHeight: 2.0,
             maxWidth: 500,
-            fontWeight: 300,
           }}>
             Weldexは、医療・士業・建設などの中小企業向けに、<br />
             AIを活用したWEB制作・予約システム・LINE連携を<br />
@@ -152,11 +151,10 @@ export default function AboutPage() {
             </blockquote>
 
             <p style={{
-              fontSize: "0.9rem",
+              fontSize: "0.9375rem",
               color: "var(--gray)",
-              lineHeight: 1.88,
+              lineHeight: 2.0,
               maxWidth: 400,
-              fontWeight: 300,
             }}>
               大手制作会社への対抗軸は「価格」だけではありません。
               レスポンスの速さ、クライアントへの理解、そして実装品質—
@@ -200,10 +198,9 @@ export default function AboutPage() {
                       {v.title}
                     </h3>
                     <p style={{
-                      fontSize: "0.875rem",
+                      fontSize: "0.9375rem",
                       color: "var(--gray)",
-                      lineHeight: 1.82,
-                      fontWeight: 300,
+                      lineHeight: 2.0,
                     }}>
                       {v.desc}
                     </p>
@@ -224,11 +221,12 @@ export default function AboutPage() {
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div className="sec-label">Tech Stack</div>
           <h2 style={{
-            fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
-            fontWeight: 700,
+            fontSize: "clamp(22px, 3vw, 36px)",
+            fontWeight: 900,
             color: "var(--navy)",
+            lineHeight: 1.25,
             marginBottom: "2.5rem",
-            letterSpacing: "-0.02em",
+            letterSpacing: "-0.01em",
           }}>
             使用技術
           </h2>
@@ -258,7 +256,7 @@ export default function AboutPage() {
             flexDirection: "column",
             gap: "1.25rem",
           }}>
-            <p style={{ fontSize: "0.9rem", color: "var(--gray)", lineHeight: 1.7 }}>
+            <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0 }}>
               まずはお気軽にご相談ください。初回相談は無料です。
             </p>
             <div>
