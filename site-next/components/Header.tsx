@@ -113,7 +113,7 @@ export default function Header() {
         }}>
           {/* メニューヘッダー */}
           <div style={{ height: 64, padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link href="/" onClick={close} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
               <div style={{
                 width: 32, height: 32, background: "#fff", borderRadius: 6,
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -122,7 +122,7 @@ export default function Header() {
               <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "0.08em", ...DM }}>
                 WELDEX<span style={{ color: "#b8960c", fontSize: 8, marginLeft: 2 }}>•</span>
               </span>
-            </div>
+            </Link>
             <button
               onClick={close}
               aria-label="閉じる"
