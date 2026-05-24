@@ -81,31 +81,18 @@ export default function Hero() {
           <Link href="/services" className="btn btn-outline">サービスを見る</Link>
         </FadeIn>
 
-        <FadeIn delay={0.65} style={{ display: "flex", gap: "3rem", flexWrap: "wrap" }}>
-          {[
-            { num: "低コスト", lbl: "大手比の価格" },
-            { num: "多数", lbl: "制作実績" },
-            { num: "高い", lbl: "顧客満足度" },
-          ].map((s) => (
-            <div key={s.lbl} style={{ borderLeft: "2px solid var(--gold)", paddingLeft: "0.85rem" }}>
-              <span style={{
-                display: "block",
-                fontFamily: "var(--font-cormorant)",
-                fontSize: "clamp(1.2rem, 4vw, 2rem)",
-                fontWeight: 700,
-                color: "var(--navy)",
-                lineHeight: 1,
-              }}>{s.num}</span>
-              <span style={{
-                fontSize: "0.68rem",
-                color: "var(--gray)",
-                letterSpacing: "0.06em",
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                {s.lbl}
-              </span>
-            </div>
-          ))}
+        <FadeIn delay={0.65}>
+          <p style={{
+            fontSize: "clamp(0.8rem, 1.3vw, 0.9375rem)",
+            color: "var(--gray)",
+            lineHeight: 1.9,
+            borderLeft: "2px solid var(--gold)",
+            paddingLeft: "1rem",
+            maxWidth: 420,
+          }}>
+            AIが反復を担い、人間が本質を設計する。<br />
+            それがWeldexのコスト優位の源泉です。
+          </p>
         </FadeIn>
       </div>
     </div>
