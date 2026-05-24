@@ -5,12 +5,15 @@ declare global {
   var _pgPool: Pool | undefined
 }
 
-function createPool() {
+function createPool(): Pool {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL が設定されていません。.env.local を確認してください。')
+  }
   return new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
-      : false,
+      : undefined,
     max: 5,
   })
 }

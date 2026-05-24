@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { requireAdminSecret } from '@/lib/auth'
 
-// ─── PATCH /api/hearing/[id] ──────────────────────────────────────────────────
+// ─── PATCH /api/hearing/[id]（管理者のみ） ────────────────────────────────────
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const authErr = requireAdminSecret(req)
+  if (authErr) return authErr
+
   try {
     const { id } = await params
     const body = await req.json()

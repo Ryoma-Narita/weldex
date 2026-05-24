@@ -351,15 +351,17 @@ export default function HearingForm() {
         : [...f[field], val],
     }))
 
-  // バリデーション
-  const canNext = () => {
-    if (step === 1) return form.company && form.name && form.industry && form.source
+  // バリデーション（常にbooleanを返す）
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const canNext = (): boolean => {
+    if (step === 1) return !!(form.company && form.name && form.industry && form.source)
     if (step === 2) return !!form.goal
-    if (step === 4) return !!form.email
+    if (step === 4) return EMAIL_RE.test(form.email)
     return true
   }
 
   const handleSubmit = async () => {
+    if (!canNext()) return
     setLoading(true)
     setError('')
     try {
@@ -368,10 +370,13 @@ export default function HearingForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error('送信失敗')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? '送信失敗')
+      }
       setSubmitted(true)
-    } catch {
-      setError('送信に失敗しました。しばらくしてから再度お試しください。')
+    } catch (e) {
+      setError((e as Error).message || '送信に失敗しました。しばらくしてから再度お試しください。')
     } finally {
       setLoading(false)
     }
