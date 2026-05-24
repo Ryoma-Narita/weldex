@@ -1,12 +1,12 @@
 import Link from "next/link";
-import Image from "next/image";
 import FadeIn from "./FadeIn";
+import HeroCanvas from "./HeroCanvas";
 
 export default function Hero() {
   return (
     <div style={{
       minHeight: "100svh",
-      background: "#ffffff",
+      background: "#060e1c",
       display: "flex",
       alignItems: "center",
       padding: "8rem clamp(1.5rem, 5vw, 6rem) 5rem",
@@ -14,26 +14,9 @@ export default function Hero() {
       overflow: "hidden",
     }}>
 
-      {/* 画像：ヒーロー全体を覆い、左側がうっすら見えるグラデーション */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 0,
-      }}>
-        <Image
-          src="/hero-tech.jpg"
-          alt=""
-          fill
-          style={{ objectFit: "cover", objectPosition: "center right" }}
-          priority
-          aria-hidden="true"
-        />
-        {/* 左から白へのグラデーションオーバーレイ：左=完全白、中央=うっすら、右=画像そのまま */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(to right, #ffffff 0%, #ffffff 40%, rgba(255,255,255,0.92) 52%, rgba(255,255,255,0.45) 65%, rgba(255,255,255,0.05) 82%, rgba(255,255,255,0) 100%)",
-        }} />
+      {/* Canvasアニメーション背景 */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <HeroCanvas />
       </div>
 
       {/* テキストコンテンツ：左側 */}
@@ -53,7 +36,7 @@ export default function Hero() {
             fontFamily: "var(--font-cormorant)",
             fontSize: "clamp(2.8rem, 6vw, 5rem)",
             fontWeight: 700,
-            color: "var(--navy)",
+            color: "#ffffff",
             lineHeight: 1.15,
             letterSpacing: "-0.02em",
             marginBottom: "1.5rem",
@@ -66,7 +49,7 @@ export default function Hero() {
         <FadeIn delay={0.35}>
           <p style={{
             fontSize: "clamp(0.875rem, 1.5vw, 1rem)",
-            color: "var(--gray)",
+            color: "rgba(255,255,255,0.72)",
             lineHeight: 1.85,
             marginBottom: "2.5rem",
             maxWidth: 480,
@@ -78,13 +61,13 @@ export default function Hero() {
 
         <FadeIn delay={0.5} style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "3.5rem" }}>
           <Link href="/contact" className="btn btn-primary">無料相談をする</Link>
-          <Link href="/services" className="btn btn-outline">サービスを見る</Link>
+          <Link href="/services" className="btn btn-outline-white">サービスを見る</Link>
         </FadeIn>
 
         <FadeIn delay={0.65}>
           <p style={{
             fontSize: "clamp(0.8rem, 1.3vw, 0.9375rem)",
-            color: "var(--gray)",
+            color: "rgba(255,255,255,0.5)",
             lineHeight: 1.9,
             borderLeft: "2px solid var(--gold)",
             paddingLeft: "1rem",
