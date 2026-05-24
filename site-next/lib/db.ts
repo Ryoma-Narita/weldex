@@ -5,21 +5,34 @@ declare global {
   var _pgPool: Pool | undefined
 }
 
-function createPool(): Pool {
+function getPool(): Pool {
+  if (global._pgPool) return global._pgPool
+
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL が設定されていません。.env.local を確認してください。')
   }
-  return new Pool({
+
+  const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
       : undefined,
     max: 5,
   })
+
+  // 開発時はグローバルにキャッシュ（hot-reload 対策）
+  if (process.env.NODE_ENV !== 'production') {
+    global._pgPool = pool
+  }
+
+  return pool
 }
 
-// Hot-reload 対策：開発時はグローバルにキャッシュ
-const pool = global._pgPool ?? createPool()
-if (process.env.NODE_ENV !== 'production') global._pgPool = pool
+// Proxy でクエリ呼び出し時に初めてプールを生成する（ビルド時の評価エラーを防ぐ）
+const pool = new Proxy({} as Pool, {
+  get(_target, prop) {
+    return (getPool() as never)[prop]
+  },
+})
 
 export default pool
