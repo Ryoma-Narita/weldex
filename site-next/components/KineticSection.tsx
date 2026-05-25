@@ -202,8 +202,8 @@ export default function KineticSection() {
         </div>
       </section>
 
-      {/* ─ 3スライド通し固定アイコン ─ */}
-      {inView && FLOAT_ICONS.map(({ id, Icon, gradient, delay, dur, hide, ...pos }) => (
+      {/* ─ 3スライド通し固定アイコン（常にDOM保持・opacityで制御してジャンプ防止） ─ */}
+      {FLOAT_ICONS.map(({ id, Icon, gradient, delay, dur, hide, ...pos }) => (
         <div
           key={id}
           className={`kinetic-float-icon${hide ? ' kinetic-icon-hide' : ''}`}
@@ -213,6 +213,8 @@ export default function KineticSection() {
             animation: `kinetic-float ${dur} ease-in-out ${delay} infinite alternate`,
             zIndex: 10,
             pointerEvents: 'none',
+            opacity: inView ? 1 : 0,
+            transition: 'opacity 0.5s ease',
           }}
         >
           <div style={{

@@ -110,7 +110,7 @@ export default function Process() {
   return (
     <section
       ref={sectionRef}
-      style={{ padding: "5rem clamp(1.5rem,5vw,6rem)", background: "var(--white,#fff)", overflow: 'hidden' }}
+      style={{ padding: "5rem clamp(1.5rem,5vw,6rem)", background: "var(--white,#fff)", overflowX: 'hidden' }}
     >
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
@@ -259,8 +259,6 @@ export default function Process() {
               const active  = isActive(i)
               const current = isCurrent(i)
               const isLeft  = i % 2 === 0
-              const textX   = isLeft ? node.x + M.r + 10 : node.x - M.r - 10
-              const anchor  = isLeft ? 'start' : 'end'
 
               return (
                 <g key={i}>
@@ -278,25 +276,29 @@ export default function Process() {
                     style={{ transition: 'fill 0.4s ease, stroke 0.4s ease' }}
                   />
 
+                  {/* 番号 */}
                   <text x={node.x} y={node.y + 5} textAnchor="middle"
                     style={{ fontFamily: 'var(--font-cormorant)', fontSize: 11, fontWeight: 700,
                       fill: active ? '#fff' : 'var(--navy)', transition: 'fill 0.4s ease' }}>
                     {steps[i].num}
                   </text>
 
-                  {/* title */}
-                  <text x={textX} y={node.y - 6} textAnchor={anchor}
-                    style={{ fontFamily: 'var(--font-cormorant)', fontSize: 12, fontWeight: 700,
-                      fill: active ? 'var(--navy)' : 'rgba(12,26,53,0.35)', transition: 'fill 0.4s ease' }}>
-                    {steps[i].title}
-                  </text>
-
-                  {/* days */}
-                  <text x={textX} y={node.y + 11} textAnchor={anchor}
-                    style={{ fontFamily: 'var(--font-cormorant)', fontSize: 10,
+                  {/* days：ノードの上に中央揃え */}
+                  <text x={node.x} y={node.y - M.r - 18} textAnchor="middle"
+                    style={{ fontFamily: 'var(--font-cormorant)', fontSize: 9,
                       fill: active ? 'var(--gold)' : 'rgba(12,26,53,0.25)', letterSpacing: '0.04em',
                       transition: 'fill 0.4s ease' }}>
                     {steps[i].days}
+                  </text>
+
+                  {/* title：daysのさらに上、左ノードは左寄せ・右ノードは右寄せで左右に離す */}
+                  <text
+                    x={isLeft ? node.x - M.r : node.x + M.r}
+                    y={node.y - M.r - 30}
+                    textAnchor={isLeft ? 'end' : 'start'}
+                    style={{ fontFamily: 'var(--font-cormorant)', fontSize: 11, fontWeight: 700,
+                      fill: active ? 'var(--navy)' : 'rgba(12,26,53,0.35)', transition: 'fill 0.4s ease' }}>
+                    {steps[i].title}
                   </text>
                 </g>
               )
