@@ -32,7 +32,7 @@ const STAGES = [
     style: 'body' as const,
   },
   {
-    words: ['Weld（溶接する・固固につなぐ）+ dex（体系化）', '制作・システム・LINE・保守まで、', '一社で完結。'],
+    words: ['Weld（つなぐ・強固にする）+ dex（体系化）', '制作・システム・LINE・保守まで、', '一社で完結。'],
     style: 'small' as const,
   },
 ]
