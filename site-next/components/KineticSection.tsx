@@ -12,8 +12,8 @@ const LinkIcon     = () => <svg viewBox="0 0 24 24" fill="none" stroke="white" s
 const MobileIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
 
 const FLOAT_ICONS = [
-  { id: 'tl', Icon: MonitorIcon,   gradient: 'linear-gradient(135deg,#667eea,#764ba2)', left: '4vw',  top: '10vh',    delay: '0s',   dur: '6s',  hide: false },
-  { id: 'tr', Icon: LightningIcon, gradient: 'linear-gradient(135deg,#f093fb,#f5576c)', right: '4vw', top: '10vh',    delay: '1s',   dur: '5s',  hide: false },
+  { id: 'tl', Icon: MonitorIcon,   gradient: 'linear-gradient(135deg,#667eea,#764ba2)', left: '4vw',  top: '26vh',    delay: '0s',   dur: '6s',  hide: false },
+  { id: 'tr', Icon: LightningIcon, gradient: 'linear-gradient(135deg,#f093fb,#f5576c)', right: '4vw', top: '26vh',    delay: '1s',   dur: '5s',  hide: false },
   { id: 'ml', Icon: ChatIcon,      gradient: 'linear-gradient(135deg,#4facfe,#00f2fe)', left: '2vw',  top: '44vh',    delay: '2s',   dur: '7s',  hide: true  },
   { id: 'mr', Icon: ChartIcon,     gradient: 'linear-gradient(135deg,#43e97b,#38f9d7)', right: '2vw', top: '44vh',    delay: '0.5s', dur: '8s',  hide: true  },
   { id: 'bl', Icon: LinkIcon,      gradient: 'linear-gradient(135deg,#fa709a,#fee140)', left: '4vw',  bottom: '12vh', delay: '1.5s', dur: '6s',  hide: false },

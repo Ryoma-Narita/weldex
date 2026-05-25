@@ -30,16 +30,16 @@ const D = {
 
 // ─── モバイル：縦型ノード座標 ─────────────────────────────────────────────────
 // viewBox="0 0 300 1020"
-// 左 x=70, 右 x=230, y step=170
+// 左 x=55, 右 x=245, y step=170（内側テキスト用に左右を広げる）
 const M = {
   vw: 300, vh: 1020,
   nodes: [
-    { x: 70,  y: 80  }, // 01 left
-    { x: 230, y: 250 }, // 02 right
-    { x: 70,  y: 420 }, // 03 left
-    { x: 230, y: 590 }, // 04 right
-    { x: 70,  y: 760 }, // 05 left
-    { x: 230, y: 930 }, // 06 right
+    { x: 55,  y: 80  }, // 01 left
+    { x: 245, y: 250 }, // 02 right
+    { x: 55,  y: 420 }, // 03 left
+    { x: 245, y: 590 }, // 04 right
+    { x: 55,  y: 760 }, // 05 left
+    { x: 245, y: 930 }, // 06 right
   ] as const,
   r: 20,
 }
@@ -283,19 +283,20 @@ export default function Process() {
                     {steps[i].num}
                   </text>
 
-                  {/* days：ノードの上に中央揃え */}
-                  <text x={node.x} y={node.y - M.r - 18} textAnchor="middle"
-                    style={{ fontFamily: 'var(--font-cormorant)', fontSize: 9,
+                  {/* days＋title：ノードのすぐ横（①右・②左）に縦2行で配置 */}
+                  <text
+                    x={isLeft ? node.x + M.r + 6 : node.x - M.r - 6}
+                    y={node.y - 5}
+                    textAnchor={isLeft ? 'start' : 'end'}
+                    style={{ fontFamily: 'var(--font-cormorant)', fontSize: 8,
                       fill: active ? 'var(--gold)' : 'rgba(12,26,53,0.25)', letterSpacing: '0.04em',
                       transition: 'fill 0.4s ease' }}>
                     {steps[i].days}
                   </text>
-
-                  {/* title：daysのさらに上、左ノードは左寄せ・右ノードは右寄せで左右に離す */}
                   <text
-                    x={isLeft ? node.x - M.r : node.x + M.r}
-                    y={node.y - M.r - 30}
-                    textAnchor={isLeft ? 'end' : 'start'}
+                    x={isLeft ? node.x + M.r + 6 : node.x - M.r - 6}
+                    y={node.y + 10}
+                    textAnchor={isLeft ? 'start' : 'end'}
                     style={{ fontFamily: 'var(--font-cormorant)', fontSize: 11, fontWeight: 700,
                       fill: active ? 'var(--navy)' : 'rgba(12,26,53,0.35)', transition: 'fill 0.4s ease' }}>
                     {steps[i].title}
