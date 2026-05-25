@@ -29,17 +29,17 @@ const D = {
 }
 
 // ─── モバイル：縦型ノード座標 ─────────────────────────────────────────────────
-// viewBox="0 0 300 1020"
-// 左 x=55, 右 x=245, y step=170（内側テキスト用に左右を広げる）
+// viewBox="0 0 340 1020"
+// 左 x=38, 右 x=302, y step=170（左右を最大限に広げる）
 const M = {
   vw: 300, vh: 1020,
   nodes: [
-    { x: 55,  y: 80  }, // 01 left
-    { x: 245, y: 250 }, // 02 right
-    { x: 55,  y: 420 }, // 03 left
-    { x: 245, y: 590 }, // 04 right
-    { x: 55,  y: 760 }, // 05 left
-    { x: 245, y: 930 }, // 06 right
+    { x: 70,  y: 80  }, // 01 left
+    { x: 230, y: 250 }, // 02 right
+    { x: 70,  y: 420 }, // 03 left
+    { x: 230, y: 590 }, // 04 right
+    { x: 70,  y: 760 }, // 05 left
+    { x: 230, y: 930 }, // 06 right
   ] as const,
   r: 20,
 }
@@ -283,10 +283,10 @@ export default function Process() {
                     {steps[i].num}
                   </text>
 
-                  {/* days＋title：ノードのすぐ横（①右・②左）に縦2行で配置 */}
+                  {/* days＋title：ノードから離してテキストが数字に被らないよう配置 */}
                   <text
-                    x={isLeft ? node.x + M.r + 6 : node.x - M.r - 6}
-                    y={node.y - 5}
+                    x={isLeft ? node.x + M.r + 55 : node.x - M.r - 55}
+                    y={node.y - 4}
                     textAnchor={isLeft ? 'start' : 'end'}
                     style={{ fontFamily: 'var(--font-cormorant)', fontSize: 8,
                       fill: active ? 'var(--gold)' : 'rgba(12,26,53,0.25)', letterSpacing: '0.04em',
@@ -294,8 +294,8 @@ export default function Process() {
                     {steps[i].days}
                   </text>
                   <text
-                    x={isLeft ? node.x + M.r + 6 : node.x - M.r - 6}
-                    y={node.y + 10}
+                    x={isLeft ? node.x + M.r + 55 : node.x - M.r - 55}
+                    y={node.y + 11}
                     textAnchor={isLeft ? 'start' : 'end'}
                     style={{ fontFamily: 'var(--font-cormorant)', fontSize: 11, fontWeight: 700,
                       fill: active ? 'var(--navy)' : 'rgba(12,26,53,0.35)', transition: 'fill 0.4s ease' }}>
