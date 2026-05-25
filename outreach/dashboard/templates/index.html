@@ -197,6 +197,30 @@
 <!-- ─── ダッシュボード ─── -->
 <div class="panel active" id="panel-dashboard">
   <div class="panel-scroll">
+
+    <!-- 収集・診断 操作パネル -->
+    <div class="kpi-label">リスト収集 / 診断実行</div>
+    <div style="background:var(--white);border:1px solid var(--border);padding:1.2rem 1.5rem;margin-bottom:1.5rem;">
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+        <div>
+          <div style="font-size:0.72rem;color:var(--gray);margin-bottom:0.3rem;">業種</div>
+          <select id="op-industry" style="padding:0.35rem 0.6rem;border:1px solid var(--border);font-size:0.82rem;min-width:140px;">
+            <option value="">読み込み中...</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:var(--gray);margin-bottom:0.3rem;">エリア</div>
+          <select id="op-area" style="padding:0.35rem 0.6rem;border:1px solid var(--border);font-size:0.82rem;min-width:160px;">
+            <option value="">読み込み中...</option>
+          </select>
+        </div>
+        <button class="btn" onclick="runCollect()" id="btn-collect">▶ 収集する</button>
+        <button class="btn green-btn" onclick="runDiagnose()" id="btn-diagnose">🔍 診断する</button>
+      </div>
+      <div id="op-quota" style="margin-top:0.6rem;font-size:0.78rem;color:var(--gray);"></div>
+      <div id="op-status" style="margin-top:0.4rem;font-size:0.8rem;color:var(--gray);min-height:1.2em;"></div>
+    </div>
+
     <div class="kpi-label">収集・診断</div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-label">合計</div><div class="stat-value blue" id="s-total">-</div></div>
@@ -575,6 +599,116 @@
   // ─── 初期化 ───
   loadStats();
   setInterval(loadStats, 30000);
+
+  // ─── 収集・診断 UI ───
+  async function loadOptions() {
+    try {
+      const d = await fetch('/api/options').then(r => r.json());
+      const ind  = document.getElementById('op-industry');
+      const area = document.getElementById('op-area');
+      ind.innerHTML  = d.industries.map(v => `<option value="${v}">${v}</option>`).join('');
+      area.innerHTML = d.areas.map(v => `<option value="${v}">${v}</option>`).join('');
+    } catch(e) { console.error('options load failed', e); }
+  }
+
+  async function loadQuota() {
+    try {
+      const d   = await fetch('/api/daily-quota').then(r => r.json());
+      const btn = document.getElementById('btn-collect');
+      const bar = document.getElementById('op-quota');
+      bar.textContent = `本日の収集：${d.today} / ${d.limit} 件（残り ${d.remaining} 件）`;
+      bar.style.color = d.locked ? 'var(--red)' : 'var(--gray)';
+      if (d.locked) {
+        btn.disabled    = true;
+        btn.textContent = '本日の上限に達しました（翌日リセット）';
+        btn.style.background = 'var(--border)';
+        btn.style.color      = 'var(--gray)';
+        btn.style.cursor     = 'not-allowed';
+      } else {
+        btn.disabled    = false;
+        btn.textContent = `▶ 収集する（残り${d.remaining}件）`;
+        btn.style.background = '';
+        btn.style.color      = '';
+        btn.style.cursor     = '';
+      }
+    } catch(e) { console.error('quota load failed', e); }
+  }
+
+  loadOptions();
+  loadQuota();
+
+  async function runCollect() {
+    const industry = document.getElementById('op-industry').value;
+    const area     = document.getElementById('op-area').value;
+    const status   = document.getElementById('op-status');
+    const btn      = document.getElementById('btn-collect');
+    if (!industry || !area) { status.textContent = '業種とエリアを選択してください'; return; }
+    btn.disabled    = true;
+    btn.textContent = '収集中...';
+    status.style.color = 'var(--gray)';
+    status.textContent = `${industry} / ${area} を収集しています...`;
+    try {
+      const d = await fetch('/api/collect', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ industry, area })
+      }).then(r => r.json());
+      if (d.ok) {
+        status.style.color = 'var(--green)';
+        status.textContent = `✓ ${d.added}件を新規追加しました（累計 ${d.total}件 / 本日 ${d.today}件）`;
+        loadStats();
+        loadQuota();
+      } else if (d.locked) {
+        status.style.color = 'var(--red)';
+        status.textContent = d.error;
+        loadQuota();
+      } else {
+        status.style.color = 'var(--red)';
+        status.textContent = `エラー: ${d.error}`;
+        btn.disabled = false;
+        btn.textContent = `▶ 収集する`;
+      }
+    } catch(e) {
+      status.style.color = 'var(--red)';
+      status.textContent = `通信エラー: ${e}`;
+      btn.disabled = false;
+    }
+  }
+
+  async function runDiagnose() {
+    const limit  = parseInt(document.getElementById('op-limit').value) * 2;
+    const status = document.getElementById('op-status');
+    const btn    = document.getElementById('btn-diagnose');
+    btn.disabled = true;
+    btn.textContent = '診断中...';
+    status.style.color = 'var(--gray)';
+    status.textContent = '未診断ターゲットのサイトを診断しています...';
+    try {
+      const d = await fetch('/api/diagnose', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ limit })
+      }).then(r => r.json());
+      if (d.ok) {
+        status.style.color = 'var(--green)';
+        if (d.diagnosed === 0) {
+          status.textContent = '未診断のターゲットはありません';
+        } else {
+          const r = d.results || {};
+          status.textContent = `✓ ${d.diagnosed}件を診断しました — なし:${r.none||0} / 古い:${r.old||0} / スマホ非対応:${r.no_mobile||0} / 問題なし:${r.ok||0}`;
+        }
+        loadStats();
+      } else {
+        status.style.color = 'var(--red)';
+        status.textContent = `エラー: ${d.error}`;
+      }
+    } catch(e) {
+      status.style.color = 'var(--red)';
+      status.textContent = `通信エラー: ${e}`;
+    }
+    btn.disabled = false;
+    btn.textContent = '🔍 診断する';
+  }
 </script>
 </body>
 </html>

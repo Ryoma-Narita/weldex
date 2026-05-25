@@ -30,5 +30,11 @@ REQUEST_TIMEOUT_SEC  = 8       # サイト診断タイムアウト（秒）
 # SendGridレピュテーション安定後に引き上げること
 DAILY_SEND_LIMIT     = 20      # 初期ウォームアップ値（法的上限は50件）
 
-# DB
-DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'outreach.db')
+# DB（Railway volumeは DB_PATH=/data/outreach.db を環境変数でセット）
+DB_PATH = os.environ.get(
+    "DB_PATH",
+    os.path.join(os.path.dirname(__file__), 'data', 'outreach.db')
+)
+
+# ダッシュボード認証（外部公開時は必ずセットすること）
+DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "")

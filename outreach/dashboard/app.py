@@ -8,19 +8,38 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Body, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import asyncio
 import json
 import re
+import secrets
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from db.database import init_db, get_stats, get_send_stats, get_conn, write_log, add_unsubscribe
+from config import DASHBOARD_PASSWORD
 
 app = FastAPI(title="Weldex Outreach Dashboard")
+security = HTTPBasic()
+
+def require_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    """DASHBOARD_PASSWORDが設定されている場合はBasic認証を要求する。"""
+    if not DASHBOARD_PASSWORD:
+        return  # 未設定なら認証スキップ（ローカル開発用）
+    ok = (
+        secrets.compare_digest(credentials.username.encode(), b"weldex") and
+        secrets.compare_digest(credentials.password.encode(), DASHBOARD_PASSWORD.encode())
+    )
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="認証に失敗しました",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 # 起動時にDBを初期化
 @app.on_event("startup")
@@ -30,7 +49,7 @@ def on_startup():
 
 
 @app.get("/", response_class=HTMLResponse)
-def index():
+def index(auth=Depends(require_auth)):
     """ダッシュボードHTMLを返す。"""
     html_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
     try:
@@ -41,13 +60,14 @@ def index():
 
 
 @app.get("/api/stats")
-def api_stats():
+def api_stats(auth=Depends(require_auth)):
     """収集・診断・送信の統計情報をまとめて返す。"""
     return {**get_stats(), **get_send_stats()}
 
 
 @app.get("/api/targets")
 def api_targets(
+    auth=Depends(require_auth),
     page:     int = Query(1, ge=1),
     per_page: int = Query(15, ge=1, le=100),
     status:   str = Query(None),
@@ -99,6 +119,7 @@ def api_targets(
 
 @app.get("/api/logs")
 def api_logs(
+    auth=Depends(require_auth),
     page:     int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
     level:    str = Query(None),
@@ -133,7 +154,7 @@ def api_logs(
 
 
 @app.get("/api/logs/stream")
-async def api_logs_stream():
+async def api_logs_stream(auth=Depends(require_auth)):
     """SSEでログをリアルタイム配信する。"""
     async def event_generator():
         last_id = 0
@@ -153,7 +174,7 @@ async def api_logs_stream():
 
 
 @app.get("/proxy")
-async def proxy_site(url: str = Query(...)):
+async def proxy_site(url: str = Query(...), auth=Depends(require_auth)):
     """
     外部サイトをiframe表示するためのプロキシ。
     X-Frame-Options / Content-Security-Policy ヘッダーを除去して返す。
@@ -212,7 +233,7 @@ async def proxy_site(url: str = Query(...)):
 
 
 @app.get("/api/preview-queue")
-def api_preview_queue(limit: int = Query(50)):
+def api_preview_queue(limit: int = Query(50), auth=Depends(require_auth)):
     """
     送信候補ターゲットの予想メールプレビューを返す。
     実際の送信はしない。scheduler.py run を実行するまで送信されない。
@@ -276,7 +297,7 @@ def api_preview_queue(limit: int = Query(50)):
 
 
 @app.get("/api/send-mode")
-def api_send_mode():
+def api_send_mode(auth=Depends(require_auth)):
     """
     現在の送信モードを返す。
     auto=False の間は scheduler.py run を手動実行しないと送信されない。
@@ -319,3 +340,125 @@ def unsubscribe(email: str = Query(None)):
   <p style="margin-top:1.5rem;font-size:0.78rem;color:#94a3b8;">Weldex（info@weldex.jp）</p>
 </div>
 </body></html>""")
+
+
+# ─── 収集・診断 APIエンドポイント ──────────────────────────────────────────────
+
+from collectors.area_config import INDUSTRY_KEYWORDS, get_all_areas
+
+@app.get("/api/options")
+def api_options(auth=Depends(require_auth)):
+    """業種・エリアの選択肢を返す。"""
+    return {
+        "industries": list(INDUSTRY_KEYWORDS.keys()),
+        "areas": get_all_areas(),
+    }
+
+
+@app.get("/api/daily-quota")
+def api_daily_quota(auth=Depends(require_auth)):
+    """本日の収集件数と上限を返す。"""
+    from config import DEFAULT_LIMIT
+    with get_conn() as conn:
+        today_count = conn.execute(
+            "SELECT COUNT(*) FROM targets WHERE date(created_at) = date('now', 'localtime')"
+        ).fetchone()[0]
+    return {
+        "today":     today_count,
+        "limit":     DEFAULT_LIMIT,
+        "remaining": max(0, DEFAULT_LIMIT - today_count),
+        "locked":    today_count >= DEFAULT_LIMIT,
+    }
+
+
+@app.post("/api/collect")
+async def api_collect(
+    auth=Depends(require_auth),
+    industry: str = Body(..., embed=True),
+    area:     str = Body(..., embed=True),
+):
+    """
+    ダッシュボードからリスト収集を実行する。
+    1日の上限（DEFAULT_LIMIT）を超えている場合はエラーを返す。
+    """
+    from collectors.google_places import collect_targets
+    from config import DEFAULT_LIMIT
+
+    # 本日の収集件数チェック
+    with get_conn() as conn:
+        today_count = conn.execute(
+            "SELECT COUNT(*) FROM targets WHERE date(created_at) = date('now', 'localtime')"
+        ).fetchone()[0]
+
+    if today_count >= DEFAULT_LIMIT:
+        return {
+            "ok":      False,
+            "locked":  True,
+            "today":   today_count,
+            "limit":   DEFAULT_LIMIT,
+            "error":   f"本日の収集上限（{DEFAULT_LIMIT}件）に達しています。明日またお試しください。",
+        }
+
+    remaining = DEFAULT_LIMIT - today_count
+
+    try:
+        write_log("INFO", "collect", f"[dashboard] 収集開始: {industry} / {area} / {remaining}件（残り枠）")
+        n = await asyncio.to_thread(collect_targets, industry, area, remaining)
+        from db.database import get_stats
+        stats = get_stats()
+        new_today = today_count + n
+        write_log("INFO", "collect", f"[dashboard] 収集完了: {n}件追加 / 本日計{new_today}件")
+        return {
+            "ok":      True,
+            "added":   n,
+            "total":   stats["total"],
+            "today":   new_today,
+            "limit":   DEFAULT_LIMIT,
+            "locked":  new_today >= DEFAULT_LIMIT,
+        }
+    except Exception as e:
+        write_log("ERROR", "collect", f"[dashboard] 収集エラー: {e}")
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/api/diagnose")
+async def api_diagnose(
+    auth=Depends(require_auth),
+    limit: int = Body(50, embed=True)):
+    """
+    ダッシュボードからサイト診断を実行する。
+    未診断ターゲットを limit 件処理してステータスを更新する。
+    """
+    from analyzers.site_checker import check_site
+    from db.database import get_unchecked_targets, update_site_status, get_stats
+
+    try:
+        targets = get_unchecked_targets(limit=limit)
+        if not targets:
+            return {"ok": True, "diagnosed": 0, "message": "未診断のターゲットはありません"}
+
+        write_log("INFO", "diagnose", f"[dashboard] 診断開始: {len(targets)}件")
+
+        results = {"none": 0, "old": 0, "no_mobile": 0, "phone_only": 0, "ok": 0, "error": 0}
+
+        for t in targets:
+            r = await asyncio.to_thread(check_site, t["website"] or "")
+            update_site_status(
+                t["id"],
+                r.get("status", "error"),
+                email              = r.get("email"),
+                has_line           = r.get("has_line"),
+                has_online_booking = r.get("has_online_booking"),
+                phone_only         = r.get("phone_only"),
+                has_ssl            = r.get("has_ssl"),
+                has_contact_form   = r.get("has_contact_form"),
+            )
+            st = r.get("status", "error")
+            results[st] = results.get(st, 0) + 1
+
+        stats = get_stats()
+        write_log("INFO", "diagnose", f"[dashboard] 診断完了: {len(targets)}件")
+        return {"ok": True, "diagnosed": len(targets), "results": results, "stats": stats}
+    except Exception as e:
+        write_log("ERROR", "diagnose", f"[dashboard] 診断エラー: {e}")
+        return {"ok": False, "error": str(e)}
