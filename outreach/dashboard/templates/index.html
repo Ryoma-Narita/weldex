@@ -541,14 +541,34 @@
     if (kw)       params.set('keyword', kw);
     if (status)   params.set('status', status);
     if (industry) params.set('industry', industry);
+
+    // ローディング表示
+    const tbody = document.getElementById('targets-body');
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--light);font-size:0.82rem;">読み込み中...</td></tr>';
+    document.getElementById('target-count').textContent = '';
+
     try {
-      const data = await fetch('/api/targets?' + params).then(r => r.json());
+      const res  = await fetch('/api/targets?' + params);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
       renderTargets(data);
-    } catch(e) {}
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--red);font-size:0.82rem;">
+        読み込みエラー: ${esc(String(e))}<br>
+        <button class="btn secondary" style="margin-top:0.75rem;font-size:0.75rem;" onclick="loadTargets(${page})">再試行</button>
+      </td></tr>`;
+      document.getElementById('target-count').textContent = 'エラー';
+    }
   }
 
   function renderTargets(data) {
     const tbody = document.getElementById('targets-body');
+    if (!data.items || data.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:2.5rem;color:var(--light);font-size:0.82rem;">データがありません。ダッシュボードタブから「収集して診断する」を実行してください。</td></tr>';
+      document.getElementById('target-count').textContent = '0件';
+      renderPagination(0, 1, 20);
+      return;
+    }
     tbody.innerHTML = data.items.map(t => {
       const pitch   = PITCH[t.site_status];
       const flags   = diagFlags(t);
@@ -769,6 +789,15 @@
   let _areasGrouped  = {};          // { 都道府県: [市区町村, ...] }
   let _selectedCities = {};         // { 都道府県: Set([市区町村, ...]) }
   let _activePref    = null;        // 右パネルに表示中の都道府県
+
+  // ── 業種の全選択/全解除（「全選択」「全解除」ボタン用） ──
+  function selectAll(className, checked) {
+    document.querySelectorAll('.' + className).forEach(cb => {
+      cb.checked = checked;
+      cb.closest('.cb-label').classList.toggle('checked', checked);
+    });
+    updateCounts();
+  }
 
   // ── 業種チェックボックス ──
   function onIndCbChange(cb) {

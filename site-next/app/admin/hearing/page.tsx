@@ -1,11 +1,14 @@
 import HearingAdmin from '@/components/hearing/Admin'
+import { getHearings, updateHearing } from './actions'
 
 export const metadata = {
   title: 'ヒアリング管理 | Weldex Admin',
   robots: 'noindex',
 }
 
-export default function AdminHearingPage() {
+export default async function AdminHearingPage() {
+  const initialList = await getHearings()
+
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* 管理画面ヘッダー */}
@@ -39,7 +42,11 @@ export default function AdminHearingPage() {
         </a>
       </div>
 
-      <HearingAdmin />
+      <HearingAdmin
+        initialList={initialList}
+        getHearings={getHearings}
+        updateHearing={updateHearing}
+      />
     </div>
   )
 }

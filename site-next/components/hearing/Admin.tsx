@@ -1,29 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import type { HearingRow } from '@/app/admin/hearing/actions'
 
-// ─── 型 ──────────────────────────────────────────────────────────────────────
+// ─── Props ───────────────────────────────────────────────────────────────────
 
-interface Hearing {
-  id: number
-  company: string
-  name: string
-  industry: string
-  industry_other: string | null
-  url: string | null
-  source: string | null
-  issues: string[]
-  goal: string | null
-  monthly: string | null
-  services: string[]
-  budget: string | null
-  deadline: string | null
-  email: string
-  phone: string | null
-  note: string | null
-  status: string
-  memo: string
-  created_at: string
+interface Props {
+  initialList: HearingRow[]
+  getHearings:  () => Promise<HearingRow[]>
+  updateHearing: (id: number, data: { status?: string; memo?: string }) => Promise<void>
 }
 
 // ─── ステータス定義 ────────────────────────────────────────────────────────────
@@ -50,70 +35,31 @@ function fmt(iso: string) {
   ].join(' ')
 }
 
-// ─── 管理API フェッチ（認証ヘッダー付き） ─────────────────────────────────────
-
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
-
-async function adminFetch(path: string, init?: RequestInit) {
-  const res = await fetch(path, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-admin-secret': ADMIN_SECRET,
-      ...init?.headers,
-    },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error ?? `HTTP ${res.status}`)
-  }
-  return res.json()
-}
-
-// ─── タグ ─────────────────────────────────────────────────────────────────────
-
-function Tag({ label, color = '#1a2540', bg = '#e8f0fe' }: {
-  label: string; color?: string; bg?: string
-}) {
-  return (
-    <span style={{
-      display: 'inline-block',
-      background: bg, color, border: `1px solid ${color}22`,
-      borderRadius: 4, fontSize: '0.72rem', fontWeight: 600,
-      padding: '2px 8px', marginRight: 4, marginBottom: 4,
-    }}>
-      {label}
-    </span>
-  )
-}
-
 // ─── メインコンポーネント ─────────────────────────────────────────────────────
 
-export default function HearingAdmin() {
-  const [list, setList]           = useState<Hearing[]>([])
-  const [selected, setSelected]   = useState<Hearing | null>(null)
-  const [memo, setMemo]           = useState('')
-  const [loading, setLoading]     = useState(true)
+export default function HearingAdmin({ initialList, getHearings, updateHearing }: Props) {
+  const [list, setList]             = useState<HearingRow[]>(initialList)
+  const [selected, setSelected]     = useState<HearingRow | null>(null)
+  const [memo, setMemo]             = useState('')
+  const [loading, setLoading]       = useState(false)
   const [fetchError, setFetchError] = useState('')
   const [saveError, setSaveError]   = useState('')
   const [saving, setSaving]         = useState(false)
 
-  // ─── 一覧取得 ─────────────────────────────────────────────────────────────
+  // ─── 一覧再取得 ───────────────────────────────────────────────────────────
 
   const loadList = () => {
     setLoading(true)
     setFetchError('')
-    adminFetch('/api/hearing')
-      .then((data: Hearing[]) => setList(data))
+    getHearings()
+      .then((data: HearingRow[]) => setList(data))
       .catch((e: Error) => setFetchError(e.message))
       .finally(() => setLoading(false))
   }
 
-  useEffect(loadList, [])
-
   // ─── 選択 ─────────────────────────────────────────────────────────────────
 
-  const select = (h: Hearing) => {
+  const select = (h: HearingRow) => {
     setSelected(h)
     setMemo(h.memo ?? '')
     setSaveError('')
@@ -123,11 +69,8 @@ export default function HearingAdmin() {
 
   const updateStatus = async (id: number, status: string) => {
     try {
-      await adminFetch(`/api/hearing/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      })
-      const patch = (h: Hearing) => h.id === id ? { ...h, status } : h
+      await updateHearing(id, { status })
+      const patch = (h: HearingRow) => h.id === id ? { ...h, status } : h
       setList(l => l.map(patch))
       setSelected(s => s?.id === id ? { ...s, status } : s)
     } catch (e) {
@@ -142,11 +85,8 @@ export default function HearingAdmin() {
     setSaving(true)
     setSaveError('')
     try {
-      await adminFetch(`/api/hearing/${selected.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ memo }),
-      })
-      const patch = (h: Hearing) => h.id === selected.id ? { ...h, memo } : h
+      await updateHearing(selected.id, { memo })
+      const patch = (h: HearingRow) => h.id === selected.id ? { ...h, memo } : h
       setList(l => l.map(patch))
       setSelected(s => s ? { ...s, memo } : s)
     } catch (e) {
@@ -375,6 +315,23 @@ export default function HearingAdmin() {
         )}
       </div>
     </div>
+  )
+}
+
+// ─── Tag ─────────────────────────────────────────────────────────────────────
+
+function Tag({ label, color = '#1a2540', bg = '#e8f0fe' }: {
+  label: string; color?: string; bg?: string
+}) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      background: bg, color, border: `1px solid ${color}22`,
+      borderRadius: 4, fontSize: '0.72rem', fontWeight: 600,
+      padding: '2px 8px', marginRight: 4, marginBottom: 4,
+    }}>
+      {label}
+    </span>
   )
 }
 
