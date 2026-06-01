@@ -44,8 +44,7 @@ def require_auth(credentials: HTTPBasicCredentials = Depends(security)):
 # 起動時にDBを初期化
 @app.on_event("startup")
 def on_startup():
-    """アプリ起動時にDBを初期化し、パスとレコード数をログ出力する。"""
-    from config import DB_PATH
+    """アプリ起動時にDBを初期化し、接続情報をログ出力する。"""
     import logging
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("weldex")
@@ -54,11 +53,16 @@ def on_startup():
 
     # ── 起動診断ログ（Railway Logs で確認可能）──
     try:
+        from db.database import DATABASE_URL
+        import psycopg2
         with get_conn() as conn:
-            count = conn.execute("SELECT COUNT(*) FROM targets").fetchone()[0]
-        logger.info(f"[STARTUP] DB_PATH = {DB_PATH}")
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM targets")
+                count = cur.fetchone()[0]
+        # DATABASE_URL からホスト部分だけ表示（パスワードは隠す）
+        db_host = DATABASE_URL.split("@")[-1].split("/")[0] if "@" in DATABASE_URL else "unknown"
+        logger.info(f"[STARTUP] PostgreSQL接続先: {db_host}")
         logger.info(f"[STARTUP] targets テーブル: {count} 件")
-        logger.info(f"[STARTUP] DB ファイル存在: {os.path.exists(DB_PATH)}")
     except Exception as e:
         logger.error(f"[STARTUP] DB確認エラー: {e}")
 
@@ -89,40 +93,33 @@ def api_targets(
     industry: str = Query(None),
     keyword:  str = Query(None),
 ):
-    """
-    ターゲット一覧をページネーション付きで返す。
-
-    Args:
-        page:     ページ番号（1始まり）
-        per_page: 1ページあたりの件数
-        status:   サイトステータスでフィルター
-        industry: 業種でフィルター
-        keyword:  店舗名・住所でキーワード検索
-    """
+    """ターゲット一覧をページネーション付きで返す。"""
+    import psycopg2.extras
     conditions = []
     params: list = []
 
     if status:
-        conditions.append("site_status = ?")
+        conditions.append("site_status = %s")
         params.append(status)
     if industry:
-        conditions.append("industry = ?")
+        conditions.append("industry = %s")
         params.append(industry)
     if keyword:
-        conditions.append("(name LIKE ? OR address LIKE ?)")
+        conditions.append("(name ILIKE %s OR address ILIKE %s)")
         params.extend([f"%{keyword}%", f"%{keyword}%"])
 
-    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    where  = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     offset = (page - 1) * per_page
 
     with get_conn() as conn:
-        total = conn.execute(
-            f"SELECT COUNT(*) FROM targets {where}", params
-        ).fetchone()[0]
-        rows = conn.execute(
-            f"SELECT * FROM targets {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            params + [per_page, offset]
-        ).fetchall()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(f"SELECT COUNT(*) FROM targets {where}", params)
+            total = cur.fetchone()[0]
+            cur.execute(
+                f"SELECT * FROM targets {where} ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                params + [per_page, offset]
+            )
+            rows = cur.fetchall()
 
     return {
         "total":    total,
@@ -141,25 +138,29 @@ def api_logs(
     category: str = Query(None),
 ):
     """実行ログを返す。"""
+    import psycopg2.extras
     conditions = []
     params: list = []
 
     if level:
-        conditions.append("level = ?")
+        conditions.append("level = %s")
         params.append(level.upper())
     if category:
-        conditions.append("category = ?")
+        conditions.append("category = %s")
         params.append(category)
 
     where  = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     offset = (page - 1) * per_page
 
     with get_conn() as conn:
-        total = conn.execute(f"SELECT COUNT(*) FROM run_logs {where}", params).fetchone()[0]
-        rows  = conn.execute(
-            f"SELECT * FROM run_logs {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            params + [per_page, offset]
-        ).fetchall()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(f"SELECT COUNT(*) FROM run_logs {where}", params)
+            total = cur.fetchone()[0]
+            cur.execute(
+                f"SELECT * FROM run_logs {where} ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                params + [per_page, offset]
+            )
+            rows = cur.fetchall()
 
     return {
         "total": total,
@@ -171,17 +172,20 @@ def api_logs(
 @app.get("/api/logs/stream")
 async def api_logs_stream(auth=Depends(require_auth)):
     """SSEでログをリアルタイム配信する。"""
+    import psycopg2.extras
     async def event_generator():
         last_id = 0
         while True:
             with get_conn() as conn:
-                rows = conn.execute(
-                    "SELECT * FROM run_logs WHERE id > ? ORDER BY id ASC LIMIT 20",
-                    (last_id,)
-                ).fetchall()
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT * FROM run_logs WHERE id > %s ORDER BY id ASC LIMIT 20",
+                        (last_id,)
+                    )
+                    rows = cur.fetchall()
             for row in rows:
                 last_id = row["id"]
-                data = json.dumps(dict(row), ensure_ascii=False)
+                data = json.dumps(dict(row), ensure_ascii=False, default=str)
                 yield f"data: {data}\n\n"
             await asyncio.sleep(2)
 
@@ -364,31 +368,30 @@ from collectors.area_config import INDUSTRY_KEYWORDS, AREA_CONFIG, get_all_areas
 
 @app.get("/api/debug")
 def api_debug(auth=Depends(require_auth)):
-    """
-    DB パス・ファイル存在・レコード数を返す診断エンドポイント。
-    データが消えた際の原因調査に使用する。
-    """
-    from config import DB_PATH
+    """DB接続・レコード数を返す診断エンドポイント。"""
+    from db.database import DATABASE_URL
     try:
         with get_conn() as conn:
-            count     = conn.execute("SELECT COUNT(*) FROM targets").fetchone()[0]
-            unchecked = conn.execute("SELECT COUNT(*) FROM targets WHERE site_status='unchecked'").fetchone()[0]
-            today     = conn.execute(
-                "SELECT COUNT(*) FROM targets WHERE date(created_at) = date('now','localtime')"
-            ).fetchone()[0]
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM targets")
+                total = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM targets WHERE site_status='unchecked'")
+                unchecked = cur.fetchone()[0]
+                cur.execute("""
+                    SELECT COUNT(*) FROM targets
+                    WHERE created_at::date = (NOW() AT TIME ZONE 'Asia/Tokyo')::date
+                """)
+                today = cur.fetchone()[0]
+        db_host = DATABASE_URL.split("@")[-1].split("/")[0] if "@" in DATABASE_URL else "not set"
         return {
-            "db_path":     DB_PATH,
-            "db_exists":   os.path.exists(DB_PATH),
-            "db_size_kb":  round(os.path.getsize(DB_PATH) / 1024, 1) if os.path.exists(DB_PATH) else 0,
-            "total":       count,
-            "unchecked":   unchecked,
-            "today":       today,
-            "volume_dir":  "/data",
-            "volume_exists": os.path.isdir("/data"),
-            "volume_files":  os.listdir("/data") if os.path.isdir("/data") else [],
+            "db_engine":  "postgresql",
+            "db_host":    db_host,
+            "total":      total,
+            "unchecked":  unchecked,
+            "today":      today,
         }
     except Exception as e:
-        return {"error": str(e), "db_path": DB_PATH}
+        return {"error": str(e)}
 
 @app.get("/api/options")
 def api_options(auth=Depends(require_auth)):
@@ -405,9 +408,12 @@ def api_daily_quota(auth=Depends(require_auth)):
     """本日の収集件数と上限を返す。"""
     from config import DEFAULT_LIMIT
     with get_conn() as conn:
-        today_count = conn.execute(
-            "SELECT COUNT(*) FROM targets WHERE date(created_at) = date('now', 'localtime')"
-        ).fetchone()[0]
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM targets
+                WHERE created_at::date = (NOW() AT TIME ZONE 'Asia/Tokyo')::date
+            """)
+            today_count = cur.fetchone()[0]
     return {
         "today":     today_count,
         "limit":     DEFAULT_LIMIT,
@@ -435,9 +441,12 @@ async def api_collect(
 
     # 本日の収集件数チェック
     with get_conn() as conn:
-        today_count = conn.execute(
-            "SELECT COUNT(*) FROM targets WHERE date(created_at) = date('now', 'localtime')"
-        ).fetchone()[0]
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM targets
+                WHERE created_at::date = (NOW() AT TIME ZONE 'Asia/Tokyo')::date
+            """)
+            today_count = cur.fetchone()[0]
 
     if today_count >= DEFAULT_LIMIT:
         return {
