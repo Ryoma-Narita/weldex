@@ -270,6 +270,7 @@
 <div class="tabs">
   <div class="tab active" onclick="showTab('dashboard')">ダッシュボード</div>
   <div class="tab" onclick="showTab('targets')">ターゲットリスト</div>
+  <div class="tab" onclick="showTab('customers')">顧客リスト <span id="customer-count-badge" style="font-size:0.62rem;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
   <div class="tab" onclick="showTab('preview')">送信プレビュー <span id="preview-count-badge" style="font-size:0.62rem;background:#dbeafe;color:#1e40af;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
   <div class="tab" onclick="showTab('logs')">ログ</div>
 </div>
@@ -345,92 +346,154 @@
   </div>
 </div>
 
-<!-- ─── ターゲットリスト（左右分割） ─── -->
+<!-- ─── ターゲットリスト ─── -->
 <div class="panel" id="panel-targets">
-<div class="targets-layout">
-
-  <!-- 左：テーブル -->
-  <div class="targets-left">
-    <div class="toolbar">
-      <input type="text" id="kw-input" placeholder="店舗名・住所で検索" style="width:160px;">
-      <select id="status-filter">
-        <option value="">ステータス：すべて</option>
-        <option value="none">サイトなし</option>
-        <option value="old">古いサイト</option>
-        <option value="no_mobile">スマホ非対応</option>
-        <option value="phone_only">電話のみ</option>
-        <option value="ok">問題なし</option>
-        <option value="unchecked">未診断</option>
-        <option value="error">エラー</option>
-      </select>
-      <select id="industry-filter" style="min-width:110px;">
-        <option value="">業種：すべて</option>
-      </select>
-      <button class="btn" onclick="loadTargets(1)">検索</button>
-      <button class="btn secondary" onclick="resetFilters()">リセット</button>
-      <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:auto;"></span>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="min-width:170px;">店舗名 / 業種・エリア</th>
-            <th style="min-width:160px;">診断結果 / 営業ポイント</th>
-            <th style="min-width:140px;">連絡先</th>
-          </tr>
-        </thead>
-        <tbody id="targets-body"></tbody>
-      </table>
-    </div>
-
-    <div class="pagination" id="pagination"></div>
+  <div class="toolbar">
+    <input type="text" id="kw-input" placeholder="店舗名・住所で検索" style="width:160px;">
+    <select id="status-filter">
+      <option value="">ステータス：すべて</option>
+      <option value="none">サイトなし</option>
+      <option value="old">古いサイト</option>
+      <option value="no_mobile">スマホ非対応</option>
+      <option value="phone_only">電話のみ</option>
+      <option value="ok">問題なし</option>
+      <option value="unchecked">未診断</option>
+      <option value="error">エラー</option>
+    </select>
+    <select id="industry-filter" style="min-width:110px;">
+      <option value="">業種：すべて</option>
+    </select>
+    <button class="btn" onclick="loadTargets(1)">検索</button>
+    <button class="btn secondary" onclick="resetFilters()">リセット</button>
+    <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:auto;"></span>
   </div>
 
-  <!-- 右：サイトプレビュー -->
-  <div class="targets-right" id="preview-panel">
-    <div class="preview-empty" id="preview-empty">
-      <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <rect x="3" y="3" width="18" height="14" rx="2" stroke-width="1.5"/>
-        <path d="M8 21h8M12 17v4" stroke-width="1.5"/>
-      </svg>
-      <p>行をクリックするとサイトを表示</p>
-    </div>
-
-    <div id="preview-content" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
-      <div class="preview-header">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
-          <div class="preview-title" id="pv-name">-</div>
-          <div class="preview-actions">
-            <button class="btn green-btn" id="pv-open-btn" onclick="openInNewTab()" title="新しいタブで開く">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:3px;"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              新しいタブ
-            </button>
-            <button class="btn secondary" onclick="closePreview()">✕</button>
-          </div>
-        </div>
-        <div class="preview-meta">
-          <span id="pv-status-badge"></span>
-          <span id="pv-phone"></span>
-          <span id="pv-email"></span>
-        </div>
-        <div class="preview-url-bar" id="pv-url">-</div>
-      </div>
-
-      <div class="preview-iframe-wrap" id="preview-iframe-wrap">
-        <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms" loading="lazy"></iframe>
-        <div class="preview-blocked" id="preview-blocked">
-          <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-          </svg>
-          <p>このサイトはiframe表示をブロックしています。<br>「新しいタブ」ボタンで直接確認できます。</p>
-          <button class="btn" onclick="openInNewTab()">新しいタブで開く</button>
-        </div>
-      </div>
-    </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:160px;">店舗名 / 業種・エリア</th>
+          <th style="min-width:120px;">診断 / 営業ポイント</th>
+          <th style="min-width:130px;">電話 / メール</th>
+          <th style="min-width:140px;">アクション</th>
+        </tr>
+      </thead>
+      <tbody id="targets-body"></tbody>
+    </table>
   </div>
-</div><!-- /targets-layout -->
+
+  <div class="pagination" id="pagination"></div>
 </div><!-- /panel-targets -->
+
+<!-- ─── 顧客リスト ─── -->
+<div class="panel" id="panel-customers">
+  <div class="toolbar">
+    <input type="text" id="cust-kw" placeholder="会社名・メールで検索" style="width:170px;">
+    <select id="cust-status-filter">
+      <option value="">ステータス：すべて</option>
+      <option value="商談中">商談中</option>
+      <option value="見積提出">見積提出</option>
+      <option value="契約">契約</option>
+      <option value="失注">失注</option>
+    </select>
+    <button class="btn" onclick="loadCustomers(1)">検索</button>
+    <button class="btn secondary" onclick="resetCustFilters()">リセット</button>
+    <button class="btn green-btn" onclick="openCustModal(null)" style="margin-left:auto;">+ 手動で顧客追加</button>
+    <span id="cust-count" style="font-size:0.75rem;color:var(--gray);margin-left:0.75rem;"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:160px;">会社名 / 業種</th>
+          <th style="min-width:120px;">電話 / メール</th>
+          <th style="min-width:90px;">ステータス</th>
+          <th style="min-width:90px;">契約金額</th>
+          <th style="min-width:90px;">接触日</th>
+          <th style="min-width:120px;">メモ</th>
+          <th style="min-width:70px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="customers-body"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="cust-pagination"></div>
+</div>
+
+<!-- ─── サイトプレビューモーダル ─── -->
+<div id="site-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+  <div style="background:var(--white);width:90%;max-width:1100px;height:85vh;display:flex;flex-direction:column;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1rem;background:var(--navy);flex-shrink:0;">
+      <span id="modal-site-name" style="font-weight:600;color:var(--white);font-size:0.875rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <a id="modal-site-link" href="#" target="_blank" rel="noopener" class="btn green-btn" style="font-size:0.72rem;padding:0.3rem 0.7rem;text-decoration:none;">新しいタブで開く</a>
+      <button onclick="closeSiteModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;padding:0 0.25rem;line-height:1;">✕</button>
+    </div>
+    <div style="font-size:0.68rem;color:var(--gray);padding:0.3rem 1rem;background:var(--off);border-bottom:1px solid var(--border);font-family:monospace;" id="modal-site-url"></div>
+    <div style="flex:1;position:relative;">
+      <iframe id="modal-iframe" sandbox="allow-scripts allow-same-origin allow-forms" style="width:100%;height:100%;border:none;"></iframe>
+      <div id="modal-blocked" style="display:none;position:absolute;inset:0;background:var(--off);align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem;text-align:center;">
+        <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        <p style="font-size:0.82rem;color:var(--gray);line-height:1.6;">このサイトはiframe表示をブロックしています。<br>「新しいタブで開く」ボタンで直接確認できます。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 顧客編集モーダル ─── -->
+<div id="cust-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+  <div style="background:var(--white);width:90%;max-width:520px;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;padding:0.85rem 1.25rem;background:var(--navy);">
+      <span id="cust-modal-title" style="font-weight:600;color:var(--white);font-size:0.9rem;flex:1;">顧客情報</span>
+      <button onclick="closeCustModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;">
+      <input type="hidden" id="cm-id">
+      <input type="hidden" id="cm-target-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">会社名 *</label>
+          <input id="cm-company" type="text" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">担当者名</label>
+          <input id="cm-contact" type="text" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">電話</label>
+          <input id="cm-phone" type="text" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">メール</label>
+          <input id="cm-email" type="text" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">ステータス</label>
+          <select id="cm-status" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+            <option>商談中</option><option>見積提出</option><option>契約</option><option>失注</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">契約金額（円）</label>
+          <input id="cm-amount" type="number" placeholder="例：150000" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">サービス内容</label>
+        <input id="cm-services" type="text" placeholder="例：コーポレートサイト制作 + LINE予約" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+      </div>
+      <div>
+        <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">メモ</label>
+        <textarea id="cm-memo" rows="3" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;resize:vertical;font-family:inherit;"></textarea>
+      </div>
+      <div id="cm-error" style="color:var(--red);font-size:0.78rem;display:none;"></div>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+        <button class="btn secondary" onclick="closeCustModal()">キャンセル</button>
+        <button class="btn green-btn" onclick="saveCustModal()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ─── 送信プレビュー ─── -->
 <div class="panel" id="panel-preview">
@@ -471,13 +534,14 @@
 <script>
   // ─── タブ ───
   function showTab(name) {
-    const names = ['dashboard', 'targets', 'preview', 'logs'];
+    const names = ['dashboard', 'targets', 'customers', 'preview', 'logs'];
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', names[i] === name));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
-    if (name === 'targets') loadTargets(1);
-    if (name === 'logs')    loadLogs();
-    if (name === 'preview') loadPreview();
+    if (name === 'targets')   loadTargets(1);
+    if (name === 'customers') loadCustomers(1);
+    if (name === 'logs')      loadLogs();
+    if (name === 'preview')   loadPreview();
   }
 
   // ─── 統計 ───
@@ -564,7 +628,7 @@
   function renderTargets(data) {
     const tbody = document.getElementById('targets-body');
     if (!data.items || data.items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:2.5rem;color:var(--light);font-size:0.82rem;">データがありません。ダッシュボードタブから「収集して診断する」を実行してください。</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2.5rem;color:var(--light);font-size:0.82rem;">データがありません。ダッシュボードタブから「収集して診断する」を実行してください。</td></tr>';
       document.getElementById('target-count').textContent = '0件';
       renderPagination(0, 1, 20);
       return;
@@ -572,13 +636,17 @@
     tbody.innerHTML = data.items.map(t => {
       const pitch   = PITCH[t.site_status];
       const flags   = diagFlags(t);
-      const sendBadge = t.send_status === 'sent'
-        ? '<span style="font-size:0.6rem;background:#dcfce7;color:var(--green);padding:0.08rem 0.38rem;border-radius:2px;font-weight:600;margin-left:4px;">送信済</span>'
+      const isConverted = t.send_status === '顧客化';
+      const sendBadge = isConverted
+        ? '<span style="font-size:0.6rem;background:#dcfce7;color:var(--green);padding:0.08rem 0.38rem;border-radius:2px;font-weight:600;margin-left:4px;">顧客化済</span>'
+        : t.send_status === 'sent'
+        ? '<span style="font-size:0.6rem;background:#dbeafe;color:var(--blue);padding:0.08rem 0.38rem;border-radius:2px;font-weight:600;margin-left:4px;">送信済</span>'
         : t.send_status === 'failed'
         ? '<span style="font-size:0.6rem;background:#fee2e2;color:var(--red);padding:0.08rem 0.38rem;border-radius:2px;font-weight:600;margin-left:4px;">送信失敗</span>'
         : '';
+      const tJson = JSON.stringify(t).replace(/"/g, '&quot;');
       return `
-        <tr class="data-row" onclick="selectTarget(this, ${JSON.stringify(t).replace(/"/g, '&quot;')})">
+        <tr class="data-row">
           <!-- 列1: 店舗名 -->
           <td>
             <div style="font-weight:600;font-size:0.82rem;line-height:1.3;">${esc(t.name)}</div>
@@ -588,7 +656,7 @@
               ${t.area     ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--light);padding:0.06rem 0.35rem;border-radius:2px;">${esc(t.area)}</span>` : ''}
             </div>
           </td>
-          <!-- 列2: 診断結果 + 営業ポイント + フラグ -->
+          <!-- 列2: 診断結果 + 営業ポイント -->
           <td>
             <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.25rem;">
               <span class="badge badge-${t.site_status||'unchecked'}">${STATUS_LABEL[t.site_status]||'未診断'}</span>
@@ -597,20 +665,33 @@
             ${pitch ? `<div class="pitch-hint" style="color:${pitch.color};">→ ${pitch.text}</div>` : ''}
             ${flags ? `<div style="margin-top:4px;display:flex;gap:0.2rem;flex-wrap:wrap;">${flags}</div>` : ''}
           </td>
-          <!-- 列3: 連絡先 -->
+          <!-- 列3: 電話 + メール -->
           <td>
             ${t.phone
-              ? `<div><a href="tel:${esc(t.phone)}" class="contact-link" onclick="event.stopPropagation()">
+              ? `<div><a href="tel:${esc(t.phone)}" class="contact-link">
                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:3px;"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.85 12a19.79 19.79 0 01-3.07-8.67A2 2 0 012.77 1.1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.84a16 16 0 006.29 6.29l1.11-1.1a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2z"/></svg>${esc(t.phone)}</a></div>`
               : `<div style="font-size:0.72rem;color:var(--light);">電話なし</div>`}
             ${t.email
-              ? `<div style="margin-top:3px;"><a href="mailto:${esc(t.email)}" style="color:var(--blue);font-size:0.7rem;text-decoration:none;" onclick="event.stopPropagation()">
+              ? `<div style="margin-top:3px;"><a href="mailto:${esc(t.email)}" style="color:var(--blue);font-size:0.72rem;text-decoration:none;">
                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>${esc(t.email)}</a></div>`
-              : ''}
-            ${t.website
-              ? `<div style="margin-top:3px;"><a href="${esc(t.website)}" target="_blank" rel="noopener" style="color:var(--light);font-size:0.68rem;text-decoration:none;" onclick="event.stopPropagation()">
-                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:2px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>サイトを確認</a></div>`
-              : ''}
+              : `<div style="font-size:0.68rem;color:var(--light);margin-top:2px;">メールなし</div>`}
+          </td>
+          <!-- 列4: アクション -->
+          <td>
+            <div style="display:flex;flex-direction:column;gap:0.3rem;">
+              ${t.website
+                ? `<button class="btn secondary" style="font-size:0.68rem;padding:0.25rem 0.55rem;"
+                     onclick="openSiteModal(${JSON.stringify(t.name).replace(/"/g,'&quot;')},${JSON.stringify(t.website).replace(/"/g,'&quot;')})">
+                     サイトを表示
+                   </button>`
+                : `<span style="font-size:0.68rem;color:var(--light);">サイトなし</span>`}
+              ${isConverted
+                ? `<span style="font-size:0.65rem;color:var(--green);font-weight:600;">顧客化済み</span>`
+                : `<button class="btn green-btn" style="font-size:0.68rem;padding:0.25rem 0.55rem;"
+                     onclick="convertToCustomer(${t.id}, ${tJson})">
+                     顧客化
+                   </button>`}
+            </div>
           </td>
         </tr>`;
     }).join('');
@@ -639,63 +720,238 @@
     closePreview();
   }
 
-  // ─── サイトプレビュー ───
-  let currentTarget = null;
-
-  function selectTarget(row, target) {
-    // 選択ハイライト
-    document.querySelectorAll('.data-row').forEach(r => r.classList.remove('selected'));
-    row.classList.add('selected');
-
-    currentTarget = target;
-    showPreview(target);
+  // ─── サイトプレビューモーダル ───
+  function openSiteModal(name, url) {
+    document.getElementById('modal-site-name').textContent = name;
+    document.getElementById('modal-site-url').textContent  = url;
+    document.getElementById('modal-site-link').href        = url;
+    const iframe   = document.getElementById('modal-iframe');
+    const blocked  = document.getElementById('modal-blocked');
+    blocked.style.display = 'none';
+    iframe.src = '/proxy?url=' + encodeURIComponent(url);
+    iframe.onerror = () => { blocked.style.display = 'flex'; };
+    // X-Frame-Options ブロック検知（load後に空ならブロック扱い）
+    iframe.onload = () => {
+      try {
+        if (!iframe.contentDocument || iframe.contentDocument.body.innerHTML === '') {
+          blocked.style.display = 'flex';
+        }
+      } catch(e) {
+        blocked.style.display = 'flex';
+      }
+    };
+    const modal = document.getElementById('site-modal');
+    modal.style.display = 'flex';
   }
 
-  function showPreview(t) {
-    document.getElementById('preview-empty').style.display   = 'none';
-    const content = document.getElementById('preview-content');
-    content.style.display = 'flex';
+  function closeSiteModal() {
+    document.getElementById('site-modal').style.display = 'none';
+    document.getElementById('modal-iframe').src = 'about:blank';
+  }
 
-    document.getElementById('pv-name').textContent  = t.name || '-';
-    document.getElementById('pv-phone').textContent = t.phone ? ('📞 ' + t.phone) : '';
-    document.getElementById('pv-email').textContent = t.email ? ('✉ ' + t.email) : '';
-    document.getElementById('pv-url').textContent   = t.website || 'サイトなし';
+  // ESCキーでモーダルを閉じる
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); }
+  });
 
-    const badgeEl = document.getElementById('pv-status-badge');
-    badgeEl.className = `badge badge-${t.site_status}`;
-    badgeEl.textContent = t.site_status;
+  // ─── 顧客化ボタン ───
+  async function convertToCustomer(targetId, t) {
+    if (!confirm(`「${t.name}」を顧客リストに追加しますか？`)) return;
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          target_id:    targetId,
+          company:      t.name,
+          phone:        t.phone  || '',
+          email:        t.email  || '',
+          industry:     t.industry || '',
+          source:       '営業リスト',
+        }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        alert(`顧客リストに追加しました（ID: ${d.id}）`);
+        loadTargets(currentPage); // リストを再読み込みして「顧客化済み」バッジを表示
+      } else {
+        alert('エラー: ' + (d.error || '不明'));
+      }
+    } catch(e) {
+      alert('通信エラー: ' + e);
+    }
+  }
 
-    const blockedEl = document.getElementById('preview-blocked');
-    const iframe    = document.getElementById('preview-iframe');
+  // ─── 顧客リスト ───
+  const CUST_STATUS_STYLE = {
+    '商談中':  { color: '#d97706', bg: '#fffbeb' },
+    '見積提出':{ color: '#3b82f6', bg: '#eff6ff' },
+    '契約':    { color: '#16a34a', bg: '#dcfce7' },
+    '失注':    { color: '#9ca3af', bg: '#f9fafb' },
+  };
 
-    if (!t.website) {
-      iframe.src = 'about:blank';
-      blockedEl.classList.remove('show');
-      blockedEl.classList.add('show');
-      blockedEl.querySelector('p').textContent = 'このターゲットにはWebサイトが登録されていません。';
+  let custPage = 1;
+  async function loadCustomers(page = 1) {
+    custPage = page;
+    const params  = new URLSearchParams({ page, per_page: 20 });
+    const kw      = document.getElementById('cust-kw').value;
+    const status  = document.getElementById('cust-status-filter').value;
+    if (kw)     params.set('keyword', kw);
+    if (status) params.set('status', status);
+
+    const tbody = document.getElementById('customers-body');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--light);font-size:0.82rem;">読み込み中...</td></tr>';
+
+    try {
+      const res  = await fetch('/api/customers?' + params);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      renderCustomers(data);
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red);font-size:0.82rem;">
+        読み込みエラー: ${esc(String(e))}<br>
+        <button class="btn secondary" style="margin-top:0.5rem;font-size:0.75rem;" onclick="loadCustomers(${page})">再試行</button>
+      </td></tr>`;
+    }
+  }
+
+  function renderCustomers(data) {
+    const tbody = document.getElementById('customers-body');
+    const badge = document.getElementById('customer-count-badge');
+    badge.textContent = data.total > 0 ? data.total + '件' : '';
+
+    if (!data.items || data.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--light);font-size:0.82rem;">顧客がまだいません。ターゲットリストの「顧客化」ボタンか「+ 手動で顧客追加」から追加してください。</td></tr>';
+      document.getElementById('cust-count').textContent = '0件';
+      renderCustPagination(0, 1, 20);
       return;
     }
 
-    blockedEl.classList.remove('show');
-    // プロキシ経由で読み込む（X-Frame-Options を除去）
-    iframe.src = '/proxy?url=' + encodeURIComponent(t.website);
+    tbody.innerHTML = data.items.map(c => {
+      const st  = CUST_STATUS_STYLE[c.status] || { color: '#9ca3af', bg: '#f9fafb' };
+      const amt = c.contract_amount ? '¥' + Number(c.contract_amount).toLocaleString() : '—';
+      const dt  = c.contacted_at ? new Date(c.contacted_at).toLocaleDateString('ja-JP') : '—';
+      const cJson = JSON.stringify(c).replace(/"/g, '&quot;');
+      return `
+        <tr class="data-row">
+          <td>
+            <div style="font-weight:600;font-size:0.82rem;">${esc(c.company)}</div>
+            ${c.industry ? `<div style="font-size:0.65rem;color:var(--gray);margin-top:2px;">${esc(c.industry)}</div>` : ''}
+            ${c.contact_name ? `<div style="font-size:0.68rem;color:var(--light);">${esc(c.contact_name)}</div>` : ''}
+            ${c.target_id ? `<div style="font-size:0.6rem;color:var(--light);margin-top:2px;">営業リスト出身</div>` : `<div style="font-size:0.6rem;color:var(--light);margin-top:2px;">手動追加</div>`}
+          </td>
+          <td>
+            ${c.phone ? `<div><a href="tel:${esc(c.phone)}" class="contact-link">${esc(c.phone)}</a></div>` : '<div style="font-size:0.72rem;color:var(--light);">電話なし</div>'}
+            ${c.email ? `<div style="margin-top:2px;"><a href="mailto:${esc(c.email)}" style="color:var(--blue);font-size:0.72rem;text-decoration:none;">${esc(c.email)}</a></div>` : ''}
+          </td>
+          <td>
+            <span style="font-size:0.72rem;font-weight:700;background:${st.bg};color:${st.color};padding:0.15rem 0.55rem;border-radius:3px;border:1px solid ${st.color}44;">
+              ${esc(c.status)}
+            </span>
+          </td>
+          <td style="font-size:0.78rem;color:var(--navy);font-weight:${c.contract_amount?'600':'400'};color:${c.contract_amount?'var(--green)':'var(--light)'};">${amt}</td>
+          <td style="font-size:0.72rem;color:var(--gray);">${dt}</td>
+          <td style="font-size:0.72rem;color:var(--gray);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.memo||'')}">${esc(c.memo||'—')}</td>
+          <td>
+            <button class="btn secondary" style="font-size:0.68rem;padding:0.22rem 0.5rem;" onclick="openCustModal(${cJson})">編集</button>
+          </td>
+        </tr>`;
+    }).join('');
 
-    iframe.onload = () => blockedEl.classList.remove('show');
-    iframe.onerror = () => blockedEl.classList.add('show');
+    document.getElementById('cust-count').textContent = `${data.total}件`;
+    renderCustPagination(data.total, data.page, data.per_page);
   }
 
-  function openInNewTab() {
-    if (currentTarget && currentTarget.website) {
-      window.open(currentTarget.website, '_blank', 'noopener,noreferrer');
+  function renderCustPagination(total, page, perPage) {
+    const pages = Math.ceil(total / perPage);
+    const el    = document.getElementById('cust-pagination');
+    if (pages <= 1) { el.innerHTML = `<span>${total}件</span>`; return; }
+    let html = `<button onclick="loadCustomers(${page-1})" ${page<=1?'disabled':''}>←</button>`;
+    for (let i = Math.max(1, page-2); i <= Math.min(pages, page+2); i++) {
+      html += `<button onclick="loadCustomers(${i})" class="${i===page?'active':''}">${i}</button>`;
     }
+    html += `<button onclick="loadCustomers(${page+1})" ${page>=pages?'disabled':''}>→</button>`;
+    html += `<span>${total}件 / ${pages}ページ</span>`;
+    el.innerHTML = html;
   }
 
-  function closePreview() {
-    currentTarget = null;
-    document.getElementById('preview-empty').style.display = '';
-    document.getElementById('preview-content').style.display = 'none';
-    document.getElementById('preview-iframe').src = 'about:blank';
-    document.querySelectorAll('.data-row').forEach(r => r.classList.remove('selected'));
+  function resetCustFilters() {
+    document.getElementById('cust-kw').value = '';
+    document.getElementById('cust-status-filter').value = '';
+    loadCustomers(1);
+  }
+
+  // ─── 顧客モーダル ───
+  function openCustModal(c) {
+    const isNew = !c;
+    document.getElementById('cust-modal-title').textContent = isNew ? '+ 顧客を追加' : '顧客情報を編集';
+    document.getElementById('cm-id').value        = c?.id       || '';
+    document.getElementById('cm-target-id').value = c?.target_id|| '';
+    document.getElementById('cm-company').value   = c?.company  || '';
+    document.getElementById('cm-contact').value   = c?.contact_name || '';
+    document.getElementById('cm-phone').value     = c?.phone    || '';
+    document.getElementById('cm-email').value     = c?.email    || '';
+    document.getElementById('cm-status').value    = c?.status   || '商談中';
+    document.getElementById('cm-amount').value    = c?.contract_amount || '';
+    document.getElementById('cm-services').value  = c?.services || '';
+    document.getElementById('cm-memo').value      = c?.memo     || '';
+    document.getElementById('cm-error').style.display = 'none';
+    document.getElementById('cust-modal').style.display = 'flex';
+  }
+
+  function closeCustModal() {
+    document.getElementById('cust-modal').style.display = 'none';
+  }
+
+  async function saveCustModal() {
+    const id       = document.getElementById('cm-id').value;
+    const targetId = document.getElementById('cm-target-id').value;
+    const company  = document.getElementById('cm-company').value.trim();
+    const errEl    = document.getElementById('cm-error');
+
+    if (!company) { errEl.textContent='会社名は必須です'; errEl.style.display=''; return; }
+    errEl.style.display = 'none';
+
+    const body = {
+      company,
+      contact_name:    document.getElementById('cm-contact').value,
+      phone:           document.getElementById('cm-phone').value,
+      email:           document.getElementById('cm-email').value,
+      status:          document.getElementById('cm-status').value,
+      contract_amount: document.getElementById('cm-amount').value || null,
+      services:        document.getElementById('cm-services').value,
+      memo:            document.getElementById('cm-memo').value,
+    };
+
+    try {
+      let res;
+      if (id) {
+        // 更新
+        res = await fetch(`/api/customers/${id}`, {
+          method: 'PATCH', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(body),
+        });
+      } else {
+        // 新規作成
+        if (targetId) body.target_id = parseInt(targetId);
+        body.source = '手動';
+        res = await fetch('/api/customers', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(body),
+        });
+      }
+      const d = await res.json();
+      if (d.ok) {
+        closeCustModal();
+        loadCustomers(custPage);
+      } else {
+        errEl.textContent = d.error || 'エラーが発生しました';
+        errEl.style.display = '';
+      }
+    } catch(e) {
+      errEl.textContent = '通信エラー: ' + e;
+      errEl.style.display = '';
+    }
   }
 
   // ─── ログ ───

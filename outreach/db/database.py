@@ -95,6 +95,24 @@ def init_db() -> None:
                     email      TEXT UNIQUE NOT NULL,
                     created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
+
+                CREATE TABLE IF NOT EXISTS customers (
+                    id              SERIAL PRIMARY KEY,
+                    target_id       INTEGER REFERENCES targets(id) ON DELETE SET NULL,
+                    company         TEXT NOT NULL,
+                    contact_name    TEXT,
+                    phone           TEXT,
+                    email           TEXT,
+                    industry        TEXT,
+                    source          TEXT DEFAULT '営業リスト',
+                    status          TEXT DEFAULT '商談中',
+                    contract_amount INTEGER,
+                    services        TEXT DEFAULT '',
+                    memo            TEXT DEFAULT '',
+                    contacted_at    TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo'),
+                    contracted_at   TIMESTAMP,
+                    created_at      TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
+                );
             """)
         conn.commit()
 

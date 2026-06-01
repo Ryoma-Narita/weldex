@@ -542,3 +542,151 @@ async def api_diagnose(
     except Exception as e:
         write_log("ERROR", "diagnose", f"[dashboard] 診断エラー: {e}")
         return {"ok": False, "error": str(e)}
+
+
+# ─── 顧客リスト API ────────────────────────────────────────────────────────────
+
+@app.get("/api/customers")
+def api_customers(
+    auth=Depends(require_auth),
+    page:     int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    status:   str = Query(None),
+    keyword:  str = Query(None),
+):
+    """顧客リストをページネーション付きで返す。ターゲット情報も結合して返す。"""
+    import psycopg2.extras
+    conditions = []
+    params: list = []
+
+    if status:
+        conditions.append("c.status = %s")
+        params.append(status)
+    if keyword:
+        conditions.append("(c.company ILIKE %s OR c.contact_name ILIKE %s OR c.email ILIKE %s)")
+        params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+
+    where  = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    offset = (page - 1) * per_page
+
+    with get_conn() as conn:
+        with conn.cursor() as cnt_cur:
+            cnt_cur.execute(f"SELECT COUNT(*) FROM customers c {where}", params)
+            total = cnt_cur.fetchone()[0]
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"""
+                SELECT c.*,
+                       t.site_status  AS target_site_status,
+                       t.address      AS target_address,
+                       t.area         AS target_area
+                FROM customers c
+                LEFT JOIN targets t ON c.target_id = t.id
+                {where}
+                ORDER BY c.created_at DESC
+                LIMIT %s OFFSET %s
+                """,
+                params + [per_page, offset],
+            )
+            rows = cur.fetchall()
+
+    return {
+        "total":    total,
+        "page":     page,
+        "per_page": per_page,
+        "items":    [dict(r) for r in rows],
+    }
+
+
+@app.post("/api/customers")
+def api_customers_create(
+    auth=Depends(require_auth),
+    body: dict = Body(...),
+):
+    """顧客を新規作成する。target_id を渡すとターゲットから情報を引き継ぐ。"""
+    target_id = body.get("target_id")
+
+    # target_id がある場合はターゲット情報を補完
+    if target_id:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT name, phone, email, industry FROM targets WHERE id = %s",
+                    (target_id,)
+                )
+                row = cur.fetchone()
+                if row:
+                    body.setdefault("company",      row[0])
+                    body.setdefault("phone",         row[1])
+                    body.setdefault("email",         row[2])
+                    body.setdefault("industry",      row[3])
+                # ターゲットに顧客化フラグを立てる
+                cur.execute(
+                    "UPDATE targets SET send_status = '顧客化' WHERE id = %s",
+                    (target_id,)
+                )
+            conn.commit()
+
+    company = body.get("company", "").strip()
+    if not company:
+        return {"ok": False, "error": "会社名は必須です"}
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO customers
+                    (target_id, company, contact_name, phone, email, industry,
+                     source, status, contract_amount, services, memo)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    target_id,
+                    company,
+                    body.get("contact_name"),
+                    body.get("phone"),
+                    body.get("email"),
+                    body.get("industry"),
+                    body.get("source", "営業リスト"),
+                    body.get("status", "商談中"),
+                    body.get("contract_amount"),
+                    body.get("services", ""),
+                    body.get("memo", ""),
+                ),
+            )
+            new_id = cur.fetchone()[0]
+        conn.commit()
+
+    write_log("INFO", "customer", f"顧客化: {company} (id={new_id}, target_id={target_id})")
+    return {"ok": True, "id": new_id}
+
+
+@app.patch("/api/customers/{customer_id}")
+def api_customers_update(
+    customer_id: int,
+    auth=Depends(require_auth),
+    body: dict = Body(...),
+):
+    """顧客情報（ステータス・メモ・契約金額など）を更新する。"""
+    allowed = {"status", "memo", "contract_amount", "services",
+               "contact_name", "phone", "email", "contracted_at"}
+    sets   = []
+    values = []
+    for key in allowed:
+        if key in body:
+            sets.append(f"{key} = %s")
+            values.append(body[key])
+
+    if not sets:
+        return {"ok": False, "error": "更新項目なし"}
+
+    values.append(customer_id)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE customers SET {', '.join(sets)} WHERE id = %s",
+                values,
+            )
+        conn.commit()
+    return {"ok": True}
