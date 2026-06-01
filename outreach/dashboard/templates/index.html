@@ -124,6 +124,30 @@
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
+    /* 収集パネル チェックボックスグリッド */
+    .cb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; }
+    .cb-grid.pref-grid { grid-template-columns: repeat(4, 1fr); }
+    .cb-label {
+      display: flex; align-items: center; gap: 0.3rem; cursor: pointer;
+      padding: 0.22rem 0.45rem; border: 1px solid var(--border); font-size: 0.76rem;
+      color: var(--navy); background: var(--white); transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .cb-label:hover { background: #eff6ff; border-color: #bfdbfe; }
+    .cb-label input[type=checkbox] { cursor: pointer; accent-color: var(--blue); flex-shrink: 0; }
+    .cb-label.checked { background: #eff6ff; border-color: var(--blue2); }
+    .sel-actions { display: flex; gap: 0.3rem; }
+    .sel-actions button { font-size: 0.65rem; padding: 0.15rem 0.5rem; }
+    .collect-section-title {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+    .collect-section-title span { font-size: 0.72rem; color: var(--gray); font-weight: 500; letter-spacing: 0.04em; }
+    .sel-count {
+      font-size: 0.68rem; padding: 0.1rem 0.45rem; background: #dbeafe;
+      color: var(--blue); border-radius: 2px; font-weight: 600;
+    }
+
     /* 送信モードバッジ */
     .mode-badge {
       display: inline-flex; align-items: center; gap: 0.3rem;
@@ -201,24 +225,42 @@
     <!-- 収集・診断 操作パネル -->
     <div class="kpi-label">リスト収集 / 診断実行</div>
     <div style="background:var(--white);border:1px solid var(--border);padding:1.2rem 1.5rem;margin-bottom:1.5rem;">
-      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
-        <div>
-          <div style="font-size:0.72rem;color:var(--gray);margin-bottom:0.3rem;">業種</div>
-          <select id="op-industry" style="padding:0.35rem 0.6rem;border:1px solid var(--border);font-size:0.82rem;min-width:140px;">
-            <option value="">読み込み中...</option>
-          </select>
+
+      <!-- 業種 -->
+      <div style="margin-bottom:1rem;">
+        <div class="collect-section-title">
+          <span>業種を選択 <span class="sel-count" id="ind-count">0</span></span>
+          <div class="sel-actions">
+            <button class="btn secondary" onclick="selectAll('ind-cb', true)">全選択</button>
+            <button class="btn secondary" onclick="selectAll('ind-cb', false)">全解除</button>
+          </div>
         </div>
-        <div>
-          <div style="font-size:0.72rem;color:var(--gray);margin-bottom:0.3rem;">エリア</div>
-          <select id="op-area" style="padding:0.35rem 0.6rem;border:1px solid var(--border);font-size:0.82rem;min-width:160px;">
-            <option value="">読み込み中...</option>
-          </select>
+        <div class="cb-grid" id="op-industries">
+          <span style="font-size:0.75rem;color:var(--light);">読み込み中...</span>
         </div>
-        <button class="btn" onclick="runCollect()" id="btn-collect">▶ 収集する</button>
-        <button class="btn green-btn" onclick="runDiagnose()" id="btn-diagnose">🔍 診断する</button>
       </div>
-      <div id="op-quota" style="margin-top:0.6rem;font-size:0.78rem;color:var(--gray);"></div>
-      <div id="op-status" style="margin-top:0.4rem;font-size:0.8rem;color:var(--gray);min-height:1.2em;"></div>
+
+      <!-- 都道府県 -->
+      <div style="margin-bottom:0.9rem;">
+        <div class="collect-section-title">
+          <span>都道府県を選択 <span class="sel-count" id="pref-count">0</span></span>
+          <div class="sel-actions">
+            <button class="btn secondary" onclick="selectAll('pref-cb', true)">全選択</button>
+            <button class="btn secondary" onclick="selectAll('pref-cb', false)">全解除</button>
+          </div>
+        </div>
+        <div class="cb-grid pref-grid" id="op-prefs">
+          <span style="font-size:0.75rem;color:var(--light);">読み込み中...</span>
+        </div>
+      </div>
+
+      <!-- クォータ＋ボタン -->
+      <div id="op-quota" style="margin-bottom:0.6rem;font-size:0.78rem;color:var(--gray);"></div>
+      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+        <button class="btn" onclick="runCollect()" id="btn-collect">▶ 収集する</button>
+        <button class="btn green-btn" onclick="runDiagnose()" id="btn-diagnose">診断する</button>
+      </div>
+      <div id="op-status" style="margin-top:0.5rem;font-size:0.8rem;color:var(--gray);min-height:1.2em;"></div>
     </div>
 
     <div class="kpi-label">収集・診断</div>
@@ -601,14 +643,71 @@
   setInterval(loadStats, 30000);
 
   // ─── 収集・診断 UI ───
+  let _areasGrouped = {}; // { 都道府県: [市区町村, ...] }
+
+  function selectAll(cls, checked) {
+    document.querySelectorAll('.' + cls).forEach(cb => {
+      cb.checked = checked;
+      cb.closest('.cb-label').classList.toggle('checked', checked);
+    });
+    updateCounts();
+  }
+
+  function updateCounts() {
+    const indCount  = document.querySelectorAll('.ind-cb:checked').length;
+    const prefCount = document.querySelectorAll('.pref-cb:checked').length;
+    document.getElementById('ind-count').textContent  = indCount  + '業種';
+    document.getElementById('pref-count').textContent = prefCount + '都道府県';
+    // 収集ボタンのラベル更新（ロック時は触らない）
+    const btn = document.getElementById('btn-collect');
+    if (!btn.disabled) {
+      // 何件残りがあるかは quota から取るが、ラベルはシンプルに
+      const areaCount = getSelectedAreas().length;
+      btn.textContent = `▶ 収集する（${indCount}業種 × ${areaCount}エリア）`;
+    }
+  }
+
+  function getSelectedIndustries() {
+    return [...document.querySelectorAll('.ind-cb:checked')].map(cb => cb.value);
+  }
+
+  function getSelectedAreas() {
+    // チェック済み都道府県のすべての市区町村をフラットに返す
+    const checked = [...document.querySelectorAll('.pref-cb:checked')].map(cb => cb.value);
+    const result  = [];
+    for (const pref of checked) {
+      const cities = _areasGrouped[pref] || [];
+      for (const city of cities) result.push(pref + city);
+    }
+    return result;
+  }
+
   async function loadOptions() {
     try {
       const d = await fetch('/api/options').then(r => r.json());
-      const ind  = document.getElementById('op-industry');
-      const area = document.getElementById('op-area');
-      ind.innerHTML  = d.industries.map(v => `<option value="${v}">${v}</option>`).join('');
-      area.innerHTML = d.areas.map(v => `<option value="${v}">${v}</option>`).join('');
+      _areasGrouped = d.areas_grouped || {};
+
+      // 業種チェックボックス
+      const indEl = document.getElementById('op-industries');
+      indEl.innerHTML = d.industries.map(v => `
+        <label class="cb-label checked">
+          <input type="checkbox" value="${v}" class="ind-cb" checked onchange="onCbChange(this)"> ${v}
+        </label>`).join('');
+
+      // 都道府県チェックボックス
+      const prefEl = document.getElementById('op-prefs');
+      prefEl.innerHTML = Object.keys(_areasGrouped).map(p => `
+        <label class="cb-label" title="${(_areasGrouped[p]||[]).join(' / ')}">
+          <input type="checkbox" value="${p}" class="pref-cb" onchange="onCbChange(this)"> ${p}
+        </label>`).join('');
+
+      updateCounts();
     } catch(e) { console.error('options load failed', e); }
+  }
+
+  function onCbChange(cb) {
+    cb.closest('.cb-label').classList.toggle('checked', cb.checked);
+    updateCounts();
   }
 
   async function loadQuota() {
@@ -616,20 +715,20 @@
       const d   = await fetch('/api/daily-quota').then(r => r.json());
       const btn = document.getElementById('btn-collect');
       const bar = document.getElementById('op-quota');
-      bar.textContent = `本日の収集：${d.today} / ${d.limit} 件（残り ${d.remaining} 件）`;
+      bar.innerHTML = `本日の収集：<strong>${d.today}</strong> / ${d.limit} 件（残り <strong>${d.remaining}</strong> 件）`;
       bar.style.color = d.locked ? 'var(--red)' : 'var(--gray)';
       if (d.locked) {
-        btn.disabled    = true;
-        btn.textContent = '本日の上限に達しました（翌日リセット）';
+        btn.disabled         = true;
+        btn.textContent      = '本日の上限に達しました（翌日リセット）';
         btn.style.background = 'var(--border)';
         btn.style.color      = 'var(--gray)';
         btn.style.cursor     = 'not-allowed';
       } else {
-        btn.disabled    = false;
-        btn.textContent = `▶ 収集する（残り${d.remaining}件）`;
+        btn.disabled         = false;
         btn.style.background = '';
         btn.style.color      = '';
         btn.style.cursor     = '';
+        updateCounts(); // ラベルを業種×エリア数で更新
       }
     } catch(e) { console.error('quota load failed', e); }
   }
@@ -638,21 +737,34 @@
   loadQuota();
 
   async function runCollect() {
-    const industry = document.getElementById('op-industry').value;
-    const area     = document.getElementById('op-area').value;
-    const status   = document.getElementById('op-status');
-    const btn      = document.getElementById('btn-collect');
-    if (!industry || !area) { status.textContent = '業種とエリアを選択してください'; return; }
+    const industries = getSelectedIndustries();
+    const areas      = getSelectedAreas();
+    const status     = document.getElementById('op-status');
+    const btn        = document.getElementById('btn-collect');
+
+    if (!industries.length) {
+      status.style.color = 'var(--red)';
+      status.textContent = '業種を1つ以上選択してください';
+      return;
+    }
+    if (!areas.length) {
+      status.style.color = 'var(--red)';
+      status.textContent = '都道府県を1つ以上選択してください';
+      return;
+    }
+
     btn.disabled    = true;
     btn.textContent = '収集中...';
     status.style.color = 'var(--gray)';
-    status.textContent = `${industry} / ${area} を収集しています...`;
+    status.textContent = `${industries.length}業種 × ${areas.length}エリア（${industries.length * areas.length}組み合わせ）を収集しています...`;
+
     try {
       const d = await fetch('/api/collect', {
-        method: 'POST',
+        method:  'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ industry, area })
+        body:    JSON.stringify({ industries, areas })
       }).then(r => r.json());
+
       if (d.ok) {
         status.style.color = 'var(--green)';
         status.textContent = `✓ ${d.added}件を新規追加しました（累計 ${d.total}件 / 本日 ${d.today}件）`;
@@ -663,15 +775,16 @@
         status.textContent = d.error;
         loadQuota();
       } else {
-        status.style.color = 'var(--red)';
-        status.textContent = `エラー: ${d.error}`;
-        btn.disabled = false;
-        btn.textContent = `▶ 収集する`;
+        status.style.color  = 'var(--red)';
+        status.textContent  = `エラー: ${d.error}`;
+        btn.disabled        = false;
+        updateCounts();
       }
     } catch(e) {
       status.style.color = 'var(--red)';
       status.textContent = `通信エラー: ${e}`;
-      btn.disabled = false;
+      btn.disabled       = false;
+      updateCounts();
     }
   }
 

@@ -344,14 +344,15 @@ def unsubscribe(email: str = Query(None)):
 
 # ─── 収集・診断 APIエンドポイント ──────────────────────────────────────────────
 
-from collectors.area_config import INDUSTRY_KEYWORDS, get_all_areas
+from collectors.area_config import INDUSTRY_KEYWORDS, AREA_CONFIG, get_all_areas
 
 @app.get("/api/options")
 def api_options(auth=Depends(require_auth)):
-    """業種・エリアの選択肢を返す。"""
+    """業種・エリアの選択肢を返す（都道府県グループ付き）。"""
     return {
-        "industries": list(INDUSTRY_KEYWORDS.keys()),
-        "areas": get_all_areas(),
+        "industries":    list(INDUSTRY_KEYWORDS.keys()),
+        "areas_grouped": {pref: cities for pref, cities in AREA_CONFIG.items()},
+        "areas":         get_all_areas(),  # 後方互換
     }
 
 
@@ -374,15 +375,19 @@ def api_daily_quota(auth=Depends(require_auth)):
 @app.post("/api/collect")
 async def api_collect(
     auth=Depends(require_auth),
-    industry: str = Body(..., embed=True),
-    area:     str = Body(..., embed=True),
+    industries: list[str] = Body(..., embed=True),
+    areas:      list[str] = Body(..., embed=True),
 ):
     """
-    ダッシュボードからリスト収集を実行する。
+    ダッシュボードから複数業種×複数エリアでリスト収集を実行する。
     1日の上限（DEFAULT_LIMIT）を超えている場合はエラーを返す。
+    選択された業種×エリアの全組み合わせを順に収集し、残り枠を使い切ったら停止する。
     """
     from collectors.google_places import collect_targets
     from config import DEFAULT_LIMIT
+
+    if not industries or not areas:
+        return {"ok": False, "error": "業種とエリアを1つ以上選択してください。"}
 
     # 本日の収集件数チェック
     with get_conn() as conn:
@@ -392,29 +397,47 @@ async def api_collect(
 
     if today_count >= DEFAULT_LIMIT:
         return {
-            "ok":      False,
-            "locked":  True,
-            "today":   today_count,
-            "limit":   DEFAULT_LIMIT,
-            "error":   f"本日の収集上限（{DEFAULT_LIMIT}件）に達しています。明日またお試しください。",
+            "ok":     False,
+            "locked": True,
+            "today":  today_count,
+            "limit":  DEFAULT_LIMIT,
+            "error":  f"本日の収集上限（{DEFAULT_LIMIT}件）に達しています。明日またお試しください。",
         }
 
-    remaining = DEFAULT_LIMIT - today_count
+    remaining    = DEFAULT_LIMIT - today_count
+    total_added  = 0
+    combinations = len(industries) * len(areas)
+
+    write_log("INFO", "collect",
+              f"[dashboard] 収集開始: {len(industries)}業種×{len(areas)}エリア"
+              f"={combinations}組み合わせ / 残り枠{remaining}件")
 
     try:
-        write_log("INFO", "collect", f"[dashboard] 収集開始: {industry} / {area} / {remaining}件（残り枠）")
-        n = await asyncio.to_thread(collect_targets, industry, area, remaining)
+        for industry in industries:
+            for area in areas:
+                if total_added >= remaining:
+                    break
+                left = remaining - total_added
+                # 1組み合わせあたりの上限は残り枠か DEFAULT_LIMIT の小さい方
+                n = await asyncio.to_thread(collect_targets, industry, area, min(left, DEFAULT_LIMIT))
+                total_added += n
+                if n > 0:
+                    write_log("INFO", "collect", f"[dashboard] {industry}/{area}: {n}件追加")
+            if total_added >= remaining:
+                break
+
         from db.database import get_stats
-        stats = get_stats()
-        new_today = today_count + n
-        write_log("INFO", "collect", f"[dashboard] 収集完了: {n}件追加 / 本日計{new_today}件")
+        stats     = get_stats()
+        new_today = today_count + total_added
+        write_log("INFO", "collect",
+                  f"[dashboard] 収集完了: {total_added}件追加 / 本日計{new_today}件")
         return {
-            "ok":      True,
-            "added":   n,
-            "total":   stats["total"],
-            "today":   new_today,
-            "limit":   DEFAULT_LIMIT,
-            "locked":  new_today >= DEFAULT_LIMIT,
+            "ok":     True,
+            "added":  total_added,
+            "total":  stats["total"],
+            "today":  new_today,
+            "limit":  DEFAULT_LIMIT,
+            "locked": new_today >= DEFAULT_LIMIT,
         }
     except Exception as e:
         write_log("ERROR", "collect", f"[dashboard] 収集エラー: {e}")
