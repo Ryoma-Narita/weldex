@@ -12,7 +12,9 @@ import psycopg2
 import psycopg2.extras
 from config import DB_PATH  # SQLiteフォールバック用（未使用だが互換性のため残す）
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
+_raw_url = os.environ.get("DATABASE_URL", "")
+# psycopg2 は "postgresql://" を要求する（"postgres://" は非対応）
+DATABASE_URL = _raw_url.replace("postgres://", "postgresql://", 1) if _raw_url.startswith("postgres://") else _raw_url
 
 
 def get_conn():
@@ -22,7 +24,8 @@ def get_conn():
             "DATABASE_URL が設定されていません。"
             "Railway の Variables で Postgres サービスをリンクしてください。"
         )
-    conn = psycopg2.connect(DATABASE_URL)
+    # Railway の Postgres は SSL 必須
+    conn = psycopg2.connect(DATABASE_URL, sslmode="require")
     return conn
 
 
