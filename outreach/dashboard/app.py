@@ -44,8 +44,23 @@ def require_auth(credentials: HTTPBasicCredentials = Depends(security)):
 # 起動時にDBを初期化
 @app.on_event("startup")
 def on_startup():
-    """アプリ起動時にDBを初期化する。"""
+    """アプリ起動時にDBを初期化し、パスとレコード数をログ出力する。"""
+    from config import DB_PATH
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("weldex")
+
     init_db()
+
+    # ── 起動診断ログ（Railway Logs で確認可能）──
+    try:
+        with get_conn() as conn:
+            count = conn.execute("SELECT COUNT(*) FROM targets").fetchone()[0]
+        logger.info(f"[STARTUP] DB_PATH = {DB_PATH}")
+        logger.info(f"[STARTUP] targets テーブル: {count} 件")
+        logger.info(f"[STARTUP] DB ファイル存在: {os.path.exists(DB_PATH)}")
+    except Exception as e:
+        logger.error(f"[STARTUP] DB確認エラー: {e}")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -345,6 +360,35 @@ def unsubscribe(email: str = Query(None)):
 # ─── 収集・診断 APIエンドポイント ──────────────────────────────────────────────
 
 from collectors.area_config import INDUSTRY_KEYWORDS, AREA_CONFIG, get_all_areas
+
+
+@app.get("/api/debug")
+def api_debug(auth=Depends(require_auth)):
+    """
+    DB パス・ファイル存在・レコード数を返す診断エンドポイント。
+    データが消えた際の原因調査に使用する。
+    """
+    from config import DB_PATH
+    try:
+        with get_conn() as conn:
+            count     = conn.execute("SELECT COUNT(*) FROM targets").fetchone()[0]
+            unchecked = conn.execute("SELECT COUNT(*) FROM targets WHERE site_status='unchecked'").fetchone()[0]
+            today     = conn.execute(
+                "SELECT COUNT(*) FROM targets WHERE date(created_at) = date('now','localtime')"
+            ).fetchone()[0]
+        return {
+            "db_path":     DB_PATH,
+            "db_exists":   os.path.exists(DB_PATH),
+            "db_size_kb":  round(os.path.getsize(DB_PATH) / 1024, 1) if os.path.exists(DB_PATH) else 0,
+            "total":       count,
+            "unchecked":   unchecked,
+            "today":       today,
+            "volume_dir":  "/data",
+            "volume_exists": os.path.isdir("/data"),
+            "volume_files":  os.listdir("/data") if os.path.isdir("/data") else [],
+        }
+    except Exception as e:
+        return {"error": str(e), "db_path": DB_PATH}
 
 @app.get("/api/options")
 def api_options(auth=Depends(require_auth)):
