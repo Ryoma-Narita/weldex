@@ -112,9 +112,11 @@ def api_targets(
     offset = (page - 1) * per_page
 
     with get_conn() as conn:
+        # COUNT は通常カーソル（RealDictCursor は [0] インデックスが使えないため分離）
+        with conn.cursor() as cnt_cur:
+            cnt_cur.execute(f"SELECT COUNT(*) FROM targets {where}", params)
+            total = cnt_cur.fetchone()[0]
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(f"SELECT COUNT(*) FROM targets {where}", params)
-            total = cur.fetchone()[0]
             cur.execute(
                 f"SELECT * FROM targets {where} ORDER BY created_at DESC LIMIT %s OFFSET %s",
                 params + [per_page, offset]
@@ -153,9 +155,11 @@ def api_logs(
     offset = (page - 1) * per_page
 
     with get_conn() as conn:
+        # COUNT は通常カーソル（RealDictCursor は [0] インデックスが使えないため分離）
+        with conn.cursor() as cnt_cur:
+            cnt_cur.execute(f"SELECT COUNT(*) FROM run_logs {where}", params)
+            total = cnt_cur.fetchone()[0]
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(f"SELECT COUNT(*) FROM run_logs {where}", params)
-            total = cur.fetchone()[0]
             cur.execute(
                 f"SELECT * FROM run_logs {where} ORDER BY created_at DESC LIMIT %s OFFSET %s",
                 params + [per_page, offset]
