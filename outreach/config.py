@@ -21,7 +21,7 @@ GMAIL_CLIENT_SECRET  = os.environ.get("GMAIL_CLIENT_SECRET", "")
 GMAIL_REFRESH_TOKEN  = os.environ.get("GMAIL_REFRESH_TOKEN", "")
 
 # 収集設定
-DEFAULT_LIMIT        = 20      # 1回の収集件数上限
+DEFAULT_LIMIT        = 100     # 1回の収集件数上限
 COLLECT_INTERVAL_SEC = 1.5     # API呼び出し間隔（秒）
 REQUEST_TIMEOUT_SEC  = 8       # サイト診断タイムアウト（秒）
 

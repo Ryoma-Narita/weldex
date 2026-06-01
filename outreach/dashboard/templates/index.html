@@ -292,20 +292,17 @@
     <div class="toolbar">
       <input type="text" id="kw-input" placeholder="店舗名・住所で検索" style="width:160px;">
       <select id="status-filter">
-        <option value="">すべて</option>
-        <option value="none">none</option>
-        <option value="old">old</option>
-        <option value="no_mobile">no_mobile</option>
-        <option value="phone_only">phone_only</option>
-        <option value="ok">ok</option>
-        <option value="unchecked">unchecked</option>
-        <option value="error">error</option>
+        <option value="">ステータス：すべて</option>
+        <option value="none">サイトなし</option>
+        <option value="old">古いサイト</option>
+        <option value="no_mobile">スマホ非対応</option>
+        <option value="phone_only">電話のみ</option>
+        <option value="ok">問題なし</option>
+        <option value="unchecked">未診断</option>
+        <option value="error">エラー</option>
       </select>
-      <select id="industry-filter">
+      <select id="industry-filter" style="min-width:110px;">
         <option value="">業種：すべて</option>
-        <option>歯科医院</option><option>クリニック</option><option>美容外科</option>
-        <option>整骨院</option><option>司法書士</option><option>税理士</option>
-        <option>行政書士</option><option>建設会社</option><option>リフォーム</option><option>美容室</option>
       </select>
       <button class="btn" onclick="loadTargets(1)">検索</button>
       <button class="btn secondary" onclick="resetFilters()">リセット</button>
@@ -316,10 +313,10 @@
       <table>
         <thead>
           <tr>
-            <th>店舗名</th>
+            <th style="min-width:160px;">店舗名 / 業種・エリア</th>
             <th>ステータス</th>
-            <th>電話</th>
-            <th>メール</th>
+            <th style="min-width:110px;">電話</th>
+            <th>メール / サイト</th>
           </tr>
         </thead>
         <tbody id="targets-body"></tbody>
@@ -339,7 +336,7 @@
       <p>行をクリックするとサイトを表示</p>
     </div>
 
-    <div id="preview-content" style="display:none; flex:1; flex-direction:column; overflow:hidden; display:none;">
+    <div id="preview-content" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
       <div class="preview-header">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
           <div class="preview-title" id="pv-name">-</div>
@@ -441,6 +438,17 @@
     } catch(e) {}
   }
 
+  // ─── ステータス日本語ラベル ───
+  const STATUS_LABEL = {
+    none:      'サイトなし',
+    old:       '古いサイト',
+    no_mobile: 'スマホ非対応',
+    phone_only:'電話のみ',
+    ok:        '問題なし',
+    unchecked: '未診断',
+    error:     'エラー',
+  };
+
   // ─── ターゲットリスト ───
   let currentPage = 1;
   async function loadTargets(page = 1) {
@@ -464,11 +472,17 @@
       <tr class="data-row" onclick="selectTarget(this, ${JSON.stringify(t).replace(/"/g, '&quot;')})">
         <td>
           <div style="font-weight:500;font-size:0.8rem;">${esc(t.name)}</div>
-          <div style="font-size:0.68rem;color:var(--light);margin-top:2px;">${esc(t.address || '')}</div>
+          <div style="margin-top:3px;display:flex;gap:0.3rem;flex-wrap:wrap;">
+            ${t.industry ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--gray);padding:0.1rem 0.4rem;border-radius:2px;">${esc(t.industry)}</span>` : ''}
+            ${t.area     ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--light);padding:0.1rem 0.4rem;border-radius:2px;">${esc(t.area)}</span>` : ''}
+          </div>
         </td>
-        <td><span class="badge badge-${t.site_status}">${t.site_status}</span></td>
-        <td style="font-size:0.72rem;white-space:nowrap;">${esc(t.phone || '-')}</td>
-        <td style="font-size:0.72rem;">${t.email ? `<a href="mailto:${esc(t.email)}" style="color:var(--blue)" onclick="event.stopPropagation()">${esc(t.email)}</a>` : '-'}</td>
+        <td><span class="badge badge-${t.site_status || 'unchecked'}">${STATUS_LABEL[t.site_status] || t.site_status || '未診断'}</span></td>
+        <td style="font-size:0.72rem;white-space:nowrap;">${esc(t.phone || '—')}</td>
+        <td style="font-size:0.72rem;">
+          <div>${t.email ? `<a href="mailto:${esc(t.email)}" style="color:var(--blue)" onclick="event.stopPropagation()">${esc(t.email)}</a>` : '—'}</div>
+          ${t.website ? `<div style="margin-top:2px;"><a href="${esc(t.website)}" target="_blank" rel="noopener" style="color:var(--light);font-size:0.65rem;" onclick="event.stopPropagation()" title="${esc(t.website)}">サイトを開く</a></div>` : ''}
+        </td>
       </tr>
     `).join('');
     document.getElementById('target-count').textContent = `${data.total}件`;
@@ -687,7 +701,7 @@
       const d = await fetch('/api/options').then(r => r.json());
       _areasGrouped = d.areas_grouped || {};
 
-      // 業種チェックボックス
+      // 業種チェックボックス（収集パネル用）
       const indEl = document.getElementById('op-industries');
       indEl.innerHTML = d.industries.map(v => `
         <label class="cb-label checked">
@@ -700,6 +714,11 @@
         <label class="cb-label" title="${(_areasGrouped[p]||[]).join(' / ')}">
           <input type="checkbox" value="${p}" class="pref-cb" onchange="onCbChange(this)"> ${p}
         </label>`).join('');
+
+      // ターゲットリストの業種フィルター（動的に設定）
+      const indFilter = document.getElementById('industry-filter');
+      indFilter.innerHTML = '<option value="">業種：すべて</option>' +
+        d.industries.map(v => `<option value="${v}">${v}</option>`).join('');
 
       updateCounts();
     } catch(e) { console.error('options load failed', e); }
@@ -789,7 +808,7 @@
   }
 
   async function runDiagnose() {
-    const limit  = parseInt(document.getElementById('op-limit').value) * 2;
+    const limit  = 100;  // 1回の診断件数上限
     const status = document.getElementById('op-status');
     const btn    = document.getElementById('btn-diagnose');
     btn.disabled = true;
