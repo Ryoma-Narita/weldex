@@ -118,10 +118,42 @@
 
     .kpi-label { margin-bottom: 0.4rem; font-size: 0.68rem; color: var(--gray); letter-spacing: 0.06em; font-weight: 500; }
 
-    @media (max-width: 900px) {
+    @media (max-width: 768px) {
+      /* ターゲットリスト：右パネル（サイトプレビュー）を非表示 */
+      .targets-right { display: none !important; }
+      .targets-left  { flex: 1 1 100% !important; border-right: none; overflow-y: auto; }
       .targets-layout { flex-direction: column; }
-      .targets-left { flex: 0 0 50%; border-right: none; border-bottom: 2px solid var(--border); }
+
+      /* 統計カード：2列 */
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+      /* 収集パネル：業種チェックボックス2列 */
+      .cb-grid { grid-template-columns: repeat(2, 1fr); }
+
+      /* 都道府県リストを縦並びに */
+      #pref-list { width: 100% !important; max-height: 120px !important; border-right: none !important; border-bottom: 1px solid var(--border); }
+      #city-panel { max-height: 120px !important; }
+
+      /* ツールバー：折り返し・縮小 */
+      .toolbar { padding: 0.5rem; gap: 0.4rem; }
+      .toolbar input, .toolbar select { font-size: 0.75rem; padding: 0.35rem 0.4rem; max-width: 120px; }
+
+      /* ヘッダー */
+      header h1 { font-size: 0.85rem; }
+      .mode-badge { display: none; }
+
+      /* タブ */
+      .tab { padding: 0.6rem 0.8rem; font-size: 0.78rem; }
+
+      /* パネル内スクロール */
+      .panel-scroll { padding: 0.75rem 1rem; }
+
+      /* テーブル：フォントサイズ縮小 */
+      table { font-size: 0.72rem; }
+      th, td { padding: 0.4rem 0.5rem; }
+
+      /* 収集操作パネル */
+      .collect-section-title { flex-wrap: wrap; gap: 0.3rem; }
     }
 
     /* 収集パネル */
@@ -262,8 +294,8 @@
             <button class="btn secondary" onclick="selectAllPrefs(false)">全解除</button>
           </div>
         </div>
-        <!-- 左: 都道府県リスト ／ 右: 市区町村 -->
-        <div style="display:flex;border:1px solid var(--border);background:var(--white);">
+        <!-- 左: 都道府県リスト ／ 右: 市区町村（スマホは縦積み） -->
+        <div style="display:flex;flex-wrap:wrap;border:1px solid var(--border);background:var(--white);">
           <div id="pref-list" style="width:120px;flex-shrink:0;max-height:200px;overflow-y:auto;border-right:1px solid var(--border);"></div>
           <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
             <div id="city-panel-title" style="padding:0.3rem 0.6rem;font-size:0.68rem;color:var(--gray);border-bottom:1px solid var(--border);background:var(--off);flex-shrink:0;">← 都道府県を選択してください</div>
