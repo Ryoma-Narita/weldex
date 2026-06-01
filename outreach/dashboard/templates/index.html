@@ -956,26 +956,59 @@
     }
   }
 
-  // 収集後に自動で呼ばれる診断
+  // 診断を20件ずつバッチ実行（Railwayの30秒タイムアウト対策）
   async function _runDiagnose(status, btn) {
+    const BATCH = 20;
+    let totalDiagnosed = 0;
+    const totals = { none:0, old:0, no_mobile:0, phone_only:0, ok:0, error:0 };
+
     try {
-      btn.textContent = '診断中...';
-      const d = await fetch('/api/diagnose', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ limit: 100 })
-      }).then(r => r.json());
-      if (d.ok) {
+      while (true) {
+        btn.textContent = `診断中... (${totalDiagnosed}件完了)`;
+        status.style.color = 'var(--gray)';
+        status.textContent = `診断中... ${totalDiagnosed}件完了。続けています...`;
+
+        let d;
+        try {
+          const res = await fetch('/api/diagnose', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ limit: BATCH })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          d = await res.json();
+        } catch(fetchErr) {
+          status.style.color = 'var(--yellow)';
+          status.textContent = `収集完了（${totalDiagnosed}件診断済）。診断通信エラー: ${fetchErr}`;
+          break;
+        }
+
+        if (!d.ok) {
+          status.style.color = 'var(--yellow)';
+          status.textContent = `収集完了（${totalDiagnosed}件診断済）。診断エラー: ${d.error || 'サーバーエラー'}`;
+          break;
+        }
+
+        // 今回のバッチ結果を累積
         const r = d.results || {};
-        status.style.color = 'var(--green)';
-        status.textContent = `✓ 診断完了 ${d.diagnosed}件 — サイトなし:${r.none||0} / 古い:${r.old||0} / スマホ非対応:${r.no_mobile||0} / 問題なし:${r.ok||0}`;
+        for (const k of Object.keys(totals)) totals[k] += (r[k] || 0);
+        totalDiagnosed += d.diagnosed;
         loadStats();
-      } else {
-        status.style.color = 'var(--yellow)';
-        status.textContent = `収集は完了しましたが診断でエラーが発生しました: ${d.error}`;
+
+        // 未診断がなくなったら終了
+        if (d.diagnosed === 0 || d.diagnosed < BATCH) break;
       }
+
+      if (totalDiagnosed > 0) {
+        status.style.color = 'var(--green)';
+        status.textContent = `✓ 診断完了 ${totalDiagnosed}件 — サイトなし:${totals.none} / 古い:${totals.old} / スマホ非対応:${totals.no_mobile} / 問題なし:${totals.ok}`;
+      } else {
+        status.style.color = 'var(--green)';
+        status.textContent = '✓ 未診断のターゲットはありません';
+      }
+      loadStats();
     } catch(e) {
       status.style.color = 'var(--yellow)';
-      status.textContent = `収集完了。診断の通信エラー: ${e}`;
+      status.textContent = `診断エラー: ${e}`;
     }
     btn.disabled = false; updateCounts();
   }
