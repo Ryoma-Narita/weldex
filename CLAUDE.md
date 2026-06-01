@@ -64,8 +64,8 @@
 ```
 言語：Python 3.11+
 FW：FastAPI 0.110.0
-DB：SQLite（開発）→ PostgreSQL（本番スケール時）
-ORM：なし（sqlite3直接）
+DB：PostgreSQL（本番・Railway）/ SQLite禁止（Railway Volume + NFS で fsync 非互換）
+ORM：なし（psycopg2直接）
 スケジューラー：APScheduler 3.10.4
 メール：SendGrid 6.11.0
 ```
@@ -94,6 +94,11 @@ ORM：なし（sqlite3直接）
 ```bash
 # Google Places API（営業自動化）
 GOOGLE_PLACES_API_KEY=
+
+# 営業自動化ダッシュボード（Railway outreach サービス）
+DATABASE_URL=          # Railway Postgres → ${{Postgres.DATABASE_URL}} で自動注入
+DASHBOARD_PASSWORD=    # Basic認証パスワード（ユーザー名固定: weldex）
+DB_PATH=               # 旧SQLite用（PostgreSQL移行後は不要だが変数は残存）
 
 # SendGrid（メール送信）
 SENDGRID_API_KEY=
@@ -180,20 +185,28 @@ weldex/
 
 ---
 
-### ✅ Phase 1：営業自動化 — 収集・診断（完了）
+### ✅ Phase 1：営業自動化 — 収集・診断・ダッシュボード（完了・本番稼働）
 ```
-[x] outreach/requirements.txt
-[x] outreach/db/database.py
-[x] outreach/config.py
-[x] outreach/collectors/area_config.py
+[x] outreach/requirements.txt（psycopg2-binary含む）
+[x] outreach/db/database.py（PostgreSQL対応・psycopg2）
+[x] outreach/config.py（DEFAULT_LIMIT=100）
+[x] outreach/collectors/area_config.py（47都道府県・343市区・10業種）
 [x] outreach/analyzers/email_extractor.py
 [x] outreach/analyzers/site_checker.py
 [x] outreach/collectors/google_places.py
 [x] outreach/main.py
-[x] outreach/dashboard/app.py
+[x] outreach/dashboard/app.py（Basic認証・PostgreSQL・/api/debug）
 [x] outreach/dashboard/templates/index.html
-[x] 統合テスト（13件収集・診断完了）
-# 2026-05-09 Phase1完了
+    - 業種チェックボックス×都道府県左パネル→市区右パネルのカスケードUI
+    - 「収集して診断する」ボタン（収集後に自動診断・20件バッチ）
+    - ターゲットリスト：tel:リンク・営業ポイント・診断フラグ
+    - スマホ対応（768px以下でプレビュー非表示）
+[x] Railway デプロイ（weldex サービス・Nixpacks・Root: outreach/）
+[x] Railway PostgreSQL 接続（${{Postgres.DATABASE_URL}}・sslmode=require）
+[x] docs/outreach_dashboard_spec.md（仕様書・トラブルシューティング含む）
+# 2026-05-09 Phase1実装完了
+# 2026-06-01 Railway本番デプロイ・PostgreSQL移行完了
+本番URL：https://weldex-production.up.railway.app
 ```
 
 ---
@@ -304,7 +317,7 @@ DB：Railway PostgreSQL（同プロジェクト内）
 
 ---
 
-## ▼ 現状サマリー・懸念点・今後のタスク（2026-05-18更新）
+## ▼ 現状サマリー・懸念点・今後のタスク（2026-06-01更新）
 
 ---
 
@@ -317,7 +330,7 @@ DB：Railway PostgreSQL（同プロジェクト内）
 | 患者向け予約画面 | /booking/ | フルカレンダーUI・1年先まで予約可 |
 | 管理画面 | /admin/ | ダッシュボード・予約・顧客・メニュー・設定 |
 | LINE Webhook | /line/webhook | URLリダイレクト型・実機確認済み |
-| 営業自動化 | outreach/（ローカル実行） | 収集・送信・返信検知・ダッシュボード |
+| 営業自動化ダッシュボード | https://weldex-production.up.railway.app | Railway 本番稼働・PostgreSQL |
 
 ---
 
@@ -340,7 +353,9 @@ DB：Railway PostgreSQL（同プロジェクト内）
 
 **営業自動化**
 - Gmail API の refresh_token は長期未使用時に期限切れの可能性（再取得が必要になる場合あり）
-- 1日 50 件上限は複数プロセス起動時に超える可能性（現状シングルプロセスなので低リスク）
+- 1日 100 件上限（DEFAULT_LIMIT=100）。Google Places API 無料枠（月$200）で月約2,000件まで無料
+- メール送信（Phase 2）は未実装。scheduler.py は実装済みだが Railway での自動実行未設定
+- `weldex-volume`（旧SQLite用）はキャンバス上に残存するが使用していない（削除可）
 
 **サイト（Next.js）**
 - og-image.png 未作成：OGP 画像がなく SNS シェア時に画像なし
@@ -407,6 +422,10 @@ DB：Railway PostgreSQL（同プロジェクト内）
 ---
 
 ### 🔧 次に着手するタスク
+
+**営業自動化 Phase 2（メール送信）**（工数 中）
+→ outreach/scheduler.py は実装済み。Railway での自動実行設定と SendGrid 疎通確認が残り。
+→ 詳細は docs/outreach.md 参照。収集リストが溜まってから着手。
 
 **Sentry 導入**（工数 30 分・Railway 本番の障害を即時検知）
 
