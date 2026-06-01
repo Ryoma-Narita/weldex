@@ -124,9 +124,8 @@
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
-    /* 収集パネル チェックボックスグリッド */
+    /* 収集パネル */
     .cb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; }
-    .cb-grid.pref-grid { grid-template-columns: repeat(4, 1fr); }
     .cb-label {
       display: flex; align-items: center; gap: 0.3rem; cursor: pointer;
       padding: 0.22rem 0.45rem; border: 1px solid var(--border); font-size: 0.76rem;
@@ -146,6 +145,20 @@
     .sel-count {
       font-size: 0.68rem; padding: 0.1rem 0.45rem; background: #dbeafe;
       color: var(--blue); border-radius: 2px; font-weight: 600;
+    }
+    /* 都道府県リスト */
+    .pref-item {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 0.55rem; cursor: pointer; font-size: 0.76rem;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+      user-select: none;
+    }
+    .pref-item:hover { background: #f8fafc; }
+    .pref-item.active { background: #eff6ff; color: var(--blue); font-weight: 600; }
+    .pref-item input[type=checkbox] { cursor: pointer; accent-color: var(--blue); flex-shrink: 0; }
+    .pref-count-badge {
+      margin-left: auto; font-size: 0.6rem; background: #dbeafe;
+      color: var(--blue); padding: 0.05rem 0.35rem; border-radius: 2px; font-weight: 600;
     }
 
     /* 送信モードバッジ */
@@ -240,25 +253,30 @@
         </div>
       </div>
 
-      <!-- 都道府県 -->
+      <!-- エリア（都道府県 + 市区町村） -->
       <div style="margin-bottom:0.9rem;">
         <div class="collect-section-title">
-          <span>都道府県を選択 <span class="sel-count" id="pref-count">0</span></span>
+          <span>エリアを選択 <span class="sel-count" id="pref-count">0都道府県 / 0市区</span></span>
           <div class="sel-actions">
-            <button class="btn secondary" onclick="selectAll('pref-cb', true)">全選択</button>
-            <button class="btn secondary" onclick="selectAll('pref-cb', false)">全解除</button>
+            <button class="btn secondary" onclick="selectAllPrefs(true)">全選択</button>
+            <button class="btn secondary" onclick="selectAllPrefs(false)">全解除</button>
           </div>
         </div>
-        <div class="cb-grid pref-grid" id="op-prefs">
-          <span style="font-size:0.75rem;color:var(--light);">読み込み中...</span>
+        <!-- 左: 都道府県リスト ／ 右: 市区町村 -->
+        <div style="display:flex;border:1px solid var(--border);background:var(--white);">
+          <div id="pref-list" style="width:120px;flex-shrink:0;max-height:200px;overflow-y:auto;border-right:1px solid var(--border);"></div>
+          <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+            <div id="city-panel-title" style="padding:0.3rem 0.6rem;font-size:0.68rem;color:var(--gray);border-bottom:1px solid var(--border);background:var(--off);flex-shrink:0;">← 都道府県を選択してください</div>
+            <div id="city-panel" style="max-height:168px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;align-content:start;"></div>
+          </div>
         </div>
       </div>
 
       <!-- クォータ＋ボタン -->
       <div id="op-quota" style="margin-bottom:0.6rem;font-size:0.78rem;color:var(--gray);"></div>
       <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn" onclick="runCollect()" id="btn-collect">▶ 収集する</button>
-        <button class="btn green-btn" onclick="runDiagnose()" id="btn-diagnose">診断する</button>
+        <button class="btn" onclick="runCollect()" id="btn-collect">▶ 収集して診断する</button>
+        <button class="btn secondary" onclick="runDiagnoseOnly()" id="btn-diagnose">診断のみ</button>
       </div>
       <div id="op-status" style="margin-top:0.5rem;font-size:0.8rem;color:var(--gray);min-height:1.2em;"></div>
     </div>
@@ -657,27 +675,136 @@
   setInterval(loadStats, 30000);
 
   // ─── 収集・診断 UI ───
-  let _areasGrouped = {}; // { 都道府県: [市区町村, ...] }
+  let _areasGrouped  = {};          // { 都道府県: [市区町村, ...] }
+  let _selectedCities = {};         // { 都道府県: Set([市区町村, ...]) }
+  let _activePref    = null;        // 右パネルに表示中の都道府県
 
-  function selectAll(cls, checked) {
-    document.querySelectorAll('.' + cls).forEach(cb => {
-      cb.checked = checked;
-      cb.closest('.cb-label').classList.toggle('checked', checked);
-    });
+  // ── 業種チェックボックス ──
+  function onIndCbChange(cb) {
+    cb.closest('.cb-label').classList.toggle('checked', cb.checked);
     updateCounts();
   }
 
+  // ── 都道府県クリック（右パネル切り替え）──
+  function onPrefItemClick(pref, e) {
+    if (e && e.target.type === 'checkbox') {
+      // チェックボックス操作は別ハンドラで処理
+      return;
+    }
+    setActivePref(pref);
+  }
+
+  function setActivePref(pref) {
+    _activePref = pref;
+    document.querySelectorAll('.pref-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.pref === pref);
+    });
+    renderCityPanel(pref);
+  }
+
+  // ── 都道府県チェックボックス ON/OFF ──
+  function onPrefCbChange(pref, checked) {
+    const cities = _areasGrouped[pref] || [];
+    if (checked) {
+      _selectedCities[pref] = new Set(cities);
+    } else {
+      delete _selectedCities[pref];
+    }
+    updatePrefBadge(pref);
+    if (_activePref === pref) renderCityPanel(pref);
+    updateCounts();
+  }
+
+  // ── 右パネル：市区町村一覧を描画 ──
+  function renderCityPanel(pref) {
+    const cities  = _areasGrouped[pref] || [];
+    const selected = _selectedCities[pref] || new Set();
+    const allChecked = cities.length > 0 && cities.every(c => selected.has(c));
+
+    document.getElementById('city-panel-title').innerHTML =
+      `<strong>${pref}</strong>（${selected.size} / ${cities.length} 市区選択中）`;
+
+    document.getElementById('city-panel').innerHTML = `
+      <label class="cb-label ${allChecked ? 'checked' : ''}" style="grid-column:1/-1;background:var(--off);font-weight:500;">
+        <input type="checkbox" ${allChecked ? 'checked' : ''} onchange="toggleAllCities('${pref}', this.checked)">
+        全${cities.length}市区を選択/解除
+      </label>
+      ${cities.map(c => `
+        <label class="cb-label ${selected.has(c) ? 'checked' : ''}">
+          <input type="checkbox" ${selected.has(c) ? 'checked' : ''}
+            onchange="onCityToggle('${pref}', '${c}', this.checked)"> ${c}
+        </label>`).join('')}
+    `;
+  }
+
+  // ── 市区町村個別 ON/OFF ──
+  function onCityToggle(pref, city, checked) {
+    if (!_selectedCities[pref]) _selectedCities[pref] = new Set();
+    if (checked) {
+      _selectedCities[pref].add(city);
+    } else {
+      _selectedCities[pref].delete(city);
+      if (_selectedCities[pref].size === 0) delete _selectedCities[pref];
+    }
+    // 都道府県チェックボックスの状態を同期
+    const el = document.querySelector(`.pref-item[data-pref="${pref}"] input`);
+    if (el) el.checked = (_selectedCities[pref]?.size || 0) > 0;
+    updatePrefBadge(pref);
+    renderCityPanel(pref);
+    updateCounts();
+  }
+
+  // ── 市区全選択/全解除 ──
+  function toggleAllCities(pref, checked) {
+    const cities = _areasGrouped[pref] || [];
+    if (checked) {
+      _selectedCities[pref] = new Set(cities);
+    } else {
+      delete _selectedCities[pref];
+    }
+    const el = document.querySelector(`.pref-item[data-pref="${pref}"] input`);
+    if (el) el.checked = checked;
+    updatePrefBadge(pref);
+    renderCityPanel(pref);
+    updateCounts();
+  }
+
+  // ── 全都道府県の全選択/全解除 ──
+  function selectAllPrefs(checked) {
+    Object.keys(_areasGrouped).forEach(pref => {
+      const cities = _areasGrouped[pref] || [];
+      if (checked) {
+        _selectedCities[pref] = new Set(cities);
+      } else {
+        delete _selectedCities[pref];
+      }
+      const el = document.querySelector(`.pref-item[data-pref="${pref}"] input`);
+      if (el) el.checked = checked;
+      updatePrefBadge(pref);
+    });
+    if (_activePref) renderCityPanel(_activePref);
+    updateCounts();
+  }
+
+  // ── 都道府県行の選択数バッジを更新 ──
+  function updatePrefBadge(pref) {
+    const badge = document.querySelector(`.pref-item[data-pref="${pref}"] .pref-count-badge`);
+    if (!badge) return;
+    const cnt = _selectedCities[pref]?.size || 0;
+    badge.textContent = cnt > 0 ? cnt : '';
+    badge.style.display = cnt > 0 ? '' : 'none';
+  }
+
+  // ── カウント更新 ──
   function updateCounts() {
     const indCount  = document.querySelectorAll('.ind-cb:checked').length;
-    const prefCount = document.querySelectorAll('.pref-cb:checked').length;
+    const prefCount = Object.keys(_selectedCities).length;
+    const cityCount = Object.values(_selectedCities).reduce((s, v) => s + v.size, 0);
     document.getElementById('ind-count').textContent  = indCount  + '業種';
-    document.getElementById('pref-count').textContent = prefCount + '都道府県';
-    // 収集ボタンのラベル更新（ロック時は触らない）
+    document.getElementById('pref-count').textContent = `${prefCount}都道府県 / ${cityCount}市区`;
     const btn = document.getElementById('btn-collect');
     if (!btn.disabled) {
-      // 何件残りがあるかは quota から取るが、ラベルはシンプルに
-      const areaCount = getSelectedAreas().length;
-      btn.textContent = `▶ 収集する（${indCount}業種 × ${areaCount}エリア）`;
+      btn.textContent = `▶ 収集して診断する（${indCount}業種 × ${cityCount}市区）`;
     }
   }
 
@@ -686,11 +813,8 @@
   }
 
   function getSelectedAreas() {
-    // チェック済み都道府県のすべての市区町村をフラットに返す
-    const checked = [...document.querySelectorAll('.pref-cb:checked')].map(cb => cb.value);
-    const result  = [];
-    for (const pref of checked) {
-      const cities = _areasGrouped[pref] || [];
+    const result = [];
+    for (const [pref, cities] of Object.entries(_selectedCities)) {
       for (const city of cities) result.push(pref + city);
     }
     return result;
@@ -701,32 +825,31 @@
       const d = await fetch('/api/options').then(r => r.json());
       _areasGrouped = d.areas_grouped || {};
 
-      // 業種チェックボックス（収集パネル用）
-      const indEl = document.getElementById('op-industries');
-      indEl.innerHTML = d.industries.map(v => `
+      // 業種チェックボックス
+      document.getElementById('op-industries').innerHTML = d.industries.map(v => `
         <label class="cb-label checked">
-          <input type="checkbox" value="${v}" class="ind-cb" checked onchange="onCbChange(this)"> ${v}
+          <input type="checkbox" value="${v}" class="ind-cb" checked onchange="onIndCbChange(this)"> ${v}
         </label>`).join('');
 
-      // 都道府県チェックボックス
-      const prefEl = document.getElementById('op-prefs');
-      prefEl.innerHTML = Object.keys(_areasGrouped).map(p => `
-        <label class="cb-label" title="${(_areasGrouped[p]||[]).join(' / ')}">
-          <input type="checkbox" value="${p}" class="pref-cb" onchange="onCbChange(this)"> ${p}
-        </label>`).join('');
+      // 都道府県リスト（左パネル）
+      document.getElementById('pref-list').innerHTML = Object.keys(_areasGrouped).map(p => `
+        <div class="pref-item" data-pref="${p}" onclick="onPrefItemClick('${p}', event)">
+          <input type="checkbox" onchange="onPrefCbChange('${p}', this.checked)">
+          <span>${p}</span>
+          <span class="pref-count-badge" style="display:none;"></span>
+        </div>`).join('');
 
-      // ターゲットリストの業種フィルター（動的に設定）
-      const indFilter = document.getElementById('industry-filter');
-      indFilter.innerHTML = '<option value="">業種：すべて</option>' +
+      // ターゲットリストの業種フィルター（動的）
+      document.getElementById('industry-filter').innerHTML =
+        '<option value="">業種：すべて</option>' +
         d.industries.map(v => `<option value="${v}">${v}</option>`).join('');
+
+      // 最初の都道府県を表示
+      const firstPref = Object.keys(_areasGrouped)[0];
+      if (firstPref) setActivePref(firstPref);
 
       updateCounts();
     } catch(e) { console.error('options load failed', e); }
-  }
-
-  function onCbChange(cb) {
-    cb.closest('.cb-label').classList.toggle('checked', cb.checked);
-    updateCounts();
   }
 
   async function loadQuota() {
@@ -747,7 +870,7 @@
         btn.style.background = '';
         btn.style.color      = '';
         btn.style.cursor     = '';
-        updateCounts(); // ラベルを業種×エリア数で更新
+        updateCounts();
       }
     } catch(e) { console.error('quota load failed', e); }
   }
@@ -761,21 +884,13 @@
     const status     = document.getElementById('op-status');
     const btn        = document.getElementById('btn-collect');
 
-    if (!industries.length) {
-      status.style.color = 'var(--red)';
-      status.textContent = '業種を1つ以上選択してください';
-      return;
-    }
-    if (!areas.length) {
-      status.style.color = 'var(--red)';
-      status.textContent = '都道府県を1つ以上選択してください';
-      return;
-    }
+    if (!industries.length) { status.style.color='var(--red)'; status.textContent='業種を1つ以上選択してください'; return; }
+    if (!areas.length)      { status.style.color='var(--red)'; status.textContent='市区町村を1つ以上選択してください'; return; }
 
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = '収集中...';
     status.style.color = 'var(--gray)';
-    status.textContent = `${industries.length}業種 × ${areas.length}エリア（${industries.length * areas.length}組み合わせ）を収集しています...`;
+    status.textContent = `${industries.length}業種 × ${areas.length}エリアを収集しています...`;
 
     try {
       const d = await fetch('/api/collect', {
@@ -785,30 +900,63 @@
       }).then(r => r.json());
 
       if (d.ok) {
-        status.style.color = 'var(--green)';
-        status.textContent = `✓ ${d.added}件を新規追加しました（累計 ${d.total}件 / 本日 ${d.today}件）`;
-        loadStats();
-        loadQuota();
+        status.style.color = 'var(--gray)';
+        status.textContent = `✓ ${d.added}件収集完了（本日 ${d.today}件）。診断を開始します...`;
+        loadStats(); loadQuota();
+        // 収集後に自動で診断を実行
+        await _runDiagnose(status, btn);
       } else if (d.locked) {
         status.style.color = 'var(--red)';
         status.textContent = d.error;
         loadQuota();
+        btn.disabled = false; updateCounts();
       } else {
-        status.style.color  = 'var(--red)';
-        status.textContent  = `エラー: ${d.error}`;
-        btn.disabled        = false;
-        updateCounts();
+        status.style.color = 'var(--red)';
+        status.textContent = `エラー: ${d.error}`;
+        btn.disabled = false; updateCounts();
       }
     } catch(e) {
       status.style.color = 'var(--red)';
       status.textContent = `通信エラー: ${e}`;
-      btn.disabled       = false;
-      updateCounts();
+      btn.disabled = false; updateCounts();
     }
   }
 
+  // 収集後に自動で呼ばれる診断
+  async function _runDiagnose(status, btn) {
+    try {
+      btn.textContent = '診断中...';
+      const d = await fetch('/api/diagnose', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ limit: 100 })
+      }).then(r => r.json());
+      if (d.ok) {
+        const r = d.results || {};
+        status.style.color = 'var(--green)';
+        status.textContent = `✓ 診断完了 ${d.diagnosed}件 — サイトなし:${r.none||0} / 古い:${r.old||0} / スマホ非対応:${r.no_mobile||0} / 問題なし:${r.ok||0}`;
+        loadStats();
+      } else {
+        status.style.color = 'var(--yellow)';
+        status.textContent = `収集は完了しましたが診断でエラーが発生しました: ${d.error}`;
+      }
+    } catch(e) {
+      status.style.color = 'var(--yellow)';
+      status.textContent = `収集完了。診断の通信エラー: ${e}`;
+    }
+    btn.disabled = false; updateCounts();
+  }
+
+  // 「診断のみ」ボタン用
+  async function runDiagnoseOnly() {
+    const status = document.getElementById('op-status');
+    const btn    = document.getElementById('btn-diagnose');
+    btn.disabled = true; btn.textContent = '診断中...';
+    await _runDiagnose(status, btn);
+    btn.textContent = '診断のみ';
+  }
+
   async function runDiagnose() {
-    const limit  = 100;  // 1回の診断件数上限
+    const limit  = 100;  // 1回の診断件数上限（後方互換用、現在はrunDiagnoseOnlyを使用）
     const status = document.getElementById('op-status');
     const btn    = document.getElementById('btn-diagnose');
     btn.disabled = true;
