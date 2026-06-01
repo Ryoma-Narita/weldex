@@ -193,6 +193,17 @@
       color: var(--blue); padding: 0.05rem 0.35rem; border-radius: 2px; font-weight: 600;
     }
 
+    /* 診断フラグタグ */
+    .flag-tag { font-size: 0.6rem; padding: 0.08rem 0.38rem; border-radius: 2px; font-weight: 600; white-space: nowrap; }
+    .flag-purple { background: #ede9fe; color: var(--purple); }
+    .flag-red    { background: #fee2e2; color: var(--red); }
+    .flag-orange { background: #fff7ed; color: #c2410c; }
+    .flag-gray   { background: #f1f5f9; color: var(--gray); }
+    .flag-blue   { background: #eff6ff; color: var(--blue); }
+    .pitch-hint  { font-size: 0.7rem; font-weight: 600; margin-top: 3px; }
+    .contact-link { color: var(--navy); text-decoration: none; font-size: 0.76rem; }
+    .contact-link:hover { text-decoration: underline; }
+
     /* 送信モードバッジ */
     .mode-badge {
       display: inline-flex; align-items: center; gap: 0.3rem;
@@ -364,10 +375,9 @@
       <table>
         <thead>
           <tr>
-            <th style="min-width:160px;">店舗名 / 業種・エリア</th>
-            <th>ステータス</th>
-            <th style="min-width:110px;">電話</th>
-            <th>メール / サイト</th>
+            <th style="min-width:170px;">店舗名 / 業種・エリア</th>
+            <th style="min-width:160px;">診断結果 / 営業ポイント</th>
+            <th style="min-width:140px;">連絡先</th>
           </tr>
         </thead>
         <tbody id="targets-body"></tbody>
@@ -501,6 +511,25 @@
     error:     'エラー',
   };
 
+  // ─── 営業ポイント（ステータス別） ───
+  const PITCH = {
+    none:      { text: 'Webサイト制作を提案', color: 'var(--red)' },
+    old:       { text: 'サイトリニューアルを提案', color: 'var(--yellow)' },
+    no_mobile: { text: 'スマホ対応を提案', color: 'var(--yellow)' },
+    phone_only:{ text: 'LINE予約導入を提案', color: 'var(--purple)' },
+  };
+
+  // ─── 診断フラグ HTML生成 ───
+  function diagFlags(t) {
+    const f = [];
+    if (t.has_line === 0)           f.push('<span class="flag-tag flag-purple">LINE未連携</span>');
+    if (t.has_ssl === 0)            f.push('<span class="flag-tag flag-red">SSL非対応</span>');
+    if (t.has_online_booking === 0) f.push('<span class="flag-tag flag-orange">予約なし</span>');
+    if (t.has_contact_form === 0)   f.push('<span class="flag-tag flag-gray">フォームなし</span>');
+    if (t.phone_only === 1)         f.push('<span class="flag-tag flag-blue">電話のみ</span>');
+    return f.join(' ');
+  }
+
   // ─── ターゲットリスト ───
   let currentPage = 1;
   async function loadTargets(page = 1) {
@@ -520,23 +549,51 @@
 
   function renderTargets(data) {
     const tbody = document.getElementById('targets-body');
-    tbody.innerHTML = data.items.map(t => `
-      <tr class="data-row" onclick="selectTarget(this, ${JSON.stringify(t).replace(/"/g, '&quot;')})">
-        <td>
-          <div style="font-weight:500;font-size:0.8rem;">${esc(t.name)}</div>
-          <div style="margin-top:3px;display:flex;gap:0.3rem;flex-wrap:wrap;">
-            ${t.industry ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--gray);padding:0.1rem 0.4rem;border-radius:2px;">${esc(t.industry)}</span>` : ''}
-            ${t.area     ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--light);padding:0.1rem 0.4rem;border-radius:2px;">${esc(t.area)}</span>` : ''}
-          </div>
-        </td>
-        <td><span class="badge badge-${t.site_status || 'unchecked'}">${STATUS_LABEL[t.site_status] || t.site_status || '未診断'}</span></td>
-        <td style="font-size:0.72rem;white-space:nowrap;">${esc(t.phone || '—')}</td>
-        <td style="font-size:0.72rem;">
-          <div>${t.email ? `<a href="mailto:${esc(t.email)}" style="color:var(--blue)" onclick="event.stopPropagation()">${esc(t.email)}</a>` : '—'}</div>
-          ${t.website ? `<div style="margin-top:2px;"><a href="${esc(t.website)}" target="_blank" rel="noopener" style="color:var(--light);font-size:0.65rem;" onclick="event.stopPropagation()" title="${esc(t.website)}">サイトを開く</a></div>` : ''}
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = data.items.map(t => {
+      const pitch   = PITCH[t.site_status];
+      const flags   = diagFlags(t);
+      const sendBadge = t.send_status === 'sent'
+        ? '<span style="font-size:0.6rem;background:#dcfce7;color:var(--green);padding:0.08rem 0.38rem;border-radius:2px;font-weight:600;margin-left:4px;">送信済</span>'
+        : t.send_status === 'failed'
+        ? '<span style="font-size:0.6rem;background:#fee2e2;color:var(--red);padding:0.08rem 0.38rem;border-radius:2px;font-weight:600;margin-left:4px;">送信失敗</span>'
+        : '';
+      return `
+        <tr class="data-row" onclick="selectTarget(this, ${JSON.stringify(t).replace(/"/g, '&quot;')})">
+          <!-- 列1: 店舗名 -->
+          <td>
+            <div style="font-weight:600;font-size:0.82rem;line-height:1.3;">${esc(t.name)}</div>
+            ${t.address ? `<div style="font-size:0.68rem;color:var(--light);margin-top:1px;">${esc(t.address)}</div>` : ''}
+            <div style="margin-top:3px;display:flex;gap:0.25rem;flex-wrap:wrap;">
+              ${t.industry ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--gray);padding:0.06rem 0.35rem;border-radius:2px;">${esc(t.industry)}</span>` : ''}
+              ${t.area     ? `<span style="font-size:0.62rem;background:#f1f5f9;color:var(--light);padding:0.06rem 0.35rem;border-radius:2px;">${esc(t.area)}</span>` : ''}
+            </div>
+          </td>
+          <!-- 列2: 診断結果 + 営業ポイント + フラグ -->
+          <td>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.25rem;">
+              <span class="badge badge-${t.site_status||'unchecked'}">${STATUS_LABEL[t.site_status]||'未診断'}</span>
+              ${sendBadge}
+            </div>
+            ${pitch ? `<div class="pitch-hint" style="color:${pitch.color};">→ ${pitch.text}</div>` : ''}
+            ${flags ? `<div style="margin-top:4px;display:flex;gap:0.2rem;flex-wrap:wrap;">${flags}</div>` : ''}
+          </td>
+          <!-- 列3: 連絡先 -->
+          <td>
+            ${t.phone
+              ? `<div><a href="tel:${esc(t.phone)}" class="contact-link" onclick="event.stopPropagation()">
+                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:3px;"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.85 12a19.79 19.79 0 01-3.07-8.67A2 2 0 012.77 1.1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.84a16 16 0 006.29 6.29l1.11-1.1a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2z"/></svg>${esc(t.phone)}</a></div>`
+              : `<div style="font-size:0.72rem;color:var(--light);">電話なし</div>`}
+            ${t.email
+              ? `<div style="margin-top:3px;"><a href="mailto:${esc(t.email)}" style="color:var(--blue);font-size:0.7rem;text-decoration:none;" onclick="event.stopPropagation()">
+                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>${esc(t.email)}</a></div>`
+              : ''}
+            ${t.website
+              ? `<div style="margin-top:3px;"><a href="${esc(t.website)}" target="_blank" rel="noopener" style="color:var(--light);font-size:0.68rem;text-decoration:none;" onclick="event.stopPropagation()">
+                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:2px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>サイトを確認</a></div>`
+              : ''}
+          </td>
+        </tr>`;
+    }).join('');
     document.getElementById('target-count').textContent = `${data.total}件`;
     renderPagination(data.total, data.page, data.per_page);
   }
