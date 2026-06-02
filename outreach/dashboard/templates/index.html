@@ -365,7 +365,8 @@
     </select>
     <button class="btn" onclick="loadTargets(1)">検索</button>
     <button class="btn secondary" onclick="resetFilters()">リセット</button>
-    <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:auto;"></span>
+    <button class="btn secondary" onclick="openTargetModal()" style="margin-left:auto;">＋ 手動追加</button>
+    <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:0.5rem;"></span>
   </div>
 
   <div class="table-wrap">
@@ -490,6 +491,64 @@
       <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
         <button class="btn secondary" onclick="closeCustModal()">キャンセル</button>
         <button class="btn green-btn" onclick="saveCustModal()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ターゲット手動追加モーダル ─── -->
+<div id="target-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+  <div style="background:var(--white);width:90%;max-width:480px;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;padding:0.85rem 1.25rem;background:var(--navy);">
+      <span style="font-weight:600;color:var(--white);font-size:0.9rem;flex:1;">＋ ターゲットを手動追加</span>
+      <button onclick="closeTargetModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.65rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">店舗名 *</label>
+          <input id="tm-name" type="text" placeholder="例：成田クリニック" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">業種</label>
+          <input id="tm-industry" type="text" placeholder="例：クリニック" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">エリア</label>
+          <input id="tm-area" type="text" placeholder="例：千葉市中央区" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">電話</label>
+          <input id="tm-phone" type="text" placeholder="例：043-000-0000" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">メール</label>
+          <input id="tm-email" type="text" placeholder="例：info@narita-clinic.jp" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">住所</label>
+          <input id="tm-address" type="text" placeholder="例：千葉県千葉市中央区..." style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">WebサイトURL</label>
+          <input id="tm-website" type="text" placeholder="例：https://narita-clinic.jp" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">診断ステータス</label>
+          <select id="tm-status" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+            <option value="unchecked">未診断</option>
+            <option value="none">サイトなし</option>
+            <option value="old">古いサイト</option>
+            <option value="no_mobile">スマホ非対応</option>
+            <option value="phone_only">電話のみ</option>
+            <option value="ok">問題なし</option>
+          </select>
+        </div>
+      </div>
+      <div id="tm-error" style="color:var(--red);font-size:0.78rem;display:none;"></div>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.25rem;">
+        <button class="btn secondary" onclick="closeTargetModal()">キャンセル</button>
+        <button class="btn" onclick="saveTargetModal()">追加する</button>
       </div>
     </div>
   </div>
@@ -751,8 +810,77 @@
 
   // ESCキーでモーダルを閉じる
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); }
+    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); closeTargetModal(); }
   });
+
+  // ─── ターゲット手動追加モーダル ───
+  function openTargetModal() {
+    // フィールドをクリア
+    ['tm-name','tm-industry','tm-area','tm-phone','tm-email','tm-address','tm-website'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('tm-status').value = 'unchecked';
+    document.getElementById('tm-error').style.display = 'none';
+    document.getElementById('target-modal').style.display = 'flex';
+    document.getElementById('tm-name').focus();
+  }
+
+  function closeTargetModal() {
+    document.getElementById('target-modal').style.display = 'none';
+  }
+
+  async function saveTargetModal() {
+    const name  = document.getElementById('tm-name').value.trim();
+    const errEl = document.getElementById('tm-error');
+    if (!name) { errEl.textContent = '店舗名は必須です'; errEl.style.display = ''; return; }
+    errEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/targets', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name,
+          industry:    document.getElementById('tm-industry').value,
+          area:        document.getElementById('tm-area').value,
+          phone:       document.getElementById('tm-phone').value,
+          email:       document.getElementById('tm-email').value,
+          address:     document.getElementById('tm-address').value,
+          website:     document.getElementById('tm-website').value,
+          site_status: document.getElementById('tm-status').value,
+        }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        closeTargetModal();
+        loadTargets(1); // 先頭ページに戻してリスト更新
+        loadStats();
+      } else {
+        errEl.textContent = d.error || 'エラーが発生しました';
+        errEl.style.display = '';
+      }
+    } catch(e) {
+      errEl.textContent = '通信エラー: ' + e;
+      errEl.style.display = '';
+    }
+  }
+
+  // ─── 顧客化を解除 ───
+  async function revertCustomer(id, company) {
+    if (!confirm(`「${company}」の顧客化を解除しますか？\n顧客レコードが削除され、ターゲットリストに戻ります。`)) return;
+    try {
+      const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+      const d   = await res.json();
+      if (d.ok) {
+        loadCustomers(custPage);
+        loadTargets(currentPage); // ターゲット側のバッジも更新
+      } else {
+        alert('エラー: ' + (d.error || '不明'));
+      }
+    } catch(e) {
+      alert('通信エラー: ' + e);
+    }
+  }
 
   // ─── 顧客化ボタン ───
   async function convertToCustomer(targetId, t) {
@@ -853,7 +981,10 @@
           <td style="font-size:0.72rem;color:var(--gray);">${dt}</td>
           <td style="font-size:0.72rem;color:var(--gray);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.memo||'')}">${esc(c.memo||'—')}</td>
           <td>
-            <button class="btn secondary" style="font-size:0.68rem;padding:0.22rem 0.5rem;" onclick="openCustModal(${cJson})">編集</button>
+            <div style="display:flex;flex-direction:column;gap:0.3rem;">
+              <button class="btn secondary" style="font-size:0.68rem;padding:0.22rem 0.5rem;" onclick="openCustModal(${cJson})">編集</button>
+              <button class="btn danger" style="font-size:0.65rem;padding:0.18rem 0.4rem;" onclick="revertCustomer(${c.id}, '${esc(c.company)}')">顧客化を解除</button>
+            </div>
           </td>
         </tr>`;
     }).join('');

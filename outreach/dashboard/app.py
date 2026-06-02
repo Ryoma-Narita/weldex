@@ -131,6 +131,44 @@ def api_targets(
     }
 
 
+@app.post("/api/targets")
+def api_targets_create(
+    auth=Depends(require_auth),
+    body: dict = Body(...),
+):
+    """ターゲットを手動で新規作成する（ダミーデータ投入・手動追加用）。"""
+    name = (body.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "店舗名は必須です"}
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO targets
+                    (name, address, phone, website, email, industry, area,
+                     site_status, send_status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'pending')
+                RETURNING id
+                """,
+                (
+                    name,
+                    body.get("address"),
+                    body.get("phone"),
+                    body.get("website"),
+                    body.get("email"),
+                    body.get("industry"),
+                    body.get("area"),
+                    body.get("site_status", "unchecked"),
+                ),
+            )
+            new_id = cur.fetchone()[0]
+        conn.commit()
+
+    write_log("INFO", "system", f"手動ターゲット追加: {name} (id={new_id})")
+    return {"ok": True, "id": new_id}
+
+
 @app.get("/api/logs")
 def api_logs(
     auth=Depends(require_auth),
@@ -660,6 +698,36 @@ def api_customers_create(
 
     write_log("INFO", "customer", f"顧客化: {company} (id={new_id}, target_id={target_id})")
     return {"ok": True, "id": new_id}
+
+
+@app.delete("/api/customers/{customer_id}")
+def api_customers_delete(
+    customer_id: int,
+    auth=Depends(require_auth),
+):
+    """顧客化を解除する。顧客レコードを削除し、元ターゲットの send_status を pending に戻す。"""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            # 紐づいている target_id を取得
+            cur.execute("SELECT target_id, company FROM customers WHERE id = %s", (customer_id,))
+            row = cur.fetchone()
+            if not row:
+                return {"ok": False, "error": "顧客が見つかりません"}
+            target_id, company = row
+
+            # 顧客レコードを削除
+            cur.execute("DELETE FROM customers WHERE id = %s", (customer_id,))
+
+            # 元ターゲットのステータスを pending に戻す
+            if target_id:
+                cur.execute(
+                    "UPDATE targets SET send_status = 'pending' WHERE id = %s",
+                    (target_id,)
+                )
+        conn.commit()
+
+    write_log("INFO", "customer", f"顧客化解除: {company} (id={customer_id}, target_id={target_id})")
+    return {"ok": True}
 
 
 @app.patch("/api/customers/{customer_id}")
