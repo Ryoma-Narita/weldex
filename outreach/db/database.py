@@ -114,6 +114,15 @@ def init_db() -> None:
                     created_at      TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
             """)
+            # 後から追加したカラム（既存 DB への migration）
+            migrations = [
+                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS president_name  TEXT DEFAULT ''",
+                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS direct_phone    TEXT DEFAULT ''",
+                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS next_action     TEXT DEFAULT ''",
+                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS last_contact_at TIMESTAMP",
+            ]
+            for sql in migrations:
+                cur.execute(sql)
         conn.commit()
 
 

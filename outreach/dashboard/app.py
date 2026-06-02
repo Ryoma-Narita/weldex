@@ -636,6 +636,40 @@ def api_customers(
     }
 
 
+@app.get("/api/customers/{customer_id}")
+def api_customers_get(
+    customer_id: int,
+    auth=Depends(require_auth),
+):
+    """顧客の詳細情報をターゲット情報も含めて返す。"""
+    import psycopg2.extras
+    with get_conn() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT c.*,
+                       t.name        AS target_name,
+                       t.address     AS target_address,
+                       t.area        AS target_area,
+                       t.website     AS target_website,
+                       t.site_status AS target_site_status,
+                       t.has_line,
+                       t.has_ssl,
+                       t.has_online_booking,
+                       t.has_contact_form,
+                       t.phone_only
+                FROM customers c
+                LEFT JOIN targets t ON c.target_id = t.id
+                WHERE c.id = %s
+                """,
+                (customer_id,),
+            )
+            row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="顧客が見つかりません")
+    return dict(row)
+
+
 @app.post("/api/customers")
 def api_customers_create(
     auth=Depends(require_auth),
@@ -738,7 +772,8 @@ def api_customers_update(
 ):
     """顧客情報（ステータス・メモ・契約金額など）を更新する。"""
     allowed = {"status", "memo", "contract_amount", "services",
-               "contact_name", "phone", "email", "contracted_at"}
+               "contact_name", "phone", "email", "contracted_at",
+               "president_name", "direct_phone", "next_action", "last_contact_at"}
     sets   = []
     values = []
     for key in allowed:

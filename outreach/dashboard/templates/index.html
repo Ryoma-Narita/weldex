@@ -496,6 +496,136 @@
   </div>
 </div>
 
+<!-- ─── 顧客詳細モーダル ─── -->
+<div id="cust-detail-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;">
+  <div style="background:var(--white);width:100%;max-width:860px;border-radius:6px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+
+    <!-- ヘッダー -->
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:1rem 1.5rem;background:var(--navy);">
+      <div style="flex:1;min-width:0;">
+        <div id="cd-company" style="font-weight:800;color:var(--white);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="cd-meta" style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:2px;"></div>
+      </div>
+      <span id="cd-status-badge" style="font-size:0.72rem;font-weight:700;padding:0.2rem 0.65rem;border-radius:3px;flex-shrink:0;"></span>
+      <button onclick="closeCustDetailModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.4rem;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>
+    </div>
+
+    <!-- 本文：左右2カラム -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+
+      <!-- 左：自動収集情報 -->
+      <div style="padding:1.25rem 1.5rem;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1rem;">
+
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:0.6rem;">基本情報（自動収集）</div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+            <tbody id="cd-basic-table"></tbody>
+          </table>
+        </div>
+
+        <div id="cd-diag-section">
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:0.5rem;">サイト診断</div>
+          <div id="cd-diag-flags" style="display:flex;flex-wrap:wrap;gap:0.3rem;"></div>
+        </div>
+
+        <div id="cd-site-btn-wrap"></div>
+      </div>
+
+      <!-- 右：手入力フィールド -->
+      <div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1rem;">
+
+        <!-- 担当者情報 -->
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:0.6rem;">担当者情報</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">社長名</label>
+              <input id="cd-president" type="text" placeholder="例：成田 太郎"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onblur="cdSave()">
+            </div>
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">担当者名</label>
+              <input id="cd-contact" type="text" placeholder="例：成田 花子"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onblur="cdSave()">
+            </div>
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">電話（直通）</label>
+              <input id="cd-direct-phone" type="text" placeholder="例：090-0000-0000"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onblur="cdSave()">
+            </div>
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">メール</label>
+              <input id="cd-email" type="text"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onblur="cdSave()">
+            </div>
+          </div>
+        </div>
+
+        <!-- 商談情報 -->
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:0.6rem;">商談情報</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">ステータス</label>
+              <select id="cd-status"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onchange="cdSave()">
+                <option>商談中</option><option>見積提出</option><option>契約</option><option>失注</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">契約金額（円）</label>
+              <input id="cd-amount" type="number" placeholder="例：150000"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onblur="cdSave()">
+            </div>
+            <div style="grid-column:1/-1;">
+              <label style="font-size:0.68rem;color:var(--gray);">サービス内容</label>
+              <input id="cd-services" type="text" placeholder="例：コーポレートサイト制作 + LINE予約"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onblur="cdSave()">
+            </div>
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">最終接触日</label>
+              <input id="cd-last-contact" type="date"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onchange="cdSave()">
+            </div>
+            <div>
+              <label style="font-size:0.68rem;color:var(--gray);">契約日</label>
+              <input id="cd-contracted" type="date"
+                style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;margin-top:0.15rem;border-radius:3px;"
+                onchange="cdSave()">
+            </div>
+          </div>
+        </div>
+
+        <!-- 次のアクション -->
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:0.4rem;">次のアクション</div>
+          <input id="cd-next-action" type="text" placeholder="例：来週月曜に提案書を送付"
+            style="width:100%;border:1px solid var(--border);padding:0.35rem 0.55rem;font-size:0.8rem;border-radius:3px;"
+            onblur="cdSave()">
+        </div>
+
+        <!-- 備考・メモ -->
+        <div style="flex:1;display:flex;flex-direction:column;">
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:0.4rem;">備考・メモ</div>
+          <textarea id="cd-memo" placeholder="商談内容・気づき・要望など自由に記入"
+            style="flex:1;min-height:120px;border:1px solid var(--border);padding:0.5rem 0.65rem;font-size:0.8rem;border-radius:3px;resize:vertical;font-family:inherit;line-height:1.65;"
+            onblur="cdSave()"></textarea>
+          <div id="cd-save-status" style="font-size:0.65rem;color:var(--light);margin-top:4px;text-align:right;min-height:1em;"></div>
+        </div>
+
+      </div>
+    </div><!-- /grid -->
+  </div>
+</div>
+
 <!-- ─── ターゲット手動追加モーダル ─── -->
 <div id="target-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
   <div style="background:var(--white);width:90%;max-width:480px;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
@@ -810,8 +940,151 @@
 
   // ESCキーでモーダルを閉じる
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); closeTargetModal(); }
+    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); closeTargetModal(); closeCustDetailModal(); }
   });
+
+  // ─── 顧客詳細モーダル ───
+  let _cdId = null; // 現在開いている顧客ID
+
+  async function openCustDetail(id) {
+    _cdId = id;
+    document.getElementById('cust-detail-modal').style.display = 'flex';
+    document.getElementById('cd-save-status').textContent = '読み込み中...';
+
+    try {
+      const res = await fetch(`/api/customers/${id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const c = await res.json();
+      renderCustDetail(c);
+    } catch(e) {
+      document.getElementById('cd-save-status').textContent = '読み込みエラー: ' + e;
+    }
+  }
+
+  function closeCustDetailModal() {
+    document.getElementById('cust-detail-modal').style.display = 'none';
+    _cdId = null;
+    loadCustomers(custPage); // 一覧を再取得して最新状態に反映
+  }
+
+  function renderCustDetail(c) {
+    // ヘッダー
+    document.getElementById('cd-company').textContent = c.company || '—';
+    document.getElementById('cd-meta').textContent =
+      [c.industry, c.target_area || c.target_address].filter(Boolean).join(' · ');
+
+    const st  = CUST_STATUS_STYLE[c.status] || { color: '#9ca3af', bg: '#f9fafb' };
+    const stEl = document.getElementById('cd-status-badge');
+    stEl.textContent  = c.status || '—';
+    stEl.style.background = st.bg;
+    stEl.style.color      = st.color;
+    stEl.style.border     = `1px solid ${st.color}55`;
+
+    // 基本情報テーブル（自動収集）
+    const rows = [
+      ['業種',    c.industry],
+      ['エリア',  c.target_area],
+      ['住所',    c.target_address],
+      ['電話',    c.phone ? `<a href="tel:${esc(c.phone)}" style="color:var(--blue);">${esc(c.phone)}</a>` : null],
+      ['メール',  c.email ? `<a href="mailto:${esc(c.email)}" style="color:var(--blue);">${esc(c.email)}</a>` : null],
+      ['流入元',  c.source],
+    ].filter(r => r[1]);
+
+    document.getElementById('cd-basic-table').innerHTML = rows.map(([lbl, val]) => `
+      <tr>
+        <td style="padding:0.3rem 0;color:var(--light);font-size:0.72rem;width:4.5rem;vertical-align:top;">${lbl}</td>
+        <td style="padding:0.3rem 0;color:var(--navy);font-size:0.78rem;">${val}</td>
+      </tr>`).join('');
+
+    // サイト診断フラグ
+    const flagsEl = document.getElementById('cd-diag-flags');
+    const statusLabel = STATUS_LABEL[c.target_site_status];
+    let flagsHtml = statusLabel
+      ? `<span class="badge badge-${c.target_site_status}">${statusLabel}</span>` : '';
+    if (c.has_line === 0)           flagsHtml += '<span class="flag-tag flag-purple">LINE未連携</span>';
+    if (c.has_ssl  === 0)           flagsHtml += '<span class="flag-tag flag-red">SSL非対応</span>';
+    if (c.has_online_booking === 0) flagsHtml += '<span class="flag-tag flag-orange">予約なし</span>';
+    if (c.has_contact_form === 0)   flagsHtml += '<span class="flag-tag flag-gray">フォームなし</span>';
+    if (c.phone_only === 1)         flagsHtml += '<span class="flag-tag flag-blue">電話のみ</span>';
+    flagsEl.innerHTML = flagsHtml || '<span style="font-size:0.72rem;color:var(--light);">診断データなし</span>';
+
+    // サイト表示ボタン
+    const siteBtnWrap = document.getElementById('cd-site-btn-wrap');
+    const website = c.target_website;
+    siteBtnWrap.innerHTML = website
+      ? `<button class="btn secondary" style="font-size:0.75rem;width:100%;"
+           onclick="openSiteModal('${esc(c.company)}','${esc(website)}')">
+           サイトを表示
+         </button>`
+      : '';
+
+    // 手入力フィールドに値をセット
+    document.getElementById('cd-president').value    = c.president_name   || '';
+    document.getElementById('cd-contact').value      = c.contact_name     || '';
+    document.getElementById('cd-direct-phone').value = c.direct_phone     || '';
+    document.getElementById('cd-email').value        = c.email            || '';
+    document.getElementById('cd-status').value       = c.status           || '商談中';
+    document.getElementById('cd-amount').value       = c.contract_amount  || '';
+    document.getElementById('cd-services').value     = c.services         || '';
+    document.getElementById('cd-next-action').value  = c.next_action      || '';
+    document.getElementById('cd-memo').value         = c.memo             || '';
+
+    // 日付フィールド（YYYY-MM-DD 形式に変換）
+    document.getElementById('cd-last-contact').value =
+      c.last_contact_at ? c.last_contact_at.slice(0,10) : '';
+    document.getElementById('cd-contracted').value =
+      c.contracted_at ? c.contracted_at.slice(0,10) : '';
+
+    document.getElementById('cd-save-status').textContent = '';
+  }
+
+  // フォーカスを外したら自動保存
+  let _cdSaveTimer = null;
+  async function cdSave() {
+    if (!_cdId) return;
+    clearTimeout(_cdSaveTimer);
+    _cdSaveTimer = setTimeout(async () => {
+      const statusEl = document.getElementById('cd-save-status');
+      statusEl.textContent = '保存中...';
+      statusEl.style.color = 'var(--light)';
+      try {
+        const res = await fetch(`/api/customers/${_cdId}`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            president_name:   document.getElementById('cd-president').value,
+            contact_name:     document.getElementById('cd-contact').value,
+            direct_phone:     document.getElementById('cd-direct-phone').value,
+            email:            document.getElementById('cd-email').value,
+            status:           document.getElementById('cd-status').value,
+            contract_amount:  document.getElementById('cd-amount').value || null,
+            services:         document.getElementById('cd-services').value,
+            next_action:      document.getElementById('cd-next-action').value,
+            memo:             document.getElementById('cd-memo').value,
+            last_contact_at:  document.getElementById('cd-last-contact').value || null,
+            contracted_at:    document.getElementById('cd-contracted').value    || null,
+          }),
+        });
+        const d = await res.json();
+        if (d.ok) {
+          statusEl.textContent = '保存済み ✓';
+          statusEl.style.color = 'var(--green)';
+          // ステータスバッジをリアルタイム更新
+          const st = CUST_STATUS_STYLE[document.getElementById('cd-status').value] || {};
+          const stEl = document.getElementById('cd-status-badge');
+          stEl.textContent = document.getElementById('cd-status').value;
+          stEl.style.background = st.bg  || '#f9fafb';
+          stEl.style.color      = st.color || '#9ca3af';
+        } else {
+          statusEl.textContent = '保存失敗: ' + (d.error || '');
+          statusEl.style.color = 'var(--red)';
+        }
+      } catch(e) {
+        statusEl.textContent = '通信エラー';
+        statusEl.style.color = 'var(--red)';
+      }
+    }, 600); // 600ms デバウンス
+  }
 
   // ─── ターゲット手動追加モーダル ───
   function openTargetModal() {
@@ -961,10 +1234,11 @@
       const dt  = c.contacted_at ? new Date(c.contacted_at).toLocaleDateString('ja-JP') : '—';
       const cJson = JSON.stringify(c).replace(/"/g, '&quot;');
       return `
-        <tr class="data-row">
+        <tr class="data-row" onclick="openCustDetail(${c.id})" style="cursor:pointer;" title="クリックで詳細を表示">
           <td>
             <div style="font-weight:600;font-size:0.82rem;">${esc(c.company)}</div>
             ${c.industry ? `<div style="font-size:0.65rem;color:var(--gray);margin-top:2px;">${esc(c.industry)}</div>` : ''}
+            ${c.president_name ? `<div style="font-size:0.68rem;color:var(--navy);">社長: ${esc(c.president_name)}</div>` : ''}
             ${c.contact_name ? `<div style="font-size:0.68rem;color:var(--light);">${esc(c.contact_name)}</div>` : ''}
             ${c.target_id ? `<div style="font-size:0.6rem;color:var(--light);margin-top:2px;">営業リスト出身</div>` : `<div style="font-size:0.6rem;color:var(--light);margin-top:2px;">手動追加</div>`}
           </td>
@@ -980,10 +1254,10 @@
           <td style="font-size:0.78rem;color:var(--navy);font-weight:${c.contract_amount?'600':'400'};color:${c.contract_amount?'var(--green)':'var(--light)'};">${amt}</td>
           <td style="font-size:0.72rem;color:var(--gray);">${dt}</td>
           <td style="font-size:0.72rem;color:var(--gray);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.memo||'')}">${esc(c.memo||'—')}</td>
-          <td>
+          <td onclick="event.stopPropagation()">
             <div style="display:flex;flex-direction:column;gap:0.3rem;">
               <button class="btn secondary" style="font-size:0.68rem;padding:0.22rem 0.5rem;" onclick="openCustModal(${cJson})">編集</button>
-              <button class="btn danger" style="font-size:0.65rem;padding:0.18rem 0.4rem;" onclick="revertCustomer(${c.id}, '${esc(c.company)}')">顧客化を解除</button>
+              <button class="btn danger" style="font-size:0.65rem;padding:0.18rem 0.4rem;" onclick="revertCustomer(${c.id}, '${esc(c.company)}')">解除</button>
             </div>
           </td>
         </tr>`;
