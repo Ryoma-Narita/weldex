@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Image from "next/image";
 import FadeIn from "./FadeIn";
 
@@ -65,18 +64,17 @@ export default function Hero() {
             lineHeight: 1.85,
             marginBottom: "2.5rem",
             maxWidth: 480,
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(4px)",
+            padding: "0.5rem 0.75rem",
+            borderRadius: 4,
           }}>
             WEBサイト制作からLINE・WEB予約システム・システム開発まで、<br />
             AIを活用した低コスト・高品質なデジタル支援を提供します。
           </p>
         </FadeIn>
 
-        <FadeIn delay={0.5} style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "3.5rem" }}>
-          <Link href="/contact" className="btn btn-primary">無料相談をする</Link>
-          <Link href="/services" className="btn btn-outline">サービスを見る</Link>
-        </FadeIn>
-
-        <FadeIn delay={0.65}>
+        <FadeIn delay={0.5}>
           <p style={{
             fontSize: "clamp(0.8rem, 1.3vw, 0.9375rem)",
             color: "var(--gray)",
@@ -84,6 +82,10 @@ export default function Hero() {
             borderLeft: "2px solid var(--gold)",
             paddingLeft: "1rem",
             maxWidth: 420,
+            background: "rgba(255,255,255,0.82)",
+            backdropFilter: "blur(4px)",
+            padding: "0.6rem 0.75rem 0.6rem 1rem",
+            borderRadius: "0 4px 4px 0",
           }}>
             AIが反復を担い、人間が本質を設計する。<br />
             それがWeldexのコスト優位の源泉です。

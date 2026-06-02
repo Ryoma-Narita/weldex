@@ -107,14 +107,14 @@ export default function BrandSection() {
         {/* 見出し */}
         <h2 style={{
           fontFamily: 'var(--font-cormorant)',
-          fontSize: 'clamp(3.2rem, 9vw, 6.5rem)',
+          fontSize: 'clamp(4.5rem, 13vw, 10rem)',
           fontWeight: 700, fontStyle: 'italic',
-          color: '#1a2540', lineHeight: 1.05,
-          letterSpacing: '-0.02em', marginBottom: '2.25rem',
+          color: '#1a2540', lineHeight: 0.95,
+          letterSpacing: '-0.03em', marginBottom: '2.25rem',
         }}>
           Connecting<br />
-          for Value<br />
-          Creation.
+          <span style={{ fontSize: '0.65em', fontStyle: 'normal', letterSpacing: '-0.01em' }}>for Value</span><br />
+          <span style={{ fontSize: '0.7em' }}>Creation.</span>
         </h2>
 
         {/* 日本語メインコピー */}
