@@ -609,7 +609,7 @@ def api_customers(
 
     with get_conn() as conn:
         with conn.cursor() as cnt_cur:
-            cnt_cur.execute(f"SELECT COUNT(*) FROM customers c {where}", params)
+            cnt_cur.execute(f"SELECT COUNT(*) FROM outreach_customers c {where}", params)
             total = cnt_cur.fetchone()[0]
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
@@ -618,7 +618,7 @@ def api_customers(
                        t.site_status  AS target_site_status,
                        t.address      AS target_address,
                        t.area         AS target_area
-                FROM customers c
+                FROM outreach_customers c
                 LEFT JOIN targets t ON c.target_id = t.id
                 {where}
                 ORDER BY c.created_at DESC
@@ -658,7 +658,7 @@ def api_customers_get(
                        t.has_online_booking,
                        t.has_contact_form,
                        t.phone_only
-                FROM customers c
+                FROM outreach_customers c
                 LEFT JOIN targets t ON c.target_id = t.id
                 WHERE c.id = %s
                 """,
@@ -707,7 +707,7 @@ def api_customers_create(
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO customers
+                INSERT INTO outreach_customers
                     (target_id, company, contact_name, phone, email, industry,
                      source, status, contract_amount, services, memo)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
@@ -743,14 +743,14 @@ def api_customers_delete(
     with get_conn() as conn:
         with conn.cursor() as cur:
             # 紐づいている target_id を取得
-            cur.execute("SELECT target_id, company FROM customers WHERE id = %s", (customer_id,))
+            cur.execute("SELECT target_id, company FROM outreach_customers WHERE id = %s", (customer_id,))
             row = cur.fetchone()
             if not row:
                 return {"ok": False, "error": "顧客が見つかりません"}
             target_id, company = row
 
             # 顧客レコードを削除
-            cur.execute("DELETE FROM customers WHERE id = %s", (customer_id,))
+            cur.execute("DELETE FROM outreach_customers WHERE id = %s", (customer_id,))
 
             # 元ターゲットのステータスを pending に戻す
             if target_id:
@@ -788,7 +788,7 @@ def api_customers_update(
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                f"UPDATE customers SET {', '.join(sets)} WHERE id = %s",
+                f"UPDATE outreach_customers SET {', '.join(sets)} WHERE id = %s",
                 values,
             )
         conn.commit()

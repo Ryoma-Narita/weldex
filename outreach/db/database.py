@@ -96,33 +96,28 @@ def init_db() -> None:
                     created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
 
-                CREATE TABLE IF NOT EXISTS customers (
+                CREATE TABLE IF NOT EXISTS outreach_customers (
                     id              SERIAL PRIMARY KEY,
                     target_id       INTEGER REFERENCES targets(id) ON DELETE SET NULL,
                     company         TEXT NOT NULL,
-                    contact_name    TEXT,
-                    phone           TEXT,
-                    email           TEXT,
-                    industry        TEXT,
+                    contact_name    TEXT DEFAULT '',
+                    president_name  TEXT DEFAULT '',
+                    direct_phone    TEXT DEFAULT '',
+                    phone           TEXT DEFAULT '',
+                    email           TEXT DEFAULT '',
+                    industry        TEXT DEFAULT '',
                     source          TEXT DEFAULT '営業リスト',
                     status          TEXT DEFAULT '商談中',
                     contract_amount INTEGER,
                     services        TEXT DEFAULT '',
                     memo            TEXT DEFAULT '',
+                    next_action     TEXT DEFAULT '',
+                    last_contact_at TIMESTAMP,
                     contacted_at    TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo'),
                     contracted_at   TIMESTAMP,
                     created_at      TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
             """)
-            # 後から追加したカラム（既存 DB への migration）
-            migrations = [
-                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS president_name  TEXT DEFAULT ''",
-                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS direct_phone    TEXT DEFAULT ''",
-                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS next_action     TEXT DEFAULT ''",
-                "ALTER TABLE customers ADD COLUMN IF NOT EXISTS last_contact_at TIMESTAMP",
-            ]
-            for sql in migrations:
-                cur.execute(sql)
         conn.commit()
 
 
