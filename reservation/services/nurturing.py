@@ -23,11 +23,9 @@ from sendgrid.helpers.mail import Mail
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 FROM_EMAIL       = os.environ.get("FROM_EMAIL", "info@weldex.jp")
 FROM_NAME        = os.environ.get("FROM_NAME", "Weldex")
-WELDEX_LINE_TOKEN = os.environ.get("WELDEX_LINE_CHANNEL_ACCESS_TOKEN", "")
-ADMIN_LINE_USER  = os.environ.get("ADMIN_LINE_USER_ID", "")
-
-LINE_PUSH_URL    = "https://api.line.me/v2/bot/message/push"
 LINE_FRIENDS_URL = "https://lin.ee/XXXXXXX"  # 本番の友だち追加URLに変更
+
+from services.line_notify import push as _line_push
 
 
 # ─── 自動返信メール ───────────────────────────────────
@@ -153,35 +151,8 @@ def notify_ryoma(name: str, company: str, message_text: str) -> bool:
     Returns:
         送信成功なら True
     """
-    if not WELDEX_LINE_TOKEN or not ADMIN_LINE_USER:
-        print("[nurturing] LINE通知設定なし（WELDEX_LINE_CHANNEL_ACCESS_TOKEN / ADMIN_LINE_USER_IDを確認）")
-        return False
-
-    import urllib.request
-    import json
-
     preview = message_text[:50] + ("…" if len(message_text) > 50 else "")
-    text = f"🔔 新規問い合わせ\n{company} / {name}\n{preview}"
-    payload = json.dumps({
-        "to": ADMIN_LINE_USER,
-        "messages": [{"type": "text", "text": text}],
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        LINE_PUSH_URL,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {WELDEX_LINE_TOKEN}",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req) as resp:
-            return resp.status == 200
-    except Exception as e:
-        print(f"[nurturing] LINE通知エラー: {e}")
-        return False
+    return _line_push(f"🔔 新規問い合わせ\n{company} / {name}\n{preview}")
 
 
 # ─── まとめて実行 ─────────────────────────────────────

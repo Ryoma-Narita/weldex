@@ -14,6 +14,7 @@ from config import (
     SENDGRID_API_KEY, FROM_EMAIL, FROM_NAME,
     APP_NAME, APP_URL, ADMIN_EMAIL,
 )
+from services.line_notify import push
 
 
 def _send(to_email: str, subject: str, body: str) -> bool:
@@ -83,7 +84,15 @@ def send_reminder(reservation: dict) -> bool:
 
 
 def send_admin_notification(reservation: dict) -> bool:
-    """新規予約を管理者に通知する。"""
+    """新規予約を管理者にメール＋LINEで通知する。"""
+    # LINE通知（Ryomaへ）
+    push(
+        f"📅 新規予約 / {APP_NAME}\n"
+        f"{reservation['name']} 様\n"
+        f"{reservation['date']} {reservation['time']}\n"
+        f"メニュー: {reservation.get('menu_name', '')}"
+    )
+    # メール通知（クライアント管理者へ）
     if not ADMIN_EMAIL:
         return False
     subject = f"【新規予約】{reservation['date']} {reservation['time']} {reservation['name']} 様"
@@ -98,11 +107,21 @@ def send_admin_notification(reservation: dict) -> bool:
 
 管理画面：{APP_URL}/admin/
 """
-    return _send(ADMIN_EMAIL, subject, body)
+    ok = _send(ADMIN_EMAIL, subject, body)
+    if not ok:
+        push(f"⚠️ {APP_NAME}\nメール送信失敗（新規予約）\n{reservation['name']} 様")
+    return ok
 
 
 def send_cancel_notification(reservation: dict) -> bool:
-    """キャンセル通知を管理者に送信する。"""
+    """キャンセル通知を管理者にメール＋LINEで送信する。"""
+    # LINE通知（Ryomaへ）
+    push(
+        f"❌ キャンセル / {APP_NAME}\n"
+        f"{reservation['name']} 様\n"
+        f"{reservation['date']} {reservation['time']}"
+    )
+    # メール通知（クライアント管理者へ）
     if not ADMIN_EMAIL:
         return False
     subject = f"【キャンセル】{reservation['date']} {reservation['time']} {reservation['name']} 様"
