@@ -810,3 +810,72 @@ export type Industry = {
 - .envはGitignoreに含まれていることを確認してから作業開始
 - client_id・client_secret・refresh_tokenはRyomaが自分で.envに直接記載
 - 本番環境はRailway/Vercelの環境変数画面で設定
+
+---
+
+<!-- ====== 以下 2026-06-05 セッション追記分 ====== -->
+
+## LINE通知仕様 [実装済み・詳細は今後詰める 2026-06-05]
+
+### 現在の実装（reservation/services/line_notify.py）
+
+共通 `push(message)` 関数で以下のイベントをRyomaのLINEに送信：
+
+| イベント | メッセージ例 |
+|---|---|
+| 未処理例外 | `⚠️ [APP_NAME] エラー\nPOST /api/booking/create\nValueError: ...` |
+| 新規予約 | `📅 新規予約 / [APP_NAME]\n田中様 / 2026-06-10 10:00\nメニュー: 初診` |
+| キャンセル | `❌ キャンセル / [APP_NAME]\n田中様 / 2026-06-10 10:00` |
+| リマインド失敗 | `⚠️ リマインド失敗 / [APP_NAME]\n2026-06-10\n失敗: 2件` |
+| Weldex問い合わせ | `🔔 新規問い合わせ\n[会社名] / [名前]\n[内容先頭50文字]` |
+
+### 今後詰めること（TODO）
+
+- [ ] LINE通知の送信頻度上限（同じエラーが大量発生した場合の重複抑制）
+- [ ] 通知のグルーピング（複数件まとめて1通にするか個別送信か）
+- [ ] クライアント本人（院長・スタッフ）へのLINE通知フロー（現状はRyomaのみ）
+- [ ] Push Message上限監視との連携（月160通アラート→200通フォールバック）
+- [ ] 日次サマリー送信（毎朝8時に当日予約件数・前日リマインド結果など）
+- [ ] LINE通知 vs メール通知の優先順位整理（クライアント側通知設計）
+- [ ] 通知テンプレートのカスタマイズ（クライアント名・絵文字統一）
+
+### 環境変数（必須）
+```
+WELDEX_LINE_CHANNEL_ACCESS_TOKEN = Weldex運用ボットのアクセストークン
+ADMIN_LINE_USER_ID               = RyomaのLINE User ID
+```
+
+---
+
+## LINE公式アカウント Webhook [設定済み 2026-06-05]
+
+- 予約システムのWebhook URL:
+  `https://earnest-gentleness-production-f682.up.railway.app/line/webhook`
+- LINE Developers → Messaging API → Webhook URL に設定
+- 設定後「検証」ボタンで疎通確認（200 OK）
+
+---
+
+## Weldexサイト リニューアル（2026-06-05セッション）[完了]
+
+### 追加・変更したページ
+
+| ページ | URL | 内容 |
+|---|---|---|
+| WEB予約システム詳細 | /services/web | 既存（料金リンクを削除） |
+| WEB予約システム詳細 | /services/reservation | 新規作成（比較表・プラン付き） |
+| LINE連携・代行詳細 | /services/line | 全面書き換え（「アカウント作成代行」に変更） |
+| 顧客管理システム | /services/crm | 新規作成（紫配色・¥300,000〜） |
+| デモポータル | /works | Share Demoセクション追加 |
+
+### デプロイ済みデモURL（商談用）
+
+```
+WEB予約フォーム:    https://weldex.jp/booking
+管理ダッシュボード: https://weldex.jp/demo-dashboard
+```
+
+### 料金ページ削除
+
+- `/pricing` ページを削除（各サービスページ内に料金プランを統合）
+- sitemapから除去・各サービスページのリンクも更新済み

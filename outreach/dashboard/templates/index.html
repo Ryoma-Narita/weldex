@@ -380,6 +380,10 @@
     </select>
     <button class="btn" onclick="loadTargets(1)">検索</button>
     <button class="btn secondary" onclick="resetFilters()">リセット</button>
+    <button class="btn secondary" id="btn-rediagnose" onclick="runReDiagnoseFromList()" style="background:#f0f4ff;color:#3b5bdb;border:1px solid #c5d0e6;">
+      ↻ 未診断を再診断
+    </button>
+    <span id="rediagnose-status" style="font-size:0.75rem;color:var(--gray);"></span>
     <button class="btn secondary" onclick="openTargetModal()" style="margin-left:auto;">＋ 手動追加</button>
     <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:0.5rem;"></span>
   </div>
@@ -1861,6 +1865,41 @@
       status.textContent = `診断エラー: ${e}`;
     }
     btn.disabled = false; updateCounts();
+  }
+
+  // ターゲットリストタブの「未診断を再診断」ボタン用
+  async function runReDiagnoseFromList() {
+    const btn    = document.getElementById('btn-rediagnose');
+    const status = document.getElementById('rediagnose-status');
+    btn.disabled = true;
+    btn.textContent = '診断中...';
+    status.style.color = 'var(--gray)';
+    status.textContent = '未診断ターゲットを診断しています...';
+    try {
+      let total = 0;
+      const BATCH = 50;
+      while (true) {
+        const d = await fetch('/api/diagnose', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ limit: BATCH })
+        }).then(r => r.json());
+        if (!d.ok || d.diagnosed === 0) break;
+        total += d.diagnosed;
+        status.textContent = `診断中... ${total}件完了`;
+        if (d.diagnosed < BATCH) break;
+      }
+      status.style.color = total > 0 ? 'var(--green)' : 'var(--gray)';
+      status.textContent = total > 0 ? `✓ ${total}件の診断が完了しました` : '未診断のターゲットはありません';
+      loadTargets(1);
+      loadStats();
+    } catch(e) {
+      status.style.color = 'var(--red)';
+      status.textContent = `エラー: ${e}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '↻ 未診断を再診断';
+    }
   }
 
   // 「診断のみ」ボタン用

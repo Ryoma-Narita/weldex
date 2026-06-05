@@ -323,30 +323,62 @@ DB：Railway PostgreSQL（同プロジェクト内）
 ```
 [x] STEP1：Next.js 15 + TypeScript + Tailwind CSS（site-next/）
 [x] STEP2：weldex.htmlをNext.jsコンポーネントに移植
-    Header / Hero / Pillars / AISection / Cases / Process / FAQ / CTABand / Footer
 [x] STEP3：業種別LPテンプレート（data/industries.ts・dental/legal/construction/beauty）
 [x] STEP4：メタデータ・OGP・Schema.org・sitemap.xml・robots.txt
 [x] /works ページ実装
 [x] STEP7：Vercelデプロイ（weldex.jp → Vercel、カスタムドメイン設定済み）
 
 [x] サイトリデザイン（2026-06-05）
-    - Hero: 背景画像と文字の可読性改善（半透明白背景パネル）・ボタン削除
-    - BrandSection: "Connecting" 文字を大きく
-    - Process: 波形を横長・縦縮め
-    - CTABand: 黒背景→白背景
-    - Pillars: 実画像4枚追加（public/pillars/）・GIG INC.参考カードデザイン
-      - 横長カード(5:3)・画像左60%（斜めclip-path）・テキスト右40%純白
-      - ホバーズーム・カードリフト・千鳥配置
-    - /admin/hearing: force-dynamic 追加（Vercelビルドエラー修正）
+    - Hero: AI具体的ベネフィット2項目追加（✓チェックマーク付き）
+      「AIが予約リマインドを自動送信 → 無断キャンセル率を削減」
+      「AIが営業メールを自動生成 → 月多数の企業に自動アプローチ」
+    - Header: PCデスクトップナビ正常化・ハンバーガー非表示確実化（CSS対応）
+    - KineticSection: テキスト「DXを促進」「全て一社で完結」に更新
+    - BrandSection: 語源テキスト更新
+    - 浮遊アイコン: PC位置をclamp()で対称化
+
+[x] サービスページ拡充（2026-06-05）
+    - /services/reservation 新規作成（WEB予約システム詳細）
+    - /services/line 全面書き換え（LINE連携・アカウント作成代行）
+    - /services/crm 新規作成（顧客管理システム ¥300,000〜・紫配色）
+    - /pricing 削除・各サービスページに料金プランを統合
+    - ハンバーガーメニュー全英語化（FREE CONSULTATION / Privacy Policy / Legal）
+    - sitemap.ts 更新（4サービスページ追加・/pricing削除）
+
+[x] デモ環境整備（2026-06-05）
+    - /works: Share Demoセクション追加（ネイビー背景・直リンク2件）
+    - 商談URLとして weldex.jp/works を案内可能な状態に
+    - weldex.jp/booking・weldex.jp/demo-dashboard が完全動作するデモとして機能
 
 未着手：
-[ ] STEP5：無料診断ツール（PageSpeed Insights API）
+[ ] STEP5：無料診断ツール（PageSpeed Insights API）→ B級優先
 [ ] STEP6：Lighthouse計測・docs/seo.mdにスコア記録
 [ ] og-image.png 作成（Ryoma手動・1200×630・ネイビー×ゴールド）
-[ ] demo.weldex.jp セットアップ（Ryoma手動作業）
-# 2026-05-13 実装完了 / 2026-05-18 Vercelデプロイ・weldex.jp カスタムドメイン設定完了
-# 2026-06-05 サイトリデザイン・Pillars実画像追加
-詳細：docs/seo.md 参照
+[ ] demo.weldex.jp カスタムドメイン（Cloudflare CNAME → Railway）→ Ryoma手動
+# 2026-05-13 実装完了 / 2026-05-18 Vercelデプロイ完了
+# 2026-06-05 大規模リデザイン・サービスページ拡充・デモ環境整備
+詳細：docs/seo.md / docs/decisions.md 参照
+```
+
+---
+
+### ✅ Phase 7：全通知のLINE統一（2026-06-05）
+```
+[x] reservation/services/line_notify.py 新規作成
+    - push(message) 共通関数（WELDEX_LINE_CHANNEL_ACCESS_TOKEN + ADMIN_LINE_USER_ID）
+    - 失敗しても例外を上げない（本業処理に影響なし）
+[x] reservation/main.py: グローバル例外ハンドラー追加（エラー→LINE通知）
+    - Sentry廃止（US企業・個人情報保護法リスクを回避）
+[x] reservation/services/mail.py: 新規予約・キャンセル時にLINE通知追加
+[x] reservation/services/reminder.py: リマインド失敗時にLINE通知追加
+[x] reservation/services/nurturing.py: 既存LINE実装をline_notify.pushに統一
+
+有効化に必要な環境変数（Railway > earnest-gentleness > Variables）:
+  WELDEX_LINE_CHANNEL_ACCESS_TOKEN = Weldex運用ボットトークン
+  ADMIN_LINE_USER_ID               = RyomaのLINE User ID
+
+LINE通知仕様の詳細は今後詰める → docs/decisions.md「LINE通知仕様」参照
+# 2026-06-05 実装完了・Railway自動デプロイ済み
 ```
 
 ---
