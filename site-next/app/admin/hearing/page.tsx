@@ -1,6 +1,9 @@
 import HearingAdmin from '@/components/hearing/Admin'
 import { getHearings, updateHearing } from './actions'
 
+// ビルド時の事前レンダリングをスキップ（DBへのアクセスが必要なため）
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'ヒアリング管理 | Weldex Admin',
   robots: 'noindex',
