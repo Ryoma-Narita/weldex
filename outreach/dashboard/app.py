@@ -793,3 +793,190 @@ def api_customers_update(
             )
         conn.commit()
     return {"ok": True}
+
+
+# ─── Claude AI 営業メール自動生成 ────────────────────────────────────────────
+
+# ステータス → 日本語ラベル
+_STATUS_LABEL: dict[str, str] = {
+    "none":       "WEBサイトなし",
+    "old":        "サイトが古い・古い技術を使用",
+    "no_mobile":  "スマホ非対応",
+    "phone_only": "電話のみ（WEB予約・フォームなし）",
+    "ok":         "サイトあり（改善余地あり）",
+    "error":      "サイト取得エラー",
+    "unchecked":  "未診断",
+}
+
+_GENERATE_EMAIL_SYSTEM_PROMPT = """\
+あなたはWeldex（ウェルデックス）の営業担当・成田涼真です。
+
+【Weldexのサービス】
+- WEBサイト制作（AIを活用し大手比1/3以下のコスト）
+- LINE予約システム・WEB予約システム
+- 業務システム開発
+- 保守・運用サポート
+- 特徴：医療・歯科・士業・建設など、社内エンジニアのいない中小企業に特化
+
+【メール作成ルール】
+1. 日本語ビジネスメール形式（丁寧かつ簡潔）
+2. 構成：「問題提起 → 解決策の提示 → 相談の誘い」の3段構成
+3. 件名は30文字以内
+4. 本文は250〜380字程度（読みやすく・押しつけがましくなく）
+5. 「診断詳細」に書かれた具体的な問題点を1〜2行で言及する
+6. フッター（特定電子メール法対応）は出力しない（後で自動付与される）
+7. 必ず以下のJSON形式のみを返すこと：
+   {"subject": "件名", "body": "本文"}
+8. JSON以外のテキストを一切含めない
+"""
+
+
+@app.post("/api/generate-email")
+async def api_generate_email(
+    auth=Depends(require_auth),
+    body: dict = Body(...),
+):
+    """
+    Claude AI（Haiku）を使って対象企業へのパーソナライズ営業メールを生成する。
+
+    Request body:
+        target_id (int, optional): ターゲットID（DBから追加情報を補完）
+        name      (str): 会社名・店舗名
+        industry  (str): 業種
+        area      (str): エリア
+        site_status (str): 診断ステータス
+        detail    (str): 診断詳細テキスト
+        has_line  (bool|None)
+        has_online_booking (bool|None)
+        is_medical (bool)
+
+    Returns:
+        ok      (bool)
+        subject (str): 生成された件名
+        body    (str): 生成された本文（フッターなし）
+        model   (str): 使用したモデル名
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return {"ok": False, "error": "ANTHROPIC_API_KEY が設定されていません。Railway の環境変数を確認してください。"}
+
+    # ── ターゲット情報を整理 ────────────────────────────────────────────────
+    name        = (body.get("name") or "").strip()
+    industry    = (body.get("industry") or "事業者").strip()
+    area        = (body.get("area") or "").strip()
+    site_status = (body.get("site_status") or "unchecked").strip()
+    detail      = (body.get("detail") or "").strip()
+    has_line    = body.get("has_line")
+    has_booking = body.get("has_online_booking")
+    is_medical  = body.get("is_medical", False)
+
+    # target_id があればDBから最新情報を補完
+    target_id = body.get("target_id")
+    if target_id:
+        try:
+            import psycopg2.extras
+            with get_conn() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT name,industry,area,site_status,has_line,has_online_booking FROM targets WHERE id=%s",
+                        (target_id,),
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        row = dict(row)
+                        name        = name        or row.get("name", name)
+                        industry    = industry    or row.get("industry", industry)
+                        area        = area        or row.get("area", area)
+                        site_status = site_status or row.get("site_status", site_status)
+                        if has_line    is None: has_line    = row.get("has_line")
+                        if has_booking is None: has_booking = row.get("has_online_booking")
+        except Exception:
+            pass  # DB補完失敗はサイレント（渡されたパラメータで続行）
+
+    if not name:
+        return {"ok": False, "error": "会社名が指定されていません"}
+
+    # ── プロンプトのユーザー部分を構築 ─────────────────────────────────────
+    from mailers.templates import select_template_key, is_medical as check_medical
+    is_medical = is_medical or check_medical(industry)
+    tmpl_key   = select_template_key(site_status, industry)
+
+    tmpl_label = {
+        "A": "サイトなし → WEB集客機会損失の訴求",
+        "B": "古い/スマホ非対応 → サイト改善・SEO低下リスクの訴求",
+        "C": "電話のみ（一般）→ 24時間WEB予約導入の訴求",
+        "D": "電話のみ（医療系）→ LINE予約・無断キャンセル削減・新患獲得の訴求",
+    }
+
+    line_str    = "あり" if has_line    is True else ("なし" if has_line    is False else "不明")
+    booking_str = "あり" if has_booking is True else ("なし" if has_booking is False else "不明")
+
+    user_message = f"""\
+【営業先情報】
+会社名・店舗名: {name}
+業種: {industry}
+エリア: {area or "不明"}
+医療系: {"はい" if is_medical else "いいえ"}
+
+【サイト診断結果】
+ステータス: {_STATUS_LABEL.get(site_status, site_status)}
+診断詳細: {detail or "詳細なし"}
+LINE連携: {line_str}
+オンライン予約: {booking_str}
+
+【推奨アプローチ】
+{tmpl_label.get(tmpl_key, tmpl_key)}
+
+上記の情報をもとに、{name}への営業メールを生成してください。
+診断詳細に書かれた具体的な問題点を本文で自然に言及し、
+Weldexのサービスで解決できることを簡潔に伝えてください。
+"""
+
+    # ── Claude API 呼び出し ────────────────────────────────────────────────
+    try:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=api_key)
+
+        message = await asyncio.to_thread(
+            lambda: client.messages.create(
+                model="claude-3-5-haiku-20241022",
+                max_tokens=1024,
+                system=_GENERATE_EMAIL_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_message}],
+            )
+        )
+
+        raw_text = message.content[0].text.strip()
+
+        # ── JSON パース ────────────────────────────────────────────────────
+        # Claude が ```json ... ``` で囲む場合もあるので除去
+        cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text, flags=re.DOTALL).strip()
+
+        try:
+            result = json.loads(cleaned)
+            subject = result.get("subject", "")
+            mail_body = result.get("body", "")
+        except json.JSONDecodeError:
+            # JSON失敗時は subject/body を正規表現で抽出
+            subject_match = re.search(r'"subject"\s*:\s*"([^"]+)"', cleaned)
+            body_match    = re.search(r'"body"\s*:\s*"([\s\S]+?)"\s*}', cleaned)
+            subject   = subject_match.group(1) if subject_match else "件名の生成に失敗しました"
+            mail_body = body_match.group(1).replace("\\n", "\n") if body_match else cleaned
+
+        if not subject or not mail_body:
+            return {"ok": False, "error": "生成結果のパースに失敗しました", "raw": raw_text[:300]}
+
+        write_log("INFO", "ai", f"メール生成完了: {name} / テンプレ:{tmpl_key} / 件名:{subject}")
+
+        return {
+            "ok":      True,
+            "subject": subject,
+            "body":    mail_body,
+            "model":   "claude-3-5-haiku-20241022",
+            "template_key": tmpl_key,
+        }
+
+    except Exception as e:
+        write_log("ERROR", "ai", f"メール生成エラー: {name} / {e}")
+        return {"ok": False, "error": f"API呼び出しエラー: {str(e)}"}

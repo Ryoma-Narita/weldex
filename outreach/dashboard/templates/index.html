@@ -252,6 +252,7 @@
       padding: 0.65rem 1rem; font-size: 0.75rem; color: #1e40af;
       margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
     }
+  @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -420,6 +421,60 @@
     </table>
   </div>
   <div class="pagination" id="cust-pagination"></div>
+</div>
+
+<!-- ─── 営業メール生成モーダル ─── -->
+<div id="gen-email-modal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+  <div style="background:var(--white);width:92%;max-width:640px;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,0.35);overflow:hidden;display:flex;flex-direction:column;max-height:90vh;">
+    <!-- ヘッダー -->
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1.1rem;background:var(--navy);flex-shrink:0;">
+      <span style="font-size:0.75rem;color:var(--gold);font-weight:700;letter-spacing:0.1em;">✦ AI メール生成</span>
+      <span id="gen-email-target-name" style="font-size:0.85rem;color:#fff;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <button onclick="closeGenerateEmailModal()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.2rem;cursor:pointer;padding:0;line-height:1;">✕</button>
+    </div>
+    <!-- ターゲット情報サマリー -->
+    <div id="gen-email-summary" style="padding:0.6rem 1.1rem;background:#f8f9fc;border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--gray);display:flex;gap:1rem;flex-wrap:wrap;flex-shrink:0;"></div>
+    <!-- 生成中・結果エリア -->
+    <div id="gen-email-content" style="flex:1;overflow-y:auto;padding:1rem 1.1rem;">
+      <!-- 初期状態 -->
+      <div id="gen-email-initial" style="text-align:center;padding:2rem 0;">
+        <div style="font-size:0.85rem;color:var(--gray);margin-bottom:1.25rem;">ターゲットの診断結果をもとに<br>パーソナライズされた営業メールを生成します</div>
+        <button onclick="runGenerateEmail()" class="btn" style="background:var(--navy);color:#fff;border:none;font-size:0.875rem;padding:0.65rem 2rem;">
+          ✦ メールを生成する
+        </button>
+      </div>
+      <!-- ローディング -->
+      <div id="gen-email-loading" style="display:none;text-align:center;padding:2.5rem 0;">
+        <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem;"></div>
+        <div style="font-size:0.8rem;color:var(--gray);">Claude AI が生成中...</div>
+      </div>
+      <!-- エラー -->
+      <div id="gen-email-error" style="display:none;padding:1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;font-size:0.8rem;color:#dc2626;"></div>
+      <!-- 結果 -->
+      <div id="gen-email-result" style="display:none;">
+        <div style="margin-bottom:0.75rem;">
+          <label style="font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">件名</label>
+          <div style="position:relative;">
+            <input id="gen-email-subject" type="text" style="width:100%;box-sizing:border-box;padding:0.55rem 2.2rem 0.55rem 0.7rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;color:var(--navy);font-family:inherit;background:#fff;" />
+            <button onclick="copyText('gen-email-subject','input')" title="コピー" style="position:absolute;right:0.4rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--light);font-size:0.9rem;padding:0.15rem;">⎘</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">本文 <span id="gen-email-char-count" style="font-weight:400;color:var(--light);"></span></label>
+          <div style="position:relative;">
+            <textarea id="gen-email-body" rows="12" oninput="updateCharCount()" style="width:100%;box-sizing:border-box;padding:0.7rem 2.2rem 0.7rem 0.7rem;border:1px solid var(--border);border-radius:4px;font-size:0.83rem;color:var(--text);line-height:1.8;font-family:inherit;resize:vertical;background:#fff;"></textarea>
+            <button onclick="copyText('gen-email-body','textarea')" title="コピー" style="position:absolute;right:0.4rem;top:0.5rem;background:none;border:none;cursor:pointer;color:var(--light);font-size:0.9rem;padding:0.15rem;">⎘</button>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.7rem;color:var(--light);">※ フッター（特定電子メール法対応の送信者情報・配信停止リンク）は送信時に自動付与されます</div>
+      </div>
+    </div>
+    <!-- フッターボタン -->
+    <div id="gen-email-footer" style="display:none;padding:0.75rem 1.1rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end;background:#fafafa;flex-shrink:0;">
+      <button onclick="runGenerateEmail()" class="btn secondary" style="font-size:0.8rem;padding:0.45rem 1rem;">再生成</button>
+      <button onclick="copyAllEmail()" class="btn" style="background:var(--gold);color:var(--navy);border:none;font-size:0.8rem;padding:0.45rem 1.1rem;font-weight:600;">件名＋本文をコピー</button>
+    </div>
+  </div>
 </div>
 
 <!-- ─── サイトプレビューモーダル ─── -->
@@ -874,6 +929,10 @@
                      サイトを表示
                    </button>`
                 : `<span style="font-size:0.68rem;color:var(--light);">サイトなし</span>`}
+              <button class="btn" style="font-size:0.68rem;padding:0.25rem 0.55rem;background:var(--navy);color:#fff;border:none;"
+                onclick="openGenerateEmailModal(${t.id}, ${tJson})">
+                ✦ メール生成
+              </button>
               ${isConverted
                 ? `<span style="font-size:0.65rem;color:var(--green);font-weight:600;">顧客化済み</span>`
                 : `<button class="btn green-btn" style="font-size:0.68rem;padding:0.25rem 0.55rem;"
@@ -1803,6 +1862,143 @@
     btn.disabled = false;
     btn.textContent = '🔍 診断する';
   }
+
+  // ─── 営業メール自動生成 ────────────────────────────────────────────────────
+
+  let _genEmailTarget = null; // 現在生成対象のターゲット情報
+
+  // ステータスの日本語ラベル
+  const STATUS_LABELS = {
+    none:       'サイトなし',
+    old:        'サイトが古い',
+    no_mobile:  'スマホ非対応',
+    phone_only: '電話のみ',
+    ok:         '問題なし',
+    unchecked:  '未診断',
+    error:      'エラー',
+  };
+
+  function openGenerateEmailModal(targetId, t) {
+    _genEmailTarget = { ...t, id: targetId };
+    const modal = document.getElementById('gen-email-modal');
+
+    // ターゲット名
+    document.getElementById('gen-email-target-name').textContent = t.name || '(名称不明)';
+
+    // サマリーバッジ
+    const summary = document.getElementById('gen-email-summary');
+    const statusLabel = STATUS_LABELS[t.site_status] || t.site_status || '不明';
+    const statusColor = { none:'var(--red)', old:'#d97706', no_mobile:'#7c3aed', phone_only:'var(--blue)', ok:'var(--green)' }[t.site_status] || 'var(--gray)';
+    const parts = [
+      t.industry ? `<span style="color:var(--navy);font-weight:600;">${esc(t.industry)}</span>` : null,
+      t.area     ? `<span>${esc(t.area)}</span>` : null,
+      `<span style="color:${statusColor};font-weight:600;">${esc(statusLabel)}</span>`,
+      t.detail   ? `<span style="color:var(--gray);">${esc(t.detail.slice(0,40))}${t.detail.length>40?'…':''}</span>` : null,
+    ].filter(Boolean);
+    summary.innerHTML = parts.join('<span style="color:var(--border);">｜</span>');
+
+    // 表示状態をリセット（初期画面に戻す）
+    document.getElementById('gen-email-initial').style.display  = 'block';
+    document.getElementById('gen-email-loading').style.display  = 'none';
+    document.getElementById('gen-email-error').style.display    = 'none';
+    document.getElementById('gen-email-result').style.display   = 'none';
+    document.getElementById('gen-email-footer').style.display   = 'none';
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeGenerateEmailModal() {
+    document.getElementById('gen-email-modal').style.display = 'none';
+    document.body.style.overflow = '';
+    _genEmailTarget = null;
+  }
+
+  async function runGenerateEmail() {
+    if (!_genEmailTarget) return;
+    const t = _genEmailTarget;
+
+    // UI: ローディング表示
+    document.getElementById('gen-email-initial').style.display = 'none';
+    document.getElementById('gen-email-loading').style.display = 'block';
+    document.getElementById('gen-email-error').style.display   = 'none';
+    document.getElementById('gen-email-result').style.display  = 'none';
+    document.getElementById('gen-email-footer').style.display  = 'none';
+
+    try {
+      const res = await fetch('/api/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_id:          t.id,
+          name:               t.name,
+          industry:           t.industry,
+          area:               t.area,
+          site_status:        t.site_status,
+          detail:             t.detail || '',
+          has_line:           t.has_line,
+          has_online_booking: t.has_online_booking,
+          is_medical:         false,
+        }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        document.getElementById('gen-email-loading').style.display = 'none';
+        document.getElementById('gen-email-error').style.display   = 'block';
+        document.getElementById('gen-email-error').textContent     = data.error || '生成に失敗しました';
+        document.getElementById('gen-email-footer').style.display  = 'flex';
+        return;
+      }
+
+      // 結果を表示
+      const subjectEl = document.getElementById('gen-email-subject');
+      const bodyEl    = document.getElementById('gen-email-body');
+      subjectEl.value = data.subject || '';
+      bodyEl.value    = data.body    || '';
+
+      document.getElementById('gen-email-loading').style.display = 'none';
+      document.getElementById('gen-email-result').style.display  = 'block';
+      document.getElementById('gen-email-footer').style.display  = 'flex';
+      updateCharCount();
+
+    } catch (e) {
+      document.getElementById('gen-email-loading').style.display = 'none';
+      document.getElementById('gen-email-error').style.display   = 'block';
+      document.getElementById('gen-email-error').textContent     = `通信エラー: ${e}`;
+      document.getElementById('gen-email-footer').style.display  = 'flex';
+    }
+  }
+
+  function updateCharCount() {
+    const body = document.getElementById('gen-email-body');
+    const count = document.getElementById('gen-email-char-count');
+    if (body && count) count.textContent = `（${body.value.length}字）`;
+  }
+
+  function copyText(id, type) {
+    const el = document.getElementById(id);
+    const text = type === 'input' ? el.value : el.value;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.parentElement.querySelector('button');
+      if (btn) { btn.textContent = '✓'; setTimeout(() => btn.textContent = '⎘', 1200); }
+    });
+  }
+
+  function copyAllEmail() {
+    const subject = document.getElementById('gen-email-subject').value;
+    const body    = document.getElementById('gen-email-body').value;
+    const text    = `件名: ${subject}\n\n${body}`;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('#gen-email-footer .btn[onclick="copyAllEmail()"]');
+      if (btn) { btn.textContent = '✓ コピー完了'; setTimeout(() => btn.textContent = '件名＋本文をコピー', 1500); }
+    });
+  }
+
+  // Escキーで閉じる（既存のリスナーに追加）
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeGenerateEmailModal();
+  });
 </script>
 </body>
 </html>
