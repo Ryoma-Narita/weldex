@@ -38,3 +38,7 @@ DB_PATH = os.environ.get(
 
 # ダッシュボード認証（外部公開時は必ずセットすること）
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "")
+
+# Anthropic API（Claude AIによる営業メール自動生成）
+# Railway > weldex > Variables に ANTHROPIC_API_KEY を設定すること
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
