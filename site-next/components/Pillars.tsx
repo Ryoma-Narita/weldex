@@ -58,23 +58,25 @@ function PillarCard({
           flexDirection: 'row',
           overflow: 'hidden',
           background: '#fff',
-          border: '1px solid var(--border)',
-          borderRadius: 4,
+          border: '1px solid #e8eaf0',
+          borderRadius: 6,
           transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
           boxShadow: hovered
-            ? '0 20px 48px rgba(12,26,53,0.13)'
-            : '0 2px 8px rgba(12,26,53,0.05)',
-          transition: 'transform 0.35s ease, box-shadow 0.35s ease',
+            ? '0 24px 56px rgba(12,26,53,0.14)'
+            : '0 2px 12px rgba(12,26,53,0.06)',
+          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         }}
       >
-        {/* ── 左：写真エリア（48%） ── */}
+        {/* ── 左：写真（48%）ストレートカット ── */}
         <div
           style={{
             width: '48%',
             flexShrink: 0,
             position: 'relative',
             overflow: 'hidden',
-            background: 'linear-gradient(135deg, #0c1a35 0%, #162645 60%, #1e3a5f 100%)',
+            background: '#0c1a35',
+            /* GIG INC. 参考：画像と白エリアは直線で分かれる */
+            borderRight: '1px solid #e8eaf0',
           }}
         >
           {!imgError ? (
@@ -85,108 +87,111 @@ function PillarCard({
               sizes="(max-width: 640px) 100vw, 25vw"
               style={{
                 objectFit: 'cover',
-                transform: hovered ? 'scale(1.07)' : 'scale(1.0)',
-                transition: 'transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                transform: hovered ? 'scale(1.06)' : 'scale(1.0)',
+                transition: 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               }}
               onError={() => setImgError(true)}
             />
           ) : (
-            <div
-              style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <span style={{ fontSize: '0.5rem', letterSpacing: '0.18em', color: 'rgba(201,168,76,0.35)', textTransform: 'uppercase' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '0.5rem', letterSpacing: '0.18em', color: 'rgba(201,168,76,0.4)', textTransform: 'uppercase' }}>
                 No image
               </span>
             </div>
           )}
 
           {/* 番号バッジ */}
-          <div
-            style={{
-              position: 'absolute', top: '1rem', left: '0.9rem',
-              background: 'rgba(12,26,53,0.65)',
-              backdropFilter: 'blur(8px)',
-              padding: '0.12rem 0.5rem',
-              borderRadius: 2,
-              zIndex: 2,
-            }}
-          >
-            <span style={{ fontFamily: 'var(--font-cormorant)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--gold)' }}>
+          <div style={{
+            position: 'absolute', top: '1rem', left: '0.9rem',
+            background: 'rgba(12,26,53,0.7)',
+            backdropFilter: 'blur(8px)',
+            padding: '0.15rem 0.55rem',
+            borderRadius: 3,
+            zIndex: 1,
+          }}>
+            <span style={{
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: '0.72rem', fontWeight: 700,
+              letterSpacing: '0.1em', color: 'var(--gold)',
+            }}>
               {p.num}
             </span>
           </div>
-
-          {/*
-            斜め境界：写真の右端に白の三角グラデーションをかぶせることで
-            クリップせずに斜め分割ラインを作る。
-            テキストエリアは常に白背景の 52% に完全収まる。
-          */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0, right: 0, bottom: 0,
-              width: '40%',
-              background: 'linear-gradient(to bottom left, #ffffff 50%, transparent 50%)',
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
         </div>
 
-        {/* ── 右：テキストエリア（52%・純白） ── */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            padding: '1.75rem 1.75rem 1.75rem 1.5rem',
-            background: '#fff',
-          }}
-        >
-          {/* ラベル */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.55rem' }}>
-            <span style={{ width: 12, height: 1, background: 'var(--gold)', display: 'inline-block', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.17em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+        {/* ── 右：テキスト（52%）── GIG INC. スタイル */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '2rem 1.75rem',
+          background: '#fff',
+        }}>
+
+          {/* ① カテゴリラベル（GIG INC. の "Web制作" 相当） */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.45rem',
+            marginBottom: '0.6rem',
+          }}>
+            <span style={{
+              width: 14, height: 1,
+              background: 'var(--gold)',
+              display: 'inline-block', flexShrink: 0,
+            }} />
+            <span style={{
+              fontSize: '0.62rem', fontWeight: 700,
+              letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: 'var(--gold)',
+            }}>
               {p.label}
             </span>
           </div>
 
-          {/* タイトル */}
-          <h3
-            style={{
-              fontSize: 'clamp(0.95rem, 1.2vw, 1.1rem)',
-              fontWeight: 700,
-              color: 'var(--navy)',
-              lineHeight: 1.3,
-              letterSpacing: '-0.01em',
-              marginBottom: '0.75rem',
-            }}
-          >
+          {/* ② タイトル（GIG INC. の "WEB CREATIVE" 相当） */}
+          <h3 style={{
+            fontSize: 'clamp(1rem, 1.3vw, 1.2rem)',
+            fontWeight: 800,
+            color: 'var(--navy)',
+            lineHeight: 1.25,
+            letterSpacing: '-0.02em',
+            marginBottom: '1rem',
+          }}>
             {p.title}
           </h3>
 
-          {/* 説明 */}
-          <p style={{ fontSize: '0.77rem', color: 'var(--gray)', lineHeight: 1.85, fontWeight: 300 }}>
+          {/* 区切り線（GIG INC. 風の細いライン） */}
+          <div style={{ width: 24, height: 1, background: 'var(--border)', marginBottom: '1rem' }} />
+
+          {/* ③ 説明文 */}
+          <p style={{
+            fontSize: '0.76rem',
+            color: 'var(--gray)',
+            lineHeight: 1.9,
+            fontWeight: 400,
+            flex: 1,
+          }}>
             {p.desc}
           </p>
 
-          {/* 矢印 */}
-          <div style={{ marginTop: '1.25rem' }}>
-            <div
-              style={{
-                width: 28, height: 28,
-                border: `1px solid ${hovered ? 'var(--navy)' : 'var(--border)'}`,
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: hovered ? 'var(--navy)' : 'transparent',
-                transform: hovered ? 'translateX(3px)' : 'translateX(0)',
-                transition: 'all 0.3s ease',
-              }}
-            >
+          {/* ④ 矢印リンク（GIG INC. の "→" 相当） */}
+          <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{
+              fontSize: '0.68rem', fontWeight: 600,
+              letterSpacing: '0.08em',
+              color: hovered ? 'var(--navy)' : 'var(--light)',
+              transition: 'color 0.3s ease',
+            }}>
+              詳しく見る
+            </span>
+            <div style={{
+              width: 28, height: 28,
+              border: `1px solid ${hovered ? 'var(--navy)' : 'var(--border)'}`,
+              borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: hovered ? 'var(--navy)' : 'transparent',
+              transform: hovered ? 'translateX(4px)' : 'translateX(0)',
+              transition: 'all 0.3s ease',
+            }}>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path
                   d="M1.5 5h7M5 1.5l3.5 3.5L5 8.5"
@@ -207,15 +212,20 @@ export default function Pillars() {
     <section style={{ maxWidth: 1100, margin: '0 auto', padding: '5rem clamp(1.5rem,5vw,3rem)' }}>
       <FadeIn style={{ marginBottom: '3rem' }}>
         <div className="sec-label">What We Do</div>
-        <h2 style={{ fontSize: 'clamp(1.9rem,3vw,2.8rem)', fontWeight: 700, color: 'var(--navy)', lineHeight: 1.2, letterSpacing: '-0.01em' }}>
+        <h2 style={{
+          fontSize: 'clamp(1.9rem,3vw,2.8rem)', fontWeight: 700,
+          color: 'var(--navy)', lineHeight: 1.2, letterSpacing: '-0.01em',
+        }}>
           4つの柱で、<br />デジタルをまるごと支える。
         </h2>
       </FadeIn>
 
-      <div
-        className="pillars-grid"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', alignItems: 'start' }}
-      >
+      <div className="pillars-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1.5rem',
+        alignItems: 'start',
+      }}>
         {pillars.map((p, i) => (
           <PillarCard key={p.num} p={p} delay={0.08 + i * 0.09} offset={i % 2 === 1} />
         ))}
