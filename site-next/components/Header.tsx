@@ -4,10 +4,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const DESKTOP_NAV = [
-  { label: "ホーム",     href: "/" },
-  { label: "サービス",   href: "/services" },
-  { label: "実績・デモ", href: "/works" },
-  { label: "About",      href: "/about" },
+  { label: "Home",     href: "/" },
+  { label: "Services", href: "/services" },
+  { label: "Works",    href: "/works" },
+  { label: "About",    href: "/about" },
 ];
 
 const MENU_ITEMS = [
