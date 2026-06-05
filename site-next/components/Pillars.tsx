@@ -35,12 +35,12 @@ const pillars = [
   },
 ]
 
-function PillarCard({ p, delay }: { p: (typeof pillars)[0]; delay: number }) {
+function PillarCard({ p, delay, offset }: { p: (typeof pillars)[0]; delay: number; offset?: boolean }) {
   const [hovered, setHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
 
   return (
-    <FadeIn delay={delay}>
+    <FadeIn delay={delay} className={offset ? 'pillars-offset' : ''}>
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -203,16 +203,18 @@ export default function Pillars() {
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
         gap: '1.5rem',
-        alignItems: 'stretch',
+        alignItems: 'start',
       }}>
         {pillars.map((p, i) => (
-          <PillarCard key={p.num} p={p} delay={0.08 + i * 0.09} />
+          <PillarCard key={p.num} p={p} delay={0.08 + i * 0.09} offset={i % 2 === 1} />
         ))}
       </div>
 
       <style>{`
+        .pillars-offset { margin-top: 3.5rem; }
         @media (max-width: 640px) {
           .pillars-grid { grid-template-columns: 1fr !important; }
+          .pillars-offset { margin-top: 0 !important; }
         }
       `}</style>
     </section>
