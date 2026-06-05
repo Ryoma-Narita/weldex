@@ -70,14 +70,28 @@ def init_db() -> None:
                 );
 
                 CREATE TABLE IF NOT EXISTS send_queue (
-                    id           SERIAL PRIMARY KEY,
-                    target_id    INTEGER NOT NULL REFERENCES targets(id),
-                    template     TEXT NOT NULL,
-                    priority     INTEGER DEFAULT 0,
-                    status       TEXT DEFAULT 'waiting',
-                    scheduled_at TIMESTAMP,
-                    created_at   TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
+                    id               SERIAL PRIMARY KEY,
+                    target_id        INTEGER NOT NULL REFERENCES targets(id),
+                    template         TEXT NOT NULL,
+                    priority         INTEGER DEFAULT 0,
+                    status           TEXT DEFAULT 'waiting',
+                    approval_status  TEXT DEFAULT 'pending',
+                    approved_at      TIMESTAMP,
+                    rejected_at      TIMESTAMP,
+                    reject_reason    TEXT,
+                    subject_override TEXT,
+                    body_override    TEXT,
+                    scheduled_at     TIMESTAMP,
+                    created_at       TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
+
+                -- 既存テーブルへのマイグレーション（冪等）
+                ALTER TABLE send_queue ADD COLUMN IF NOT EXISTS approval_status  TEXT DEFAULT 'pending';
+                ALTER TABLE send_queue ADD COLUMN IF NOT EXISTS approved_at      TIMESTAMP;
+                ALTER TABLE send_queue ADD COLUMN IF NOT EXISTS rejected_at      TIMESTAMP;
+                ALTER TABLE send_queue ADD COLUMN IF NOT EXISTS reject_reason    TEXT;
+                ALTER TABLE send_queue ADD COLUMN IF NOT EXISTS subject_override TEXT;
+                ALTER TABLE send_queue ADD COLUMN IF NOT EXISTS body_override    TEXT;
 
                 CREATE TABLE IF NOT EXISTS outreach_log (
                     id        SERIAL PRIMARY KEY,
@@ -118,6 +132,36 @@ def init_db() -> None:
                     created_at      TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
             """)
+        conn.commit()
+
+
+def get_send_mode() -> str:
+    """
+    現在の送信モードを返す。
+    'manual'  = 確認して送信（デフォルト）
+    'auto'    = 自動送信
+    """
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT value FROM outreach_settings WHERE key = 'send_mode'")
+            row = cur.fetchone()
+    return row[0] if row else "manual"
+
+
+def set_send_mode(mode: str) -> None:
+    """送信モードを保存する。mode: 'manual' or 'auto'"""
+    if mode not in ("manual", "auto"):
+        raise ValueError(f"不正なモード: {mode}")
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO outreach_settings (key, value)
+                VALUES ('send_mode', %s)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                """,
+                (mode,),
+            )
         conn.commit()
 
 

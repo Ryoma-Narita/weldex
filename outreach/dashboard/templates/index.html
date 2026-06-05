@@ -268,12 +268,26 @@
   <span id="updated-at">---</span>
 </header>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('dashboard')">ダッシュボード</div>
-  <div class="tab" onclick="showTab('targets')">ターゲットリスト</div>
-  <div class="tab" onclick="showTab('customers')">顧客リスト <span id="customer-count-badge" style="font-size:0.62rem;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
-  <div class="tab" onclick="showTab('preview')">送信プレビュー <span id="preview-count-badge" style="font-size:0.62rem;background:#dbeafe;color:#1e40af;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
-  <div class="tab" onclick="showTab('logs')">ログ</div>
+<div class="tabs" style="justify-content:space-between;align-items:center;">
+  <div style="display:flex;">
+    <div class="tab active" onclick="showTab('dashboard')">ダッシュボード</div>
+    <div class="tab" onclick="showTab('targets')">ターゲットリスト</div>
+    <div class="tab" onclick="showTab('customers')">顧客リスト <span id="customer-count-badge" style="font-size:0.62rem;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
+    <div class="tab" onclick="showTab('sendqueue')">送信キュー <span id="sendqueue-badge" style="font-size:0.62rem;background:#fef3c7;color:#d97706;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;display:none;"></span></div>
+    <div class="tab" onclick="showTab('preview')">送信プレビュー <span id="preview-count-badge" style="font-size:0.62rem;background:#dbeafe;color:#1e40af;padding:0.1rem 0.4rem;border-radius:2px;margin-left:4px;"></span></div>
+    <div class="tab" onclick="showTab('logs')">ログ</div>
+  </div>
+  <!-- 送信モードトグル -->
+  <div id="send-mode-toggle" style="display:flex;align-items:center;gap:0.6rem;padding:0 1.25rem;flex-shrink:0;">
+    <span style="font-size:0.7rem;color:var(--gray);">送信モード</span>
+    <label style="position:relative;display:inline-block;width:48px;height:24px;cursor:pointer;" title="ON=自動送信 / OFF=確認して送信">
+      <input type="checkbox" id="send-mode-switch" onchange="toggleSendMode(this.checked)" style="opacity:0;width:0;height:0;position:absolute;">
+      <span id="send-mode-track" style="position:absolute;inset:0;border-radius:24px;background:#cbd5e1;transition:background 0.25s;">
+        <span id="send-mode-thumb" style="position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left 0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+      </span>
+    </label>
+    <span id="send-mode-label" style="font-size:0.72rem;font-weight:600;color:var(--navy);min-width:76px;">確認して送信</span>
+  </div>
 </div>
 
 <!-- ─── ダッシュボード ─── -->
@@ -739,6 +753,34 @@
   </div>
 </div>
 
+<!-- ─── 送信キュー ─── -->
+<div class="panel" id="panel-sendqueue">
+  <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span style="font-size:0.78rem;color:var(--gray);">承認待ち：</span>
+      <span id="sq-pending-count" style="font-size:0.85rem;font-weight:700;color:var(--navy);">—</span>
+      <select id="sq-filter" onchange="loadSendQueue(1)" style="font-size:0.75rem;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.4rem;color:var(--navy);">
+        <option value="pending">承認待ち</option>
+        <option value="approved">承認済み</option>
+        <option value="rejected">却下済み</option>
+        <option value="all">すべて</option>
+      </select>
+    </div>
+    <div id="sq-mode-notice" style="font-size:0.72rem;padding:0.25rem 0.75rem;border-radius:4px;"></div>
+  </div>
+
+  <!-- 承認待ちなし -->
+  <div id="sq-empty" style="display:none;text-align:center;padding:3rem;color:var(--light);font-size:0.85rem;">
+    承認待ちのメールはありません
+  </div>
+
+  <!-- キュー一覧 -->
+  <div id="sq-list" style="padding:0.5rem 1rem;display:flex;flex-direction:column;gap:0.75rem;overflow-y:auto;flex:1;"></div>
+
+  <!-- ページネーション -->
+  <div id="sq-pagination" style="padding:0.5rem 1rem;display:flex;gap:0.4rem;align-items:center;flex-shrink:0;border-top:1px solid var(--border);font-size:0.75rem;"></div>
+</div>
+
 <!-- ─── 送信プレビュー ─── -->
 <div class="panel" id="panel-preview">
   <div class="toolbar" style="justify-content:space-between;">
@@ -778,12 +820,13 @@
 <script>
   // ─── タブ ───
   function showTab(name) {
-    const names = ['dashboard', 'targets', 'customers', 'preview', 'logs'];
+    const names = ['dashboard', 'targets', 'customers', 'sendqueue', 'preview', 'logs'];
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', names[i] === name));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
     if (name === 'targets')   loadTargets(1);
     if (name === 'customers') loadCustomers(1);
+    if (name === 'sendqueue') loadSendQueue(1);
     if (name === 'logs')      loadLogs();
     if (name === 'preview')   loadPreview();
   }
@@ -1503,6 +1546,7 @@
 
   // ─── 初期化 ───
   loadStats();
+  initSendMode();
   setInterval(loadStats, 30000);
 
   // ─── 収集・診断 UI ───
@@ -1861,6 +1905,220 @@
     }
     btn.disabled = false;
     btn.textContent = '🔍 診断する';
+  }
+
+  // ─── 送信モードトグル ──────────────────────────────────────────────────────
+
+  async function initSendMode() {
+    try {
+      const res  = await fetch('/api/send-mode');
+      const data = await res.json();
+      applySendModeUI(data.mode);
+    } catch (e) { /* サイレント失敗 */ }
+  }
+
+  function applySendModeUI(mode) {
+    const sw    = document.getElementById('send-mode-switch');
+    const track = document.getElementById('send-mode-track');
+    const thumb = document.getElementById('send-mode-thumb');
+    const label = document.getElementById('send-mode-label');
+    if (!sw) return;
+
+    const isAuto = (mode === 'auto');
+    sw.checked         = isAuto;
+    track.style.background = isAuto ? 'var(--blue)' : '#cbd5e1';
+    thumb.style.left       = isAuto ? '27px' : '3px';
+    label.textContent      = isAuto ? '自動送信' : '確認して送信';
+    label.style.color      = isAuto ? 'var(--blue)' : 'var(--navy)';
+  }
+
+  async function toggleSendMode(isAuto) {
+    const mode = isAuto ? 'auto' : 'manual';
+    const warn = isAuto
+      ? '自動送信モードに切り替えます。\nスケジューラー実行時に自動でメールが送信されます。\nよろしいですか？'
+      : '確認して送信モードに切り替えます。\nメールはあなたが承認するまで送信されません。';
+    if (!confirm(warn)) {
+      // キャンセル時はスイッチを元に戻す
+      document.getElementById('send-mode-switch').checked = !isAuto;
+      applySendModeUI(isAuto ? 'manual' : 'auto');
+      return;
+    }
+    try {
+      const res  = await fetch('/api/send-mode', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ mode }),
+      });
+      const data = await res.json();
+      applySendModeUI(data.mode);
+      // 送信キューの表示も更新
+      if (document.getElementById('panel-sendqueue').classList.contains('active')) {
+        loadSendQueue(1);
+      }
+    } catch (e) {
+      alert('送信モードの変更に失敗しました');
+      document.getElementById('send-mode-switch').checked = !isAuto;
+      applySendModeUI(isAuto ? 'manual' : 'auto');
+    }
+  }
+
+  // ─── 送信キュー ────────────────────────────────────────────────────────────
+
+  let sqCurrentPage = 1;
+
+  async function loadSendQueue(page = 1) {
+    sqCurrentPage = page;
+    const filter   = document.getElementById('sq-filter')?.value || 'pending';
+    const list     = document.getElementById('sq-list');
+    const emptyEl  = document.getElementById('sq-empty');
+    const notice   = document.getElementById('sq-mode-notice');
+    const countEl  = document.getElementById('sq-pending-count');
+    if (!list) return;
+
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--light);font-size:0.8rem;">読み込み中…</div>';
+    emptyEl.style.display = 'none';
+
+    try {
+      const res  = await fetch(`/api/send-queue?page=${page}&per_page=10&approval=${filter}`);
+      const data = await res.json();
+
+      // モード通知
+      const isAuto = data.mode === 'auto';
+      if (notice) {
+        notice.textContent      = isAuto ? '自動送信モード：スケジューラー実行で送信されます' : '確認して送信モード：各メールを確認してから送信してください';
+        notice.style.background = isAuto ? '#dbeafe' : '#fef3c7';
+        notice.style.color      = isAuto ? '#1e40af' : '#92400e';
+      }
+
+      if (countEl) countEl.textContent = `${data.total}件`;
+
+      // バッジ更新（承認待ち件数）
+      const badge = document.getElementById('sendqueue-badge');
+      if (badge && filter === 'pending') {
+        if (data.total > 0) { badge.textContent = data.total; badge.style.display = 'inline'; }
+        else                { badge.style.display = 'none'; }
+      }
+
+      if (!data.items || data.items.length === 0) {
+        list.innerHTML = '';
+        emptyEl.style.display = 'block';
+        document.getElementById('sq-pagination').innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = data.items.map(item => renderQueueItem(item, filter)).join('');
+      renderSqPagination(data.total, page, data.per_page || 10);
+
+    } catch (e) {
+      list.innerHTML = `<div style="color:var(--red);font-size:0.8rem;padding:1rem;">読み込みエラー: ${e}</div>`;
+    }
+  }
+
+  function renderQueueItem(item, filter) {
+    const statusColors = { none:'var(--red)', old:'#d97706', no_mobile:'#7c3aed', phone_only:'var(--blue)', ok:'var(--green)' };
+    const statusLabels = { none:'サイトなし', old:'古い', no_mobile:'スマホ非対応', phone_only:'電話のみ', ok:'問題なし', unchecked:'未診断' };
+    const sColor = statusColors[item.target_site_status] || 'var(--gray)';
+    const sLabel = statusLabels[item.target_site_status] || item.target_site_status || '不明';
+    const tmplColors = { A:'#dc2626', B:'#d97706', C:'var(--blue)', D:'#7c3aed' };
+    const tmplColor  = tmplColors[item.template] || 'var(--gray)';
+
+    const isPending  = item.approval_status === 'pending';
+    const isApproved = item.approval_status === 'approved';
+    const isRejected = item.approval_status === 'rejected';
+
+    const bodyPreview = (item.preview_body || '').replace(/\n/g, ' ').slice(0, 100);
+    const bodyId = `sq-body-${item.id}`;
+
+    return `
+      <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;">
+        <!-- ヘッダー行 -->
+        <div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.9rem;background:#f8f9fc;flex-wrap:wrap;">
+          <span style="font-weight:700;font-size:0.85rem;color:var(--navy);flex:1;min-width:120px;">${esc(item.target_name || '')}</span>
+          <span style="font-size:0.65rem;background:${sColor}1a;color:${sColor};padding:0.1rem 0.4rem;border-radius:2px;font-weight:600;">${sLabel}</span>
+          <span style="font-size:0.65rem;background:${tmplColor}1a;color:${tmplColor};padding:0.1rem 0.4rem;border-radius:2px;font-weight:600;">テンプレ${esc(item.template||'')}</span>
+          ${item.target_industry ? `<span style="font-size:0.65rem;color:var(--gray);">${esc(item.target_industry)}</span>` : ''}
+          ${item.target_area     ? `<span style="font-size:0.65rem;color:var(--light);">${esc(item.target_area)}</span>` : ''}
+          ${isApproved ? `<span style="font-size:0.65rem;background:#dcfce7;color:#16a34a;padding:0.1rem 0.5rem;border-radius:2px;font-weight:700;">✓ 送信済み</span>` : ''}
+          ${isRejected ? `<span style="font-size:0.65rem;background:#fee2e2;color:#dc2626;padding:0.1rem 0.5rem;border-radius:2px;font-weight:700;">✗ 却下</span>` : ''}
+        </div>
+        <!-- 件名 -->
+        <div style="padding:0.5rem 0.9rem 0.25rem;font-size:0.8rem;">
+          <span style="color:var(--light);font-size:0.68rem;">件名：</span>
+          <span style="color:var(--navy);font-weight:600;">${esc(item.preview_subject || '（未生成）')}</span>
+        </div>
+        <!-- 本文プレビュー（クリックで展開） -->
+        <div style="padding:0 0.9rem 0.5rem;">
+          <div id="${bodyId}-short" style="font-size:0.76rem;color:var(--gray);line-height:1.6;cursor:pointer;" onclick="toggleSqBody(${item.id})">
+            ${esc(bodyPreview)}… <span style="color:var(--blue);font-size:0.68rem;">展開▼</span>
+          </div>
+          <div id="${bodyId}-full" style="display:none;font-size:0.76rem;color:var(--gray);line-height:1.7;white-space:pre-wrap;max-height:220px;overflow-y:auto;background:#f8f9fc;border-radius:4px;padding:0.5rem 0.7rem;margin-top:0.25rem;">${esc(item.preview_body || '')}</div>
+        </div>
+        <!-- アクション -->
+        ${isPending ? `
+        <div style="display:flex;gap:0.5rem;padding:0.5rem 0.9rem 0.7rem;border-top:1px solid var(--border);">
+          <button onclick="rejectQueueItem(${item.id})" class="btn secondary" style="font-size:0.75rem;padding:0.35rem 0.9rem;">✗ 却下</button>
+          <button onclick="approveQueueItem(${item.id}, ${JSON.stringify(item.preview_subject).replace(/"/g,'&quot;')}, ${JSON.stringify(item.preview_body||'').replace(/"/g,'&quot;')})"
+            class="btn" style="font-size:0.75rem;padding:0.35rem 1.1rem;background:var(--navy);color:#fff;border:none;font-weight:600;">
+            ✓ 確認して送信
+          </button>
+          <span style="flex:1;"></span>
+          <span style="font-size:0.68rem;color:var(--light);align-self:center;">${esc(item.target_email || 'メールなし')}</span>
+        </div>` : ''}
+        ${isRejected && item.reject_reason ? `<div style="padding:0.3rem 0.9rem 0.5rem;font-size:0.7rem;color:var(--light);">却下理由: ${esc(item.reject_reason)}</div>` : ''}
+      </div>`;
+  }
+
+  function toggleSqBody(id) {
+    const short = document.getElementById(`sq-body-${id}-short`);
+    const full  = document.getElementById(`sq-body-${id}-full`);
+    if (!short || !full) return;
+    const isExpanded = full.style.display !== 'none';
+    short.style.display = isExpanded ? 'block' : 'none';
+    full.style.display  = isExpanded ? 'none'  : 'block';
+  }
+
+  function renderSqPagination(total, page, perPage) {
+    const pages = Math.ceil(total / perPage);
+    const el    = document.getElementById('sq-pagination');
+    if (!el) return;
+    if (pages <= 1) { el.innerHTML = `<span>${total}件</span>`; return; }
+    let html = `<button onclick="loadSendQueue(${page-1})" ${page<=1?'disabled':''}>←</button>`;
+    for (let i = Math.max(1, page-2); i <= Math.min(pages, page+2); i++) {
+      html += `<button onclick="loadSendQueue(${i})" class="${i===page?'active':''}">${i}</button>`;
+    }
+    html += `<button onclick="loadSendQueue(${page+1})" ${page>=pages?'disabled':''}>→</button>`;
+    html += `<span>${total}件</span>`;
+    el.innerHTML = html;
+  }
+
+  async function approveQueueItem(queueId, subject, body) {
+    if (!confirm(`このメールを送信しますか？\n\n件名: ${subject}\n\n送信すると取り消せません。`)) return;
+    try {
+      const res  = await fetch(`/api/send-queue/${queueId}/approve`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ subject_override: subject, body_override: body }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(`✓ 送信完了\n宛先: ${data.sent_to}`);
+        loadSendQueue(sqCurrentPage);
+      } else {
+        alert(`送信失敗: ${data.detail || JSON.stringify(data)}`);
+      }
+    } catch (e) { alert(`エラー: ${e}`); }
+  }
+
+  async function rejectQueueItem(queueId) {
+    const reason = prompt('却下理由（任意）:', '') ;
+    if (reason === null) return; // キャンセル
+    try {
+      const res  = await fetch(`/api/send-queue/${queueId}/reject`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ reason: reason || '手動却下' }),
+      });
+      const data = await res.json();
+      if (data.ok) loadSendQueue(sqCurrentPage);
+      else alert(`却下失敗: ${data.detail || JSON.stringify(data)}`);
+    } catch (e) { alert(`エラー: ${e}`); }
   }
 
   // ─── 営業メール自動生成 ────────────────────────────────────────────────────
