@@ -401,68 +401,99 @@ DB：Railway PostgreSQL（同プロジェクト内）
 
 ### 📋 今後の実装タスク（優先度順）
 
-**すぐやる（工数：小）**
-```
-[ ] Sentry 導入
-    → reservation/requirements.txt に sentry-sdk[fastapi] 追加
-    → reservation/main.py に sentry_sdk.init() 追加
-    → Railway 環境変数に SENTRY_DSN 追加
+---
 
-[ ] UptimeRobot 設定（Ryoma 手動・無料プラン）
-    → Railway サービスの死活監視・ダウン時メール通知
+#### 🔴 今すぐやる（手動作業・設定のみ）
+
+```
+[ ] ANTHROPIC_API_KEY を Railway に設定（Ryoma 手動・5分）
+    → https://console.anthropic.com → API Keys → Create Key
+    → Railway > weldex サービス > Variables > 追加
+    → 設定後にAI営業メール生成ボタンが使用可能になる
+
+[ ] UptimeRobot 設定（Ryoma 手動・無料プラン・15分）
+    → https://uptimerobot.com で Railway 2サービスの死活監視を設定
+    → ダウン時メール通知。障害に気づけない状態を解消
 
 [ ] og-image.png 作成（Ryoma 手動・1200×630・ネイビー×ゴールド）
-    → SNS シェア・OGP に必要
-
-[ ] Phase 6 STEP7 完了マーク（Vercel デプロイ済み）
-    → CLAUDE.md の [ ] STEP7 を [x] に更新
-```
-
-**近いうちにやる（工数：小〜中）**
-```
-[ ] LINE Push 上限監視（#005）
-    → 月 160 通でアラート・200 通超でリマインドをメールにフォールバック
-    → 対象：reservation/db/database.py・reservation/services/reminder.py
-
-[ ] XSS 対策：管理画面 innerHTML → textContent 化
-    → 対象：reservation/static/admin/index.html
-
-[ ] SendGrid ドメイン認証（weldex.jp）
-    → Cloudflare DNS に CNAME レコード追加（docs/decisions.md D-1 参照）
-
-[ ] Lighthouse 計測・docs/seo.md にスコア記録
-```
-
-**余裕があればやる（工数：中）**
-```
-[ ] 無料診断ツール（PageSpeed Insights API）
-    → site-next/ に実装。営業差別化ツール
-
-[ ] demo.weldex.jp セットアップ
-    → Vercel プレビューURL で代替可能
-
-[ ] WEB予約 → LINE 紐づけフロー（#020）
-    → 予約完了メールに LINE 友だち追加 URL を添付
-```
-
-**クライアント獲得後にやる**
-```
-[ ] Railway 環境変数をクライアント別に設定（APP_NAME・APP_URL・ADMIN_EMAIL 等）
-[ ] 管理画面 URL・ADMIN_PASSWORD をクライアントに共有
-[ ] LINE チャネル（クライアント専用）を LINE Developers で作成
-[ ] Railway PostgreSQL の定期バックアップ確認
-[ ] リッチメニュー画像制作・LINE Official Account Manager で設定
+    → weldex.jp/ にアクセスした際の OGP 画像（SNS シェア・LINE 等）
+    → site-next/public/og-image.png に配置してプッシュ
 ```
 
 ---
 
-### 🔧 次に着手するタスク
+#### 🟡 近いうちにやる（工数：小）
 
-**営業自動化 Phase 2（メール送信）**（工数 中）
-→ outreach/scheduler.py は実装済み。Railway での自動実行設定と SendGrid 疎通確認が残り。
-→ 詳細は docs/outreach.md 参照。収集リストが溜まってから着手。
+```
+[ ] Sentry 導入（工数：30分）
+    → reservation/requirements.txt に sentry-sdk[fastapi] 追加
+    → reservation/main.py に sentry_sdk.init() 追加
+    → Railway 環境変数 SENTRY_DSN 追加
+    → 理由：本番Railway で例外が起きても現状は気づけない
 
-**Sentry 導入**（工数 30 分・Railway 本番の障害を即時検知）
+[ ] 営業自動化 — 実際に収集して試す（工数：1時間）
+    → Railway ダッシュボードから業種・エリアを選んで収集
+    → 診断を実行して site_status・detail を確認
+    → 「✦ メール生成」ボタンで Claude Haiku の生成品質を確認
+    → 「送信キュー」タブで確認フローを通しテスト
+
+[ ] SendGrid ドメイン認証（weldex.jp）（工数：30分）
+    → Cloudflare DNS に CNAME レコード追加（docs/decisions.md D-1 参照）
+    → 未設定だとメールが迷惑メール判定される可能性あり
+```
+
+---
+
+#### 🟢 余裕があればやる（工数：小〜中）
+
+```
+[ ] XSS 対策：管理画面 innerHTML → textContent 化（工数：1時間）
+    → 対象：reservation/static/admin/index.html
+    → 予約システムの管理画面にユーザー入力値を innerHTML で出力している箇所
+
+[ ] LINE Push 上限監視（工数：中）
+    → 月 160 通でアラート・200 通超でリマインドをメールにフォールバック
+    → 対象：reservation/db/database.py・reservation/services/reminder.py
+
+[ ] 無料診断ツール（PageSpeed Insights API）（工数：中）
+    → site-next/ に実装。weldex.jp の集客・営業差別化ツール
+    → 見込み客が自社サイトのスコアを入力すると問題点と改善提案が表示される
+
+[ ] Lighthouse 計測・docs/seo.md にスコア記録（工数：小）
+    → weldex.jp の現状スコアをベースラインとして記録
+
+[ ] weldex.jp サービスページの充実（工数：中）
+    → /services/dental・/services/legal 等の業種別LPに実績・価格帯・FAQ を追加
+    → 問い合わせ転換率の向上
+
+[ ] ヒアリングフォーム → 提案書自動生成（工数：中）
+    → /hearing の回答内容を Claude API で分析して提案書の叩き台を自動生成
+    → Ryoma の工数を大幅削減
+```
+
+---
+
+#### 📦 クライアント獲得後にやる
+
+```
+[ ] Railway 環境変数をクライアント別に設定
+    APP_NAME・APP_URL・ADMIN_EMAIL・LINE_CHANNEL_SECRET 等
+[ ] 管理画面 URL・ADMIN_PASSWORD をクライアントに共有
+[ ] LINE チャネル（クライアント専用）を LINE Developers で作成
+[ ] Railway PostgreSQL の定期バックアップ確認
+[ ] リッチメニュー画像制作・LINE Official Account Manager で設定
+[ ] WEB予約 → LINE 紐づけフロー（予約完了メールに友だち追加 URL を添付）
+[ ] demo.weldex.jp セットアップ（Vercel プレビュー URL で代替可能）
+```
+
+---
+
+### 🔧 次に着手する推奨タスク（優先度順）
+
+1. **ANTHROPIC_API_KEY を Railway に設定**（5分・手動）→ 今日作った機能が使えるようになる
+2. **営業自動化を実際に動かして確認**（1時間）→ 収集→診断→AI生成→送信キュー確認
+3. **UptimeRobot 設定**（15分・手動）→ 本番障害の検知体制を整える
+4. **Sentry 導入**（30分）→ Railway エラーをリアルタイム検知
 
 ---
 
