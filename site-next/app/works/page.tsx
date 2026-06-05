@@ -39,13 +39,61 @@ export default function WorksPage() {
             lineHeight: 2.0, maxWidth: 440, margin: "0 auto",
           }}>
             実際に動くデモをご用意しています。<br />
-            気になる方はお気軽にお試しください。
+            商談の場でそのままお見せいただけます。
           </p>
         </FadeIn>
 
         {/* カルーセル */}
         <FadeIn delay={0.1}>
           <WorksCarousel />
+        </FadeIn>
+
+        {/* 直リンクセクション */}
+        <FadeIn delay={0.15} style={{ marginTop: "4rem" }}>
+          <div style={{
+            background: "var(--navy)", borderRadius: 2,
+            padding: "2.5rem clamp(1.5rem,4vw,3rem)",
+          }}>
+            <div style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.18em", color: "var(--gold)", textTransform: "uppercase", marginBottom: "0.75rem" }}>
+              Share Demo
+            </div>
+            <h2 style={{ fontSize: "clamp(1.1rem,2.5vw,1.5rem)", fontWeight: 900, color: "#fff", marginBottom: "0.5rem", lineHeight: 1.3 }}>
+              このURLを商談相手にそのまま送れます
+            </h2>
+            <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", marginBottom: "2rem", lineHeight: 1.8 }}>
+              アプリ不要・ログイン不要。URLを貼るだけで相手がすぐ試せます。
+            </p>
+            <style>{`.demo-link:hover { background: rgba(255,255,255,0.12) !important; }`}</style>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {[
+                { label: "WEB予約フォーム", url: "https://weldex.jp/booking", desc: "予約フロー体験（スマホ対応）" },
+                { label: "管理ダッシュボード", url: "https://weldex.jp/demo-dashboard", desc: "予約管理・顧客CRM・統計" },
+              ].map((item) => (
+                <a
+                  key={item.url}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="demo-link"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                    padding: "1rem 1.25rem", textDecoration: "none",
+                    transition: "background 0.15s",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#fff", marginBottom: "0.2rem" }}>{item.label}</div>
+                    <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)" }}>{item.desc}</div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.25rem", flexShrink: 0, marginLeft: "1rem" }}>
+                    <span style={{ fontSize: "0.65rem", color: "var(--gold)", letterSpacing: "0.04em", fontWeight: 600 }}>weldex.jp</span>
+                    <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)" }}>→ 開く</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
         </FadeIn>
 
         {/* 業種別LP誘導 */}
