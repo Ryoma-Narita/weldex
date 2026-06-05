@@ -95,6 +95,9 @@ ORM：なし（psycopg2直接）
 # Google Places API（営業自動化）
 GOOGLE_PLACES_API_KEY=
 
+# Claude AI（営業メール自動生成）← 2026-06-05追加
+ANTHROPIC_API_KEY=     # console.anthropic.com で取得 / Railway outreach サービスに設定
+
 # 営業自動化ダッシュボード（Railway outreach サービス）
 DATABASE_URL=          # Railway Postgres → ${{Postgres.DATABASE_URL}} で自動注入
 DASHBOARD_PASSWORD=    # Basic認証パスワード（ユーザー名固定: weldex）
@@ -187,25 +190,45 @@ weldex/
 
 ### ✅ Phase 1：営業自動化 — 収集・診断・ダッシュボード（完了・本番稼働）
 ```
-[x] outreach/requirements.txt（psycopg2-binary含む）
+[x] outreach/requirements.txt（psycopg2-binary・anthropic==0.40.0 含む）
 [x] outreach/db/database.py（PostgreSQL対応・psycopg2）
+    - settings → outreach_settings にリネーム（予約システムとのテーブル衝突解消）
+    - get_send_mode() / set_send_mode() 追加
+    - send_queue に approval_status/approved_at/rejected_at/subject_override 等追加
 [x] outreach/config.py（DEFAULT_LIMIT=100）
 [x] outreach/collectors/area_config.py（47都道府県・343市区・10業種）
 [x] outreach/analyzers/email_extractor.py
 [x] outreach/analyzers/site_checker.py
+    - OLD_YEAR_THRESHOLD: 5年→10年に変更
+    - _detect_old_tech()追加（フレーム/Flash/非推奨タグ/固定幅レイアウト検出）
+    - industry引数追加・医療系業種判定（is_medical_industry）
+    - check_site() 返却値に is_medical フラグ追加
 [x] outreach/collectors/google_places.py
-[x] outreach/main.py
-[x] outreach/dashboard/app.py（Basic認証・PostgreSQL・/api/debug）
+    - Details API に types フィールド追加（業種自動補正）
+    - 大手チェーン除外（_is_chain_store）
+[x] outreach/mailers/templates.py
+    - テンプレートD追加（医療系・電話のみ→LINE予約訴求）
+    - select_template_key() 追加（ステータス+業種→最適テンプレート自動選択）
+[x] outreach/main.py（diagnose時にindustry渡す・推奨テンプレートをログ表示）
+[x] outreach/dashboard/app.py
+    - POST /api/generate-email（Claude Haiku で営業メール自動生成）
+    - GET/POST /api/send-mode（確認して送信 / 自動送信 切り替え）
+    - GET /api/send-queue（承認待ち一覧・メールプレビュー付き）
+    - POST /api/send-queue/{id}/approve（承認→即送信）
+    - POST /api/send-queue/{id}/reject（却下・ターゲットをpendingに戻す）
+    - GET/POST /api/customers, PATCH/DELETE 顧客CRUD
+    - 顧客詳細モーダル・ターゲット手動追加
 [x] outreach/dashboard/templates/index.html
-    - 業種チェックボックス×都道府県左パネル→市区右パネルのカスケードUI
-    - 「収集して診断する」ボタン（収集後に自動診断・20件バッチ）
-    - ターゲットリスト：tel:リンク・営業ポイント・診断フラグ
-    - スマホ対応（768px以下でプレビュー非表示）
+    - 「✦ メール生成」ボタン・生成モーダル（件名/本文コピー・再生成）
+    - 送信モードトグル（ダッシュボード右上）
+    - 「送信キュー」タブ（承認待ち一覧・確認して送信・却下）
+    - 「顧客リスト」タブ・顧客詳細モーダル（自動保存）
 [x] Railway デプロイ（weldex サービス・Nixpacks・Root: outreach/）
 [x] Railway PostgreSQL 接続（${{Postgres.DATABASE_URL}}・sslmode=require）
-[x] docs/outreach_dashboard_spec.md（仕様書・トラブルシューティング含む）
+[x] Railway 環境変数：ANTHROPIC_API_KEY 追加が必要（メール生成に使用）
 # 2026-05-09 Phase1実装完了
 # 2026-06-01 Railway本番デプロイ・PostgreSQL移行完了
+# 2026-06-05 診断ロジック強化・Claude AI営業メール生成・送信モード切り替え追加
 本番URL：https://weldex-production.up.railway.app
 ```
 
@@ -213,7 +236,7 @@ weldex/
 
 ### ✅ Phase 2：営業自動化 — 送信・返信（完了）
 ```
-[x] mailers/templates.py（A/B/Cパターン・特定電子メール法対応）
+[x] mailers/templates.py（A/B/C/Dパターン・特定電子メール法対応）
 [x] mailers/sender.py（SendGrid）
 [x] replies/checker.py（Gmail API・自動返信除外ロジック含む）
 [x] scheduler.py（1日50件上限・auto対応）
@@ -296,7 +319,7 @@ DB：Railway PostgreSQL（同プロジェクト内）
 
 ---
 
-### 🔧 Phase 6：Weldex.jp リニューアル（Next.js移行・実装済み・デプロイ待ち）
+### ✅ Phase 6：Weldex.jp リニューアル（Next.js移行・本番稼働中）
 ```
 [x] STEP1：Next.js 15 + TypeScript + Tailwind CSS（site-next/）
 [x] STEP2：weldex.htmlをNext.jsコンポーネントに移植
@@ -304,20 +327,31 @@ DB：Railway PostgreSQL（同プロジェクト内）
 [x] STEP3：業種別LPテンプレート（data/industries.ts・dental/legal/construction/beauty）
 [x] STEP4：メタデータ・OGP・Schema.org・sitemap.xml・robots.txt
 [x] /works ページ実装
+[x] STEP7：Vercelデプロイ（weldex.jp → Vercel、カスタムドメイン設定済み）
+
+[x] サイトリデザイン（2026-06-05）
+    - Hero: 背景画像と文字の可読性改善（半透明白背景パネル）・ボタン削除
+    - BrandSection: "Connecting" 文字を大きく
+    - Process: 波形を横長・縦縮め
+    - CTABand: 黒背景→白背景
+    - Pillars: 実画像4枚追加（public/pillars/）・GIG INC.参考カードデザイン
+      - 横長カード(5:3)・画像左60%（斜めclip-path）・テキスト右40%純白
+      - ホバーズーム・カードリフト・千鳥配置
+    - /admin/hearing: force-dynamic 追加（Vercelビルドエラー修正）
 
 未着手：
 [ ] STEP5：無料診断ツール（PageSpeed Insights API）
 [ ] STEP6：Lighthouse計測・docs/seo.mdにスコア記録
-[x] STEP7：Vercelデプロイ（weldex.jp → Vercel、カスタムドメイン設定済み）
 [ ] og-image.png 作成（Ryoma手動・1200×630・ネイビー×ゴールド）
 [ ] demo.weldex.jp セットアップ（Ryoma手動作業）
 # 2026-05-13 実装完了 / 2026-05-18 Vercelデプロイ・weldex.jp カスタムドメイン設定完了
+# 2026-06-05 サイトリデザイン・Pillars実画像追加
 詳細：docs/seo.md 参照
 ```
 
 ---
 
-## ▼ 現状サマリー・懸念点・今後のタスク（2026-06-01更新）
+## ▼ 現状サマリー・懸念点・今後のタスク（2026-06-05更新）
 
 ---
 
@@ -354,8 +388,9 @@ DB：Railway PostgreSQL（同プロジェクト内）
 **営業自動化**
 - Gmail API の refresh_token は長期未使用時に期限切れの可能性（再取得が必要になる場合あり）
 - 1日 100 件上限（DEFAULT_LIMIT=100）。Google Places API 無料枠（月$200）で月約2,000件まで無料
-- メール送信（Phase 2）は未実装。scheduler.py は実装済みだが Railway での自動実行未設定
+- メール送信は「確認して送信」モードで運用中。Railway ANTHROPIC_API_KEY 設定後にAI生成ボタンが使用可能
 - `weldex-volume`（旧SQLite用）はキャンバス上に残存するが使用していない（削除可）
+- settings テーブル衝突は解消済み（outreach_settings に改名）
 
 **サイト（Next.js）**
 - og-image.png 未作成：OGP 画像がなく SNS シェア時に画像なし
