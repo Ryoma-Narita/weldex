@@ -3,6 +3,10 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
+
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +18,15 @@ from routers import booking, admin, customers, import_export
 from handlers.webhook import process_webhook
 from services.reminder import run_reminder
 from config import REMIND_HOUR, APP_NAME
+
+_sentry_dsn = os.environ.get("SENTRY_DSN")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[StarletteIntegration(), FastApiIntegration()],
+        traces_sample_rate=0.1,
+        environment=os.environ.get("ENVIRONMENT", "production"),
+    )
 
 app = FastAPI(title=f"{APP_NAME} 予約システム", docs_url="/api/docs")
 
