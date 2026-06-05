@@ -10,28 +10,28 @@ const pillars = [
     label: 'Web Creative',
     title: 'WEBサイト制作',
     desc: '古いサイト・スマホ非対応・検索に出てこない。そんな課題をAIと人の目で解決。顧客・取引先に信頼されるサイトをつくります。',
-    img: '/pillars/web.jpg',
+    img: '/pillars/web.png',
   },
   {
     num: '02',
     label: 'LINE / DX',
     title: 'LINE予約・DX導入',
     desc: '電話予約の手間、予約漏れ、無断キャンセル。LINE一本で解決できる仕組みを、貴社の業務フローに合わせて設計・構築します。',
-    img: '/pillars/line.jpg',
+    img: '/pillars/line.png',
   },
   {
     num: '03',
     label: 'System Dev',
     title: 'システム開発',
     desc: '予約管理・顧客管理・業務自動化など、貴事業に合わせたシステムをゼロから構築。「こんな機能がほしい」をAIで低コスト実現します。',
-    img: '/pillars/system.jpg',
+    img: '/pillars/system.png',
   },
   {
     num: '04',
     label: 'Support',
     title: '保守・運用サポート',
     desc: '作って終わりにしません。公開後の更新・改善・トラブル対応まで、まるごとお任せいただけます。',
-    img: '/pillars/support.jpg',
+    img: '/pillars/support.png',
   },
 ]
 
@@ -201,8 +201,8 @@ export default function Pillars() {
 
       <div className="pillars-grid" style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '1.25rem',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1.5rem',
         alignItems: 'stretch',
       }}>
         {pillars.map((p, i) => (
@@ -211,10 +211,7 @@ export default function Pillars() {
       </div>
 
       <style>{`
-        @media (max-width: 900px) {
-          .pillars-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
           .pillars-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
