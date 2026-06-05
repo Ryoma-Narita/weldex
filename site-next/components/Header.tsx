@@ -7,7 +7,6 @@ const DESKTOP_NAV = [
   { label: "ホーム",     href: "/" },
   { label: "サービス",   href: "/services" },
   { label: "実績・デモ", href: "/works" },
-  { label: "料金",       href: "/pricing" },
   { label: "About",      href: "/about" },
 ];
 
@@ -166,10 +165,10 @@ export default function Header() {
                 borderRadius: 100, background: "#b8960c",
                 color: "#fff", fontSize: 16, fontWeight: 700,
                 textDecoration: "none", boxSizing: "border-box",
-                letterSpacing: "0.04em", ...DM,
+                letterSpacing: "0.08em", ...DM,
               }}
             >
-              <span>無料相談をする</span>
+              <span>FREE CONSULTATION</span>
               <span>→</span>
             </Link>
           </div>
@@ -177,8 +176,8 @@ export default function Header() {
           {/* フッターリンク */}
           <div style={{ padding: "16px 24px 32px", display: "flex", gap: 24, flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
             {[
-              { label: "プライバシーポリシー", href: "/privacy" },
-              { label: "特定商取引法",         href: "/legal" },
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Legal",          href: "/legal" },
             ].map(({ label, href }) => (
               <Link key={href} href={href} onClick={close} style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", textDecoration: "none", ...DM }}>
                 {label}

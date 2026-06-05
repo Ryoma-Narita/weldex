@@ -27,6 +27,7 @@ const services = [
     tag: "予約 / 管理",
     desc: "24時間自動で予約を受け付ける管理画面付きの予約システムです。歯科・クリニック・サロンなど幅広い業種に対応します。",
     features: ["24時間自動受付", "管理画面付き", "メール自動返信", "顧客管理・CSV出力", "前日リマインド"],
+    detailHref: "/services/reservation",
   },
   {
     num: "03",
@@ -35,6 +36,7 @@ const services = [
     tag: "LINE / Bot",
     desc: "LINEのトーク画面から予約できるシステムです。前日リマインド・キャンセル対応も自動化。既存のLINE公式アカウントに連携できます。",
     features: ["LINEから予約完結", "前日リマインド自動送信", "キャンセル自動対応", "既存LINE公式に連携", "管理画面連携"],
+    detailHref: "/services/line",
   },
 ];
 
@@ -116,7 +118,6 @@ export default function ServicesPage() {
 
         <FadeIn delay={0.2} style={{ marginTop: "3rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
           <Link href="/contact" className="btn btn-primary">無料相談をする</Link>
-          <Link href="/pricing" className="btn btn-outline">料金を見る</Link>
         </FadeIn>
       </div>
 
