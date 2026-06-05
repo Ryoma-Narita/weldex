@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "LINE連携・アカウント作成代行 | Weldex",
+  title: "顧客管理システム（CRM）| Weldex",
   description:
-    "LINE公式アカウントの開設代行からリッチメニュー制作・予約システム連携・自動メッセージ設定まで一社完結。LINEを使った顧客との接点づくりをまるごとお任せ。",
-  alternates: { canonical: "https://weldex.jp/services/line" },
+    "顧客情報・来院履歴・コミュニケーション履歴を一元管理。予約システムと連携し、リピート率向上・離脱防止につながる顧客DXを実現します。",
+  alternates: { canonical: "https://weldex.jp/services/crm" },
 };
 
 const NAVY   = "#1a2540";
 const GOLD   = "#b8960c";
-const GREEN  = "#06c755";
+const PURPLE = "#7c3aed";
 const GRAY   = "#4b5563";
 const BORDER = "#f1f3f5";
 const BG_L   = "#fafbfc";
@@ -18,46 +18,46 @@ const DM:  React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
 const ZEN: React.CSSProperties = { fontFamily: "'Zen Kaku Gothic New', 'Hiragino Sans', sans-serif" };
 
 const TECH_CARDS = [
-  { icon: "📱", title: "開設代行",     value: "最短1週間",        note: "LINE公式アカウントの新規開設を全て代行" },
-  { icon: "🎨", title: "リッチメニュー", value: "デザイン込み",    note: "ブランドに合わせたメニュー画像を制作" },
-  { icon: "🔗", title: "システム連携", value: "予約・CRM連携",     note: "予約システム・顧客管理と自動連携" },
-  { icon: "⚙️", title: "自動応答設定", value: "24時間対応",        note: "よくある質問・予約誘導を自動化" },
+  { icon: "👥", title: "顧客管理",     value: "一元管理・即検索",  note: "名前・電話・来院履歴をDBで一元管理" },
+  { icon: "📊", title: "分析・レポート", value: "リピート率・LTV",  note: "来院頻度・売上貢献度を可視化" },
+  { icon: "🔄", title: "自動フォロー",  value: "離脱防止メール",   note: "一定期間来院なしの顧客に自動フォロー" },
+  { icon: "🔗", title: "システム連携",  value: "予約・LINE統合",   note: "WEB/LINE予約と顧客データが自動連携" },
 ];
 
 const COMPARE_ROWS = [
-  { label: "アカウント開設",   other: "自分で設定（複雑）",     weldex: "Weldexが全て代行",       highlight: true,  weldexGreen: true  },
-  { label: "リッチメニュー",   other: "画像・設定を自分で作成", weldex: "デザイン＋設定込みで納品", highlight: true,  weldexGreen: true  },
-  { label: "自動応答",         other: "手動返信のみ",           weldex: "キーワード自動返信設定",  highlight: false, weldexGreen: false },
-  { label: "予約システム連携", other: "別途対応が必要",         weldex: "WEB予約と自動連携",       highlight: true,  weldexGreen: true  },
-  { label: "運用サポート",     other: "なし",                   weldex: "月額保守で継続対応",      highlight: false, weldexGreen: false },
-  { label: "契約終了時",       other: "アカウント消滅リスク",   weldex: "所有権をクライアントへ",  highlight: false, weldexGreen: false },
-  { label: "導入費用",         other: "制作会社に依頼 ¥200,000〜", weldex: "¥150,000〜",          highlight: true,  weldexGreen: true  },
+  { label: "顧客情報管理",   other: "Excel・紙カルテ",        weldex: "DBで一元管理・即検索",     highlight: true,  weldexPurple: true  },
+  { label: "来院履歴",       other: "手動記録・紙台帳",       weldex: "予約完了で自動蓄積",        highlight: true,  weldexPurple: true  },
+  { label: "リピート分析",   other: "なし / 勘頼り",          weldex: "来院頻度・LTVを可視化",     highlight: true,  weldexPurple: true  },
+  { label: "離脱検知",       other: "気づかない",             weldex: "自動フォローメール送信",     highlight: false, weldexPurple: false },
+  { label: "CSV入出力",      other: "Excelのみ",              weldex: "インポート・エクスポート対応", highlight: false, weldexPurple: false },
+  { label: "セキュリティ",   other: "ファイル漏洩リスク",     weldex: "DB管理・アクセス制限",       highlight: false, weldexPurple: false },
+  { label: "導入費用",       other: "既製SaaS ¥5,000〜/月",   weldex: "¥300,000〜（買い切り）",    highlight: true,  weldexPurple: true  },
 ];
 
 const DELIVERABLES = [
-  { icon: "📱", title: "LINE公式アカウント開設・設定",   desc: "事業者情報・プロフィール・基本設定を全て代行で完了。" },
-  { icon: "🎨", title: "リッチメニューデザイン・設定",   desc: "ブランドカラーに合わせたメニュー画像を制作し、アクション設定まで完了。" },
-  { icon: "💬", title: "自動応答・ウェルカムメッセージ", desc: "友だち追加時のウェルカムメッセージと主要キーワードの自動返信を設定。" },
-  { icon: "🔗", title: "WEB予約システム連携",            desc: "WEB予約URLをLINEから案内。予約完了通知もLINEで受け取れるように設定。" },
-  { icon: "📊", title: "LINE公式アカウント引き渡し",     desc: "契約終了時はWeldexが管理権限から退出。クライアント単独での運用が可能。" },
-  { icon: "⚙️", title: "運用マニュアル",                 desc: "管理画面の操作方法・メッセージ配信手順をPDFマニュアルで提供。" },
+  { icon: "👥", title: "顧客管理画面",           desc: "名前・電話・メール・来院履歴を一覧管理。氏名・電話番号で即検索。" },
+  { icon: "📅", title: "予約システム自動連携",   desc: "WEB/LINE予約が完了すると顧客DBに自動登録・来院履歴を蓄積。" },
+  { icon: "📊", title: "ダッシュボード・分析",   desc: "今月の来院数・リピート率・新規vs既存比率をグラフで可視化。" },
+  { icon: "🔄", title: "自動フォローアップ",     desc: "3ヶ月以上来院なしの顧客へ自動でフォローメールを送信。" },
+  { icon: "📁", title: "CSVインポート・エクスポート", desc: "既存の顧客リスト（Excel・Shift-JIS対応）を一括取込。" },
+  { icon: "🔒", title: "セキュリティ・個人情報管理", desc: "HTTPS・レートリミット・一定期間経過後の個人情報自動削除に対応。" },
 ];
 
 const PLANS = [
   {
-    name: "Light", price: "¥150,000", monthly: "¥8,000/月",
+    name: "Light", price: "¥300,000", monthly: "¥10,000/月",
     badge: null, dark: false,
-    features: ["アカウント開設代行", "リッチメニュー制作", "自動応答設定"],
+    features: ["顧客管理画面", "予約システム連携", "CSV入出力"],
   },
   {
-    name: "Standard", price: "¥230,000", monthly: "¥12,000/月",
+    name: "Standard", price: "¥420,000", monthly: "¥15,000/月",
     badge: "人気", dark: true,
-    features: ["Lightの全て", "WEB予約システム連携", "ウェルカムメッセージ", "運用マニュアル"],
+    features: ["Lightの全て", "ダッシュボード・分析", "自動フォローメール", "LINE連携"],
   },
   {
-    name: "Premium", price: "¥350,000", monthly: "¥18,000/月",
+    name: "Premium", price: "¥580,000", monthly: "¥20,000/月",
     badge: null, dark: false,
-    features: ["Standardの全て", "Push配信代行", "CRM連携", "優先サポート"],
+    features: ["Standardの全て", "カスタムレポート", "API連携", "優先サポート"],
   },
 ];
 
@@ -77,52 +77,52 @@ function H2({ children }: { children: string }) {
   );
 }
 
-export default function LineServicePage() {
+export default function CrmServicePage() {
   return (
     <>
       <style>{`
-        .ls-section { border-bottom: 1px solid ${BORDER}; }
-        .ls-inner   { max-width: 1080px; margin: 0 auto; padding: 5rem clamp(1.5rem,5vw,5rem); }
-        .ls-tech-layout { display: flex; gap: 4rem; align-items: flex-start; }
-        .ls-tech-cards  { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex: 1; }
-        .ls-tech-text   { flex: 1; }
-        .ls-del-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .ls-plans-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; max-width: 860px; }
+        .crm-section { border-bottom: 1px solid ${BORDER}; }
+        .crm-inner   { max-width: 1080px; margin: 0 auto; padding: 5rem clamp(1.5rem,5vw,5rem); }
+        .crm-tech-layout { display: flex; gap: 4rem; align-items: flex-start; }
+        .crm-tech-cards  { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex: 1; }
+        .crm-tech-text   { flex: 1; }
+        .crm-del-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .crm-plans-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; max-width: 860px; }
         @media (max-width: 768px) {
-          .ls-inner       { padding: 3rem 20px; }
-          .ls-tech-layout { flex-direction: column; gap: 2rem; }
-          .ls-tech-text   { flex: none; width: 100%; }
-          .ls-tech-cards  { grid-template-columns: 1fr 1fr; }
-          .ls-del-grid    { grid-template-columns: 1fr; }
-          .ls-plans-grid  { grid-template-columns: 1fr; max-width: 400px; }
+          .crm-inner       { padding: 3rem 20px; }
+          .crm-tech-layout { flex-direction: column; gap: 2rem; }
+          .crm-tech-text   { flex: none; width: 100%; }
+          .crm-tech-cards  { grid-template-columns: 1fr 1fr; }
+          .crm-del-grid    { grid-template-columns: 1fr; }
+          .crm-plans-grid  { grid-template-columns: 1fr; max-width: 400px; }
         }
       `}</style>
 
       <main>
         {/* ─── ヒーロー ─── */}
-        <section className="ls-section" style={{ paddingTop: "6rem", background: "#fff" }}>
-          <div className="ls-inner" style={{ paddingTop: "1.5rem" }}>
+        <section className="crm-section" style={{ paddingTop: "6rem", background: "#fff" }}>
+          <div className="crm-inner" style={{ paddingTop: "1.5rem" }}>
             <nav style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: GRAY, marginBottom: "2.5rem", ...DM }}>
               <Link href="/"         style={{ color: GRAY, textDecoration: "none" }}>ホーム</Link>
               <span style={{ color: "#cbd5e1" }}>›</span>
               <Link href="/services" style={{ color: GRAY, textDecoration: "none" }}>サービス</Link>
               <span style={{ color: "#cbd5e1" }}>›</span>
-              <span style={{ color: NAVY, fontWeight: 500 }}>LINE連携・アカウント作成代行</span>
+              <span style={{ color: NAVY, fontWeight: 500 }}>顧客管理システム（CRM）</span>
             </nav>
 
-            <span style={{ display: "inline-block", background: GREEN, color: "#fff", fontSize: "0.72rem", fontWeight: 600, padding: "0.3rem 0.9rem", borderRadius: 100, marginBottom: "1.5rem", letterSpacing: "0.04em", ...DM }}>
-              LINE連携・アカウント作成代行
+            <span style={{ display: "inline-block", background: PURPLE, color: "#fff", fontSize: "0.72rem", fontWeight: 600, padding: "0.3rem 0.9rem", borderRadius: 100, marginBottom: "1.5rem", letterSpacing: "0.04em", ...DM }}>
+              顧客管理システム（CRM）
             </span>
 
             <h1 style={{ ...ZEN, fontSize: "clamp(2.4rem,5.5vw,4rem)", fontWeight: 900, color: NAVY, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: "1.5rem" }}>
-              LINEの設定、<br />
-              <em style={{ color: GOLD, fontStyle: "normal" }}>全部お任せください。</em>
+              顧客との関係を、<br />
+              <em style={{ color: GOLD, fontStyle: "normal" }}>データで深める。</em>
             </h1>
 
             <p style={{ ...ZEN, fontSize: "clamp(0.9rem,1.5vw,1.05rem)", color: GRAY, lineHeight: 1.9, fontWeight: 400, marginBottom: "2.5rem", maxWidth: 520 }}>
-              LINE公式アカウントの開設から、リッチメニュー制作・<br />
-              自動応答設定・予約システム連携まで一社完結。<br />
-              難しい設定作業をWeldexが全て代行します。
+              顧客情報・来院履歴・コミュニケーション履歴を一元管理。<br />
+              予約システムとシームレスに連携し、リピート率向上・<br />
+              離脱防止につながる顧客DXを実現します。
             </p>
 
             <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
@@ -137,30 +137,27 @@ export default function LineServicePage() {
         </section>
 
         {/* ─── 特長 ─── */}
-        <section className="ls-section" style={{ background: BG_L }}>
-          <div className="ls-inner">
+        <section className="crm-section" style={{ background: BG_L }}>
+          <div className="crm-inner">
             <SecLabel>Features</SecLabel>
-            <H2>LINE代行サービスの特長</H2>
+            <H2>顧客管理システムの特長</H2>
 
-            <div className="ls-tech-layout" style={{ marginTop: "2.5rem" }}>
-              <div className="ls-tech-text">
+            <div className="crm-tech-layout" style={{ marginTop: "2.5rem" }}>
+              <div className="crm-tech-text">
                 <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, lineHeight: 1.95 }}>
-                  「LINE公式アカウントを作りたいが、
-                  設定が複雑で手が出せない」という事業者様が
-                  非常に多くいらっしゃいます。
-                  リッチメニューの画像制作・Webhook設定・
-                  予約システムとの連携は、専門知識がなければ
-                  対応困難です。
+                  「患者の情報がExcelと紙カルテに分散している」
+                  「常連客が離れたことに気づかなかった」
+                  こうした課題は、顧客情報が一元化されていないことが原因です。
                 </p>
                 <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, lineHeight: 1.95, marginTop: "1.25rem" }}>
-                  Weldexは開設から運用開始まで全工程を代行。
-                  契約終了時にはアカウントの所有権をクライアントへ
-                  完全移管するため、Weldexへの依存リスクが
-                  ありません。
+                  WeldexのCRMは、WEB予約・LINE予約と完全連携した
+                  カスタムシステムです。既製SaaSと異なり、
+                  業種・業務フローに合わせてゼロから設計するため、
+                  使わない機能に費用を払う必要がありません。
                 </p>
               </div>
 
-              <div className="ls-tech-cards">
+              <div className="crm-tech-cards">
                 {TECH_CARDS.map(c => (
                   <div key={c.title} style={{ background: "#fff", border: `1px solid ${BORDER}`, padding: "1.25rem 1rem" }}>
                     <div style={{ fontSize: "1.4rem", marginBottom: "0.6rem" }}>{c.icon}</div>
@@ -175,12 +172,12 @@ export default function LineServicePage() {
         </section>
 
         {/* ─── 比較表 ─── */}
-        <section className="ls-section" style={{ background: "#fff" }}>
-          <div className="ls-inner">
+        <section className="crm-section" style={{ background: "#fff" }}>
+          <div className="crm-inner">
             <SecLabel>Comparison</SecLabel>
-            <H2>自社対応との比較</H2>
+            <H2>Excel・紙管理との比較</H2>
             <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, marginBottom: "2rem" }}>
-              専門家に任せることで、ここまで差が出ます。
+              システム化でここまで変わります。
             </p>
 
             <div style={{ overflowX: "auto" }}>
@@ -188,16 +185,16 @@ export default function LineServicePage() {
                 <thead>
                   <tr style={{ background: NAVY }}>
                     <th style={{ ...ZEN, padding: "0.85rem 1.25rem", color: "rgba(255,255,255,0.6)", fontWeight: 500, textAlign: "left", fontSize: "0.75rem", letterSpacing: "0.04em" }}>比較項目</th>
-                    <th style={{ ...ZEN, padding: "0.85rem 1.25rem", color: "rgba(255,255,255,0.6)", fontWeight: 500, textAlign: "left", fontSize: "0.75rem" }}>自社で対応</th>
-                    <th style={{ ...DM,  padding: "0.85rem 1.25rem", color: GOLD, fontWeight: 700, textAlign: "left", fontSize: "0.8rem", letterSpacing: "0.06em" }}>Weldex代行</th>
+                    <th style={{ ...ZEN, padding: "0.85rem 1.25rem", color: "rgba(255,255,255,0.6)", fontWeight: 500, textAlign: "left", fontSize: "0.75rem" }}>Excel・紙管理</th>
+                    <th style={{ ...DM,  padding: "0.85rem 1.25rem", color: GOLD, fontWeight: 700, textAlign: "left", fontSize: "0.8rem", letterSpacing: "0.06em" }}>Weldex CRM</th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARE_ROWS.map((row, i) => (
-                    <tr key={row.label} style={{ background: row.highlight ? "#f0fff4" : (i % 2 === 0 ? "#fff" : BG_L) }}>
+                    <tr key={row.label} style={{ background: row.highlight ? "#f5f3ff" : (i % 2 === 0 ? "#fff" : BG_L) }}>
                       <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: NAVY, fontWeight: 600, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>{row.label}</td>
                       <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: GRAY, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem" }}>{row.other}</td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexGreen ? GREEN : NAVY }}>{row.weldex}</td>
+                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexPurple ? PURPLE : NAVY }}>{row.weldex}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -207,15 +204,15 @@ export default function LineServicePage() {
         </section>
 
         {/* ─── 納品物 ─── */}
-        <section className="ls-section" style={{ background: BG_L }}>
-          <div className="ls-inner">
+        <section className="crm-section" style={{ background: BG_L }}>
+          <div className="crm-inner">
             <SecLabel>Deliverables</SecLabel>
             <H2>納品物一覧</H2>
             <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, marginBottom: "2rem" }}>
               Standardプランの納品物です。全て込みの価格です。
             </p>
 
-            <div className="ls-del-grid">
+            <div className="crm-del-grid">
               {DELIVERABLES.map(d => (
                 <div key={d.title} style={{ background: "#fff", border: `1px solid ${BORDER}`, padding: "1.25rem 1.5rem", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
                   <span style={{ fontSize: "1.5rem", flexShrink: 0, lineHeight: 1 }}>{d.icon}</span>
@@ -230,15 +227,15 @@ export default function LineServicePage() {
         </section>
 
         {/* ─── 料金 ─── */}
-        <section className="ls-section" style={{ background: "#fff" }}>
-          <div className="ls-inner">
+        <section className="crm-section" style={{ background: "#fff" }}>
+          <div className="crm-inner">
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
             <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, marginBottom: "2.5rem" }}>
               現在モニター価格にて受付中です。
             </p>
 
-            <div className="ls-plans-grid">
+            <div className="crm-plans-grid">
               {PLANS.map(plan => (
                 <div key={plan.name} style={{
                   position: "relative",
@@ -265,8 +262,8 @@ export default function LineServicePage() {
                     {plan.features.map(f => (
                       <li key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", ...ZEN, color: plan.dark ? "rgba(255,255,255,0.85)" : GRAY }}>
                         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                          <circle cx="6.5" cy="6.5" r="6.5" fill={plan.dark ? "rgba(255,255,255,0.15)" : "#f0fff4"} />
-                          <path d="M3.5 6.5l2 2 4-4" stroke={plan.dark ? GOLD : GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <circle cx="6.5" cy="6.5" r="6.5" fill={plan.dark ? "rgba(255,255,255,0.15)" : "#f5f3ff"} />
+                          <path d="M3.5 6.5l2 2 4-4" stroke={plan.dark ? GOLD : PURPLE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         {f}
                       </li>

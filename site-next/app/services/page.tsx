@@ -6,7 +6,7 @@ import CTABand from "@/components/CTABand";
 export const metadata: Metadata = {
   title: "サービス一覧 | Weldex",
   description:
-    "ホームページ制作・WEB予約システム・LINE予約システムの3サービスを一社完結で提供。費用・納期の目安もご確認いただけます。",
+    "ホームページ制作・WEB予約システム・LINE連携代行・顧客管理システムの4サービスを一社完結で提供。費用・納期の目安もご確認いただけます。",
   alternates: { canonical: "https://weldex.jp/services" },
 };
 
@@ -31,12 +31,21 @@ const services = [
   },
   {
     num: "03",
-    title: "LINE予約システム",
+    title: "LINE連携・アカウント作成代行",
     price: "150,000円〜",
-    tag: "LINE / Bot",
-    desc: "LINEのトーク画面から予約できるシステムです。前日リマインド・キャンセル対応も自動化。既存のLINE公式アカウントに連携できます。",
-    features: ["LINEから予約完結", "前日リマインド自動送信", "キャンセル自動対応", "既存LINE公式に連携", "管理画面連携"],
+    tag: "LINE / 代行",
+    desc: "LINE公式アカウントの開設から設定・予約システム連携・リッチメニュー制作まで一社完結で代行します。LINEを使った顧客との接点づくりをまるごとお任せいただけます。",
+    features: ["LINE公式アカウント開設代行", "リッチメニュー制作", "予約システム連携", "自動メッセージ設定", "運用サポート"],
     detailHref: "/services/line",
+  },
+  {
+    num: "04",
+    title: "顧客管理システム（CRM）",
+    price: "300,000円〜",
+    tag: "CRM / 顧客管理",
+    desc: "顧客情報・来院履歴・コミュニケーション履歴を一元管理。予約システムとシームレスに連携し、リピート率向上・離脱防止につながる顧客DXを実現します。",
+    features: ["顧客情報一元管理", "予約履歴連携", "CSV入出力", "自動フォローアップ", "レポート・分析機能"],
+    detailHref: "/services/crm",
   },
 ];
 
