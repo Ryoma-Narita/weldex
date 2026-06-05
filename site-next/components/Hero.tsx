@@ -62,34 +62,44 @@ export default function Hero() {
             fontSize: "clamp(0.875rem, 1.5vw, 1rem)",
             color: "var(--gray)",
             lineHeight: 1.85,
-            marginBottom: "2.5rem",
+            marginBottom: "2rem",
             maxWidth: 480,
             background: "rgba(255,255,255,0.85)",
             backdropFilter: "blur(4px)",
             padding: "0.5rem 0.75rem",
             borderRadius: 4,
           }}>
-            WEBサイト制作からLINE・WEB予約システム・システム開発まで、<br />
-            AIを活用した低コスト・高品質なデジタル支援を提供します。
+            WEBサイト制作・LINE予約システム・システム開発まで、<br />
+            大手の1/3以下のコストで一社完結のデジタル支援を提供します。
           </p>
         </FadeIn>
 
         <FadeIn delay={0.5}>
-          <p style={{
-            fontSize: "clamp(0.8rem, 1.3vw, 0.9375rem)",
-            color: "var(--gray)",
-            lineHeight: 1.9,
+          <div style={{
             borderLeft: "2px solid var(--gold)",
-            paddingLeft: "1rem",
-            maxWidth: 420,
+            maxWidth: 440,
             background: "rgba(255,255,255,0.82)",
             backdropFilter: "blur(4px)",
-            padding: "0.6rem 0.75rem 0.6rem 1rem",
+            padding: "0.75rem 0.75rem 0.75rem 1rem",
             borderRadius: "0 4px 4px 0",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.45rem",
           }}>
-            AIが反復を担い、人間が本質を設計する。<br />
-            それがWeldexのコスト優位の源泉です。
-          </p>
+            {[
+              "AIが予約リマインドを自動送信 → 無断キャンセル率を削減",
+              "AIが営業メールを自動生成 → 月多数の企業に自動アプローチ",
+            ].map((text, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: "0.5rem",
+                fontSize: "clamp(0.78rem, 1.2vw, 0.875rem)",
+                color: "var(--gray)", lineHeight: 1.65,
+              }}>
+                <span style={{ color: "var(--gold)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
         </FadeIn>
       </div>
     </div>

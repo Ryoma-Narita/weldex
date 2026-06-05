@@ -133,6 +133,14 @@ nav a { font-weight: 500; }
   to   { transform: translateY(-18px); }
 }
 
+/* ── PCではハンバーガー非表示・デスクトップナビ表示 ── */
+.desktop-nav { display: none; }
+.hamburger-btn { display: flex; }
+@media (min-width: 768px) {
+  .desktop-nav { display: flex !important; }
+  .hamburger-btn { display: none !important; }
+}
+
 /* ── ハンバーガーメニュー アニメーション ── */
 @keyframes menuOpenAnim {
   from { opacity: 0; transform: translateY(-8px); }

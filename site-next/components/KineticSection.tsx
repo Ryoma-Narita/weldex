@@ -12,12 +12,12 @@ const LinkIcon     = () => <svg viewBox="0 0 24 24" fill="none" stroke="white" s
 const MobileIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
 
 const FLOAT_ICONS = [
-  { id: 'tl', Icon: MonitorIcon,   gradient: 'linear-gradient(135deg,#667eea,#764ba2)', left: '4vw',  top: '26vh',    delay: '0s',   dur: '6s',  hide: false },
-  { id: 'tr', Icon: LightningIcon, gradient: 'linear-gradient(135deg,#f093fb,#f5576c)', right: '4vw', top: '26vh',    delay: '1s',   dur: '5s',  hide: false },
-  { id: 'ml', Icon: ChatIcon,      gradient: 'linear-gradient(135deg,#4facfe,#00f2fe)', left: '2vw',  top: '44vh',    delay: '2s',   dur: '7s',  hide: true  },
-  { id: 'mr', Icon: ChartIcon,     gradient: 'linear-gradient(135deg,#43e97b,#38f9d7)', right: '2vw', top: '44vh',    delay: '0.5s', dur: '8s',  hide: true  },
-  { id: 'bl', Icon: LinkIcon,      gradient: 'linear-gradient(135deg,#fa709a,#fee140)', left: '4vw',  bottom: '12vh', delay: '1.5s', dur: '6s',  hide: false },
-  { id: 'br', Icon: MobileIcon,    gradient: 'linear-gradient(135deg,#a18cd1,#fbc2eb)', right: '4vw', bottom: '12vh', delay: '2.5s', dur: '7s',  hide: false },
+  { id: 'tl', Icon: MonitorIcon,   gradient: 'linear-gradient(135deg,#667eea,#764ba2)', left: 'clamp(1rem,4vw,5rem)',   top: 'clamp(5rem,20vh,12rem)',    delay: '0s',   dur: '6s',  hide: false },
+  { id: 'tr', Icon: LightningIcon, gradient: 'linear-gradient(135deg,#f093fb,#f5576c)', right: 'clamp(1rem,4vw,5rem)',  top: 'clamp(5rem,20vh,12rem)',    delay: '1s',   dur: '5s',  hide: false },
+  { id: 'ml', Icon: ChatIcon,      gradient: 'linear-gradient(135deg,#4facfe,#00f2fe)', left: 'clamp(0.75rem,2vw,3rem)', top: 'calc(50% - 32px)',         delay: '2s',   dur: '7s',  hide: true  },
+  { id: 'mr', Icon: ChartIcon,     gradient: 'linear-gradient(135deg,#43e97b,#38f9d7)', right: 'clamp(0.75rem,2vw,3rem)', top: 'calc(50% - 32px)',        delay: '0.5s', dur: '8s',  hide: true  },
+  { id: 'bl', Icon: LinkIcon,      gradient: 'linear-gradient(135deg,#fa709a,#fee140)', left: 'clamp(1rem,4vw,5rem)',   bottom: 'clamp(4rem,18vh,11rem)', delay: '1.5s', dur: '6s',  hide: false },
+  { id: 'br', Icon: MobileIcon,    gradient: 'linear-gradient(135deg,#a18cd1,#fbc2eb)', right: 'clamp(1rem,4vw,5rem)',  bottom: 'clamp(4rem,18vh,11rem)', delay: '2.5s', dur: '7s',  hide: false },
 ] as const
 
 // ─── ステージコンテンツ ───────────────────────────────────────────────────────
@@ -28,11 +28,11 @@ const STAGES = [
     style: 'headline' as const,
   },
   {
-    words: ['Weldexは顧客と企業・', 'システムとマーケティング、', '全てを一体化させ引き出します。'],
+    words: ['Weldexは顧客と企業・', 'システムとマーケティング、', '全てを一体化させ', 'お客様の事業のDXを促進させます。'],
     style: 'body' as const,
   },
   {
-    words: ['Weld（つなぐ・強固にする）+ dex（体系化）', '制作・システム・LINE・保守まで、', '一社で完結。'],
+    words: ['Weld（つなぐ・強固にする）+ dex（体系化）', '制作・システム・LINE連携・保守まで、', '全て一社で完結。'],
     style: 'small' as const,
   },
 ]

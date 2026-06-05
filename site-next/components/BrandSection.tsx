@@ -124,7 +124,7 @@ export default function BrandSection() {
           marginBottom: '1.25rem',
         }}>
           Weldexは顧客と企業・システムとマーケティング、<br />
-          全てを一体化させ引き出します。
+          全てを一体化させお客様の事業のDXを促進させます。
         </p>
 
         {/* 語源説明 */}
@@ -132,8 +132,8 @@ export default function BrandSection() {
           fontSize: '0.78rem', color: 'var(--light)',
           fontWeight: 300, lineHeight: 1.85,
         }}>
-          Weld（溶接する・強固につなぐ）＋ dex（体系化）<br />
-          制作・システム・LINE・保守まで、一社で完結。
+          Weld（つなぐ・強固にする）+ dex（体系化）<br />
+          制作・システム・LINE連携・保守まで、全て一社で完結。
         </p>
       </div>
 

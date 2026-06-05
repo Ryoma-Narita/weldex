@@ -61,7 +61,7 @@ export default function Header() {
         </Link>
 
         {/* デスクトップ nav */}
-        <ul style={{ gap: "2.5rem", listStyle: "none", margin: 0, padding: 0, alignItems: "center" }} className="hidden md:flex">
+        <ul style={{ gap: "2.5rem", listStyle: "none", margin: 0, padding: 0, alignItems: "center" }} className="desktop-nav">
           {DESKTOP_NAV.map(({ label, href }) => {
             const active = isActive(href);
             return (
@@ -94,7 +94,7 @@ export default function Header() {
         <button
           onClick={toggle}
           aria-label="メニュー"
-          className="flex md:hidden"
+          className="flex md:hidden hamburger-btn"
           style={{ flexDirection: "column", gap: 5, padding: 8, background: "none", border: "none", cursor: "pointer", alignItems: "flex-end" }}
         >
           {[22, 22, 16].map((w, i) => (
