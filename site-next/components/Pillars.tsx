@@ -54,8 +54,7 @@ function PillarCard({
         onMouseLeave={() => setHovered(false)}
         style={{
           aspectRatio: '1 / 1',
-          display: 'flex',
-          flexDirection: 'row',
+          position: 'relative',
           overflow: 'hidden',
           background: '#fff',
           border: '1px solid #e8eaf0',
@@ -67,16 +66,17 @@ function PillarCard({
           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         }}
       >
-        {/* ── 左：写真（48%）ストレートカット ── */}
+        {/* ── 左：写真（斜めクリップ）── */}
+        {/* position:absolute で画像コンテナとテキストコンテナを重ねない */}
         <div
           style={{
-            width: '48%',
-            flexShrink: 0,
-            position: 'relative',
+            position: 'absolute', left: 0, top: 0, bottom: 0,
+            width: '54%',
             overflow: 'hidden',
+            /* 上辺: 0→100%, 下辺: 0→66% — 右端が斜めになる */
+            clipPath: 'polygon(0 0, 100% 0, 66% 100%, 0 100%)',
             background: '#0c1a35',
-            /* GIG INC. 参考：画像と白エリアは直線で分かれる */
-            borderRight: '1px solid #e8eaf0',
+            zIndex: 2,
           }}
         >
           {!imgError ? (
@@ -107,7 +107,7 @@ function PillarCard({
             backdropFilter: 'blur(8px)',
             padding: '0.15rem 0.55rem',
             borderRadius: 3,
-            zIndex: 1,
+            zIndex: 3,
           }}>
             <span style={{
               fontFamily: 'var(--font-cormorant)',
@@ -119,13 +119,16 @@ function PillarCard({
           </div>
         </div>
 
-        {/* ── 右：テキスト（52%）── GIG INC. スタイル */}
+        {/* ── 右：テキスト（純白・画像コンテナの後ろに配置）── */}
+        {/* left: 54% = 画像コンテナ幅。テキストは常に白背景内に収まる */}
         <div style={{
-          flex: 1,
+          position: 'absolute',
+          left: '54%', right: 0, top: 0, bottom: 0,
           display: 'flex',
           flexDirection: 'column',
-          padding: '2rem 1.75rem',
+          padding: '2rem 1.5rem 2rem 1.75rem',
           background: '#fff',
+          zIndex: 1,
         }}>
 
           {/* ① カテゴリラベル（GIG INC. の "Web制作" 相当） */}
