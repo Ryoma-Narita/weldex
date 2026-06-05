@@ -20,6 +20,7 @@ from db.database import (
 from collectors.google_places import collect_targets
 from collectors.area_config import INDUSTRY_KEYWORDS, get_all_areas
 from analyzers.site_checker import check_site
+from mailers.templates import select_template_key
 
 
 def cmd_collect(args: argparse.Namespace) -> None:
@@ -65,9 +66,12 @@ def cmd_diagnose(args: argparse.Namespace) -> None:
     write_log("INFO", "diagnose", f"診断開始: {total}件")
 
     for i, target in enumerate(targets, 1):
-        name    = target["name"]
-        website = target.get("website", "")
-        result  = check_site(website)
+        name     = target["name"]
+        website  = target.get("website", "")
+        industry = target.get("industry", "")
+
+        # 業種情報を渡して診断（医療系判定に使用）
+        result = check_site(website, industry=industry)
 
         update_site_status(
             target["id"],
@@ -80,18 +84,22 @@ def cmd_diagnose(args: argparse.Namespace) -> None:
             has_contact_form   = result.get("has_contact_form"),
         )
 
-        flags = []
-        if result.get("has_line") is False:        flags.append("LINE×")
-        if result.get("has_online_booking") is False: flags.append("予約×")
-        if result.get("phone_only"):               flags.append("電話のみ")
-        if result.get("has_ssl") is False:         flags.append("SSL×")
-        if result.get("has_contact_form") is False:flags.append("フォーム×")
+        # 推奨テンプレートを決定してログに含める
+        tmpl = select_template_key(result["status"], industry)
 
-        flag_str = f" [{', '.join(flags)}]" if flags else ""
+        flags = []
+        if result.get("has_line") is False:           flags.append("LINE×")
+        if result.get("has_online_booking") is False: flags.append("予約×")
+        if result.get("phone_only"):                  flags.append("電話のみ")
+        if result.get("has_ssl") is False:            flags.append("SSL×")
+        if result.get("has_contact_form") is False:   flags.append("フォーム×")
+        if result.get("is_medical"):                  flags.append("医療系")
+
+        flag_str  = f" [{', '.join(flags)}]" if flags else ""
         email_str = f" / {result['email']}" if result.get("email") else ""
 
-        print(f"  [{i}/{total}] {name} → {result['status']}{flag_str} ({result['detail']}){email_str}")
-        write_log("INFO", "diagnose", f"{name}: {result['status']} / {result['detail']}{flag_str}")
+        print(f"  [{i}/{total}] {name} → {result['status']} [テンプレ:{tmpl}]{flag_str} ({result['detail']}){email_str}")
+        write_log("INFO", "diagnose", f"{name}: {result['status']} テンプレ:{tmpl} / {result['detail']}{flag_str}")
 
     stats = get_stats()
     print(f"\n[診断完了]")

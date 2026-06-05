@@ -1,6 +1,11 @@
 """
 outreach/collectors/google_places.py
 Google Places APIでターゲット企業を収集してDBに保存する
+
+改善点:
+- Details APIで types を取得し、業種を補正（dentist→歯科医院 等）
+- 大手チェーン・フランチャイズを除外（ターゲット外）
+- 収集ログの詳細化
 """
 import time
 import sys
@@ -14,6 +19,72 @@ from db.database import upsert_target, write_log
 
 PLACES_TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 PLACES_DETAILS_URL     = "https://maps.googleapis.com/maps/api/place/details/json"
+
+# ── Google Place types → 業種名マッピング ─────────────────────────────────────
+# Google が返す types フィールドから、Weldex の業種分類に補正する
+_TYPES_TO_INDUSTRY: dict[str, str] = {
+    "dentist":              "歯科医院",
+    "doctor":               "クリニック",
+    "hospital":             "クリニック",
+    "physiotherapist":      "整骨院",
+    "health":               "クリニック",
+    "beauty_salon":         "美容室",
+    "hair_care":            "美容室",
+    "lawyer":               "司法書士",
+    "accounting":           "税理士",
+    "general_contractor":   "建設会社",
+    "roofing_contractor":   "建設会社",
+    "painter":              "リフォーム",
+    "spa":                  "美容外科",
+}
+
+# ── 大手チェーン・フランチャイズ除外キーワード ────────────────────────────────
+# 個人・中小企業を狙うため、大手チェーンはスキップ
+_CHAIN_KEYWORDS = [
+    # 小売・薬局チェーン
+    "イオン", "アピタ", "ピアゴ", "ツルハ", "マツキヨ", "マツモトキヨシ",
+    "サンドラッグ", "ウエルシア", "カワチ", "スギ薬局", "コスモス薬品",
+    # 大手歯科チェーン
+    "デンタルクリニック東京", "医療法人社団", "医療法人財団",
+    # 大手美容チェーン
+    "ホットペッパービューティー", "アース", "アクシス", "アルテ",
+    # 大手建設
+    "大和ハウス", "積水ハウス", "ダイワハウス", "ミサワホーム",
+    "パナホーム", "へーベルハウス",
+    # フランチャイズ店（店舗数が多いため個別営業効果低）
+    "接骨院ひだまり", "ほねごり",
+]
+
+
+def _is_chain_store(name: str) -> bool:
+    """
+    大手チェーン・フランチャイズかどうかを名前で判定する。
+
+    Args:
+        name: 店舗・会社名
+
+    Returns:
+        True: 除外すべきチェーン店 / False: 対象として収集する
+    """
+    return any(kw in name for kw in _CHAIN_KEYWORDS)
+
+
+def _refine_industry(original: str, types: list[str]) -> str:
+    """
+    Google Places の types フィールドをもとに業種名を補正する。
+    元の業種がある程度正確な場合はそのまま返す。
+
+    Args:
+        original: 収集時に指定した業種名
+        types:    Google Places Details API の types フィールド
+
+    Returns:
+        補正後の業種名
+    """
+    for place_type in types:
+        if place_type in _TYPES_TO_INDUSTRY:
+            return _TYPES_TO_INDUSTRY[place_type]
+    return original
 
 
 def _fetch_places(query: str, page_token: str = None) -> dict:
@@ -46,7 +117,7 @@ def _fetch_places(query: str, page_token: str = None) -> dict:
 
 def _fetch_details(place_id: str) -> dict:
     """
-    Places Details APIで電話番号・URLを取得する。
+    Places Details APIで電話番号・URL・typesを取得する。
 
     Args:
         place_id: Google Place ID
@@ -56,7 +127,7 @@ def _fetch_details(place_id: str) -> dict:
     """
     params = {
         "place_id": place_id,
-        "fields":   "name,formatted_phone_number,website",
+        "fields":   "name,formatted_phone_number,website,types",
         "language": "ja",
         "key":      GOOGLE_PLACES_API_KEY,
     }
@@ -82,8 +153,9 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
     Returns:
         新規保存件数
     """
-    queries  = get_search_queries(industry, area)
-    saved    = 0
+    queries   = get_search_queries(industry, area)
+    saved     = 0
+    skipped   = 0
 
     for query in queries:
         if saved >= limit:
@@ -111,11 +183,21 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
                 name     = place.get("name", "")
                 address  = place.get("formatted_address", "")
 
-                # Details APIで電話・URLを取得
+                # 大手チェーン除外
+                if _is_chain_store(name):
+                    skipped += 1
+                    write_log("INFO", "collect", f"チェーン店除外: {name}")
+                    continue
+
+                # Details APIで電話・URL・typesを取得
                 time.sleep(COLLECT_INTERVAL_SEC)
                 details  = _fetch_details(place_id)
                 phone    = details.get("formatted_phone_number", "")
                 website  = details.get("website", "")
+                types    = details.get("types", [])
+
+                # typesをもとに業種名を補正
+                refined_industry = _refine_industry(industry, types)
 
                 target = {
                     "place_id": place_id,
@@ -123,14 +205,15 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
                     "address":  address,
                     "phone":    phone,
                     "website":  website,
-                    "industry": industry,
+                    "industry": refined_industry,
                     "area":     area,
                 }
 
                 is_new = upsert_target(target)
                 if is_new:
                     saved += 1
-                    write_log("INFO", "collect", f"保存: {name} ({address})")
+                    industry_note = f" [{refined_industry}]" if refined_industry != industry else ""
+                    write_log("INFO", "collect", f"保存: {name} ({address}){industry_note}")
                 else:
                     write_log("INFO", "collect", f"重複スキップ: {name}")
 
@@ -142,5 +225,8 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
             # next_page_token は2秒待たないと有効にならない
             time.sleep(2)
 
-    write_log("INFO", "collect", f"収集完了: {saved}件保存 ({industry} / {area})")
+    write_log(
+        "INFO", "collect",
+        f"収集完了: {saved}件保存 / {skipped}件チェーン除外 ({industry} / {area})"
+    )
     return saved
