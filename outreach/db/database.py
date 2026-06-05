@@ -56,7 +56,7 @@ def init_db() -> None:
                     has_contact_form   INTEGER DEFAULT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS settings (
+                CREATE TABLE IF NOT EXISTS outreach_settings (
                     key   TEXT PRIMARY KEY,
                     value TEXT
                 );
