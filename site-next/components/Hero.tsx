@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import FadeIn from "./FadeIn";
 
 export default function Hero() {
@@ -55,6 +56,21 @@ export default function Hero() {
             AIで、あなたの事業の<br />
             <em style={{ color: "var(--gold)", fontStyle: "italic" }}>本質</em>を支える。
           </h1>
+        </FadeIn>
+
+        <FadeIn delay={0.28}>
+          <Link href="/diagnosis" style={{
+            display: "inline-flex", alignItems: "center", gap: "0.5rem",
+            background: "var(--gold)", color: "var(--navy)",
+            padding: "0.55rem 1.1rem", fontSize: "0.75rem", fontWeight: 700,
+            textDecoration: "none", letterSpacing: "0.06em", marginBottom: "1.5rem",
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            サイトを無料診断する →
+          </Link>
         </FadeIn>
 
         <FadeIn delay={0.35}>
