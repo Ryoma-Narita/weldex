@@ -78,6 +78,26 @@ def index(auth=Depends(require_auth)):
         return HTMLResponse("<h1>index.html が見つかりません</h1>", status_code=404)
 
 
+@app.get("/version")
+def version():
+    """デプロイバージョン確認用（認証不要）。"""
+    import hashlib
+    html_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
+    try:
+        with open(html_path, encoding="utf-8") as f:
+            content = f.read()
+        h = hashlib.md5(content.encode()).hexdigest()[:8]
+        has_rediagnose = "btn-rediagnose" in content
+        return {
+            "html_hash":       h,
+            "has_rediagnose":  has_rediagnose,
+            "git_commit":      os.environ.get("RAILWAY_GIT_COMMIT_SHA", "unknown")[:8],
+            "deploy_id":       os.environ.get("RAILWAY_DEPLOYMENT_ID", "unknown"),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.get("/api/stats")
 def api_stats(auth=Depends(require_auth)):
     """収集・診断・送信の統計情報をまとめて返す。"""
