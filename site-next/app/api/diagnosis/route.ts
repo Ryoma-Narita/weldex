@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
     clearTimeout(timer);
 
     if (!psiRes.ok) {
-      const body = await psiRes.json().catch(() => ({}));
-      const msg = (body as any)?.error?.message ?? "診断できませんでした。URLを確認してください。";
+      const body = await psiRes.json().catch(() => ({})) as { error?: { message?: string } };
+      const msg = body?.error?.message ?? "診断できませんでした。URLを確認してください。";
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 

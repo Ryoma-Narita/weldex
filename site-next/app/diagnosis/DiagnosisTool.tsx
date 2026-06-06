@@ -96,7 +96,6 @@ export default function DiagnosisTool() {
 
   const g = result ? grade(result.scores) : null;
   const criticals = result?.issues.filter(i => i.severity === "critical").length ?? 0;
-  const warnings  = result?.issues.filter(i => i.severity === "warning").length ?? 0;
 
   return (
     <main style={{ paddingTop: "4.5rem", overflow: "hidden" }}>
