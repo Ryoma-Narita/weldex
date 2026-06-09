@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useState } from 'react'
 import FadeIn from './FadeIn'
 
@@ -11,6 +12,7 @@ const pillars = [
     title: 'WEBサイト制作',
     desc: '古いサイト・スマホ非対応・検索に出てこない。AIと人の目で解決し、顧客・取引先に信頼されるサイトをつくります。',
     img: '/pillars/web.png',
+    href: '/services/web',
   },
   {
     num: '02',
@@ -18,6 +20,7 @@ const pillars = [
     title: 'LINE予約・DX導入',
     desc: '電話予約の手間、予約漏れ、無断キャンセル。LINE一本で解決できる仕組みを、業務フローに合わせて設計・構築します。',
     img: '/pillars/line.png',
+    href: '/services/line',
   },
   {
     num: '03',
@@ -25,6 +28,7 @@ const pillars = [
     title: 'システム開発',
     desc: '予約管理・顧客管理・業務自動化など、貴事業に合わせたシステムをゼロから構築。AIで低コスト実現します。',
     img: '/pillars/system.png',
+    href: '/services/crm',
   },
   {
     num: '04',
@@ -32,6 +36,7 @@ const pillars = [
     title: '保守・運用サポート',
     desc: '作って終わりにしません。公開後の更新・改善・トラブル対応まで、まるごとお任せいただけます。',
     img: '/pillars/support.png',
+    href: '/services',
   },
 ]
 
@@ -49,12 +54,15 @@ function PillarCard({
 
   return (
     <FadeIn delay={delay} className={offset ? 'pillars-offset' : ''}>
-      <div
+      <Link
+        href={p.href}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          /* 横長 5:3 ── 写真が十分に見える・正方形より幅広 */
-          aspectRatio: '5 / 3',
+          textDecoration: 'none',
+          display: 'block',
+          /* 高さは右テキスト量で決まる（はみ出し防止）・写真は絶対配置で追従 */
+          minHeight: 200,
           position: 'relative',
           overflow: 'hidden',
           background: '#fff',
@@ -119,15 +127,16 @@ function PillarCard({
           </div>
         </div>
 
-        {/* ── 右：テキスト（純白・60%以降）── */}
+        {/* ── 右：テキスト（純白・60%以降／高さを決める）── */}
         <div style={{
-          position: 'absolute',
-          left: '60%', right: 0, top: 0, bottom: 0,
+          marginLeft: '60%',
+          minHeight: 200,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: '1.1rem 1.4rem 1.1rem 1.5rem',
+          padding: '1.4rem 1.4rem 1.4rem 1.5rem',
           background: '#fff',
+          position: 'relative',
           zIndex: 1,
         }}>
 
@@ -190,7 +199,7 @@ function PillarCard({
             </div>
           </div>
         </div>
-      </div>
+      </Link>
     </FadeIn>
   )
 }

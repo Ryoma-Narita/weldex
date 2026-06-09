@@ -12,7 +12,7 @@ const pains = [
   {
     emoji: "💆‍♀️",
     role: "サロンオーナー",
-    bubble: "診療中も電話が鳴り続けて、集中できない日が続いている。。",
+    bubble: "施術中も予約の電話が鳴り続けて、対応に追われてしまう。。",
     color: "#8b5cf6",
   },
   {
@@ -236,8 +236,8 @@ export default function PainPoints() {
                   maxWidth: 260,
                   boxShadow: "0 2px 8px rgba(12,26,53,0.18)",
                 }}>
-                  全て、Weldexが解決できます。<br />
-                  お気軽にご相談ください。
+                  集客・予約・コスト、すべて一社で。<br />
+                  AI活用で、低コストに解決します。
                 </div>
               </div>
             )}

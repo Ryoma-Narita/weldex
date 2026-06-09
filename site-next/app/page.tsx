@@ -4,6 +4,7 @@ import Hero from "@/components/Hero";
 import PainPoints from "@/components/PainPoints";
 import KineticSection from "@/components/KineticSection";
 import Pillars from "@/components/Pillars";
+import PriceTeaser from "@/components/PriceTeaser";
 import Process from "@/components/Process";
 import CTABand from "@/components/CTABand";
 
@@ -22,6 +23,7 @@ export default function Home() {
       <KineticSection />
       <PainPoints />
       <Pillars />
+      <PriceTeaser />
       <Process />
       <CTABand />
     </main>
