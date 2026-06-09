@@ -53,7 +53,8 @@ def init_db() -> None:
                     has_online_booking INTEGER DEFAULT NULL,
                     phone_only         INTEGER DEFAULT NULL,
                     has_ssl            INTEGER DEFAULT NULL,
-                    has_contact_form   INTEGER DEFAULT NULL
+                    has_contact_form   INTEGER DEFAULT NULL,
+                    contact_form_url   TEXT DEFAULT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS outreach_settings (
@@ -132,6 +133,10 @@ def init_db() -> None:
                     created_at      TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Tokyo')
                 );
             """)
+            # 既存DBへのマイグレーション（CREATE IF NOT EXISTS では列追加されないため）
+            cur.execute(
+                "ALTER TABLE targets ADD COLUMN IF NOT EXISTS contact_form_url TEXT DEFAULT NULL"
+            )
         conn.commit()
 
 
@@ -217,6 +222,7 @@ def update_site_status(
     phone_only=None,
     has_ssl=None,
     has_contact_form=None,
+    contact_form_url: str = None,
 ) -> None:
     """サイト診断結果をターゲットに反映する。"""
     def to_int(v):
@@ -233,15 +239,36 @@ def update_site_status(
                     has_online_booking = %s,
                     phone_only         = %s,
                     has_ssl            = %s,
-                    has_contact_form   = %s
+                    has_contact_form   = %s,
+                    contact_form_url   = %s
                 WHERE id = %s
             """, (
                 status, email,
                 to_int(has_line), to_int(has_online_booking),
                 to_int(phone_only), to_int(has_ssl), to_int(has_contact_form),
+                contact_form_url,
                 target_id,
             ))
         conn.commit()
+
+
+def target_exists(place_id: str) -> bool:
+    """
+    place_id が既にDBに存在するか判定する。
+    収集時に Details API を叩く前の重複チェックに使い、API課金の無駄打ちを防ぐ。
+
+    Args:
+        place_id: Google Place ID
+
+    Returns:
+        True=既存（収集済み） / False=未収集
+    """
+    if not place_id:
+        return False
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM targets WHERE place_id = %s LIMIT 1", (place_id,))
+            return cur.fetchone() is not None
 
 
 def is_unsubscribed(email: str) -> bool:
@@ -388,6 +415,12 @@ def get_stats() -> dict:
             phone_only_fl = count("SELECT COUNT(*) FROM targets WHERE phone_only=1")
             no_ssl        = count("SELECT COUNT(*) FROM targets WHERE has_ssl=0")
             no_form       = count("SELECT COUNT(*) FROM targets WHERE has_contact_form=0")
+            with_form     = count("SELECT COUNT(*) FROM targets WHERE contact_form_url IS NOT NULL AND contact_form_url != ''")
+            # メール or フォームでアプローチ可能な件数（接触機会の総量）
+            approachable  = count(
+                "SELECT COUNT(*) FROM targets WHERE (email IS NOT NULL AND email != '')"
+                " OR (contact_form_url IS NOT NULL AND contact_form_url != '')"
+            )
 
     return {
         "total": total, "unchecked": unchecked,
@@ -397,6 +430,7 @@ def get_stats() -> dict:
         "no_line": no_line, "no_booking": no_booking,
         "phone_only_flag": phone_only_fl,
         "no_ssl": no_ssl, "no_form": no_form,
+        "with_form": with_form, "approachable": approachable,
     }
 
 

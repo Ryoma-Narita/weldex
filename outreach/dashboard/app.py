@@ -563,9 +563,11 @@ async def api_diagnose(
         write_log("INFO", "diagnose", f"[dashboard] 診断開始: {len(targets)}件")
 
         results = {"none": 0, "old": 0, "no_mobile": 0, "phone_only": 0, "ok": 0, "error": 0}
+        email_found = 0   # このバッチで新たにメールが取れた件数
+        form_found  = 0   # このバッチでフォームURLが取れた件数
 
         for t in targets:
-            r = await asyncio.to_thread(check_site, t["website"] or "")
+            r = await asyncio.to_thread(check_site, t["website"] or "", t.get("industry") or "")
             update_site_status(
                 t["id"],
                 r.get("status", "error"),
@@ -575,13 +577,22 @@ async def api_diagnose(
                 phone_only         = r.get("phone_only"),
                 has_ssl            = r.get("has_ssl"),
                 has_contact_form   = r.get("has_contact_form"),
+                contact_form_url   = r.get("contact_form_url"),
             )
             st = r.get("status", "error")
             results[st] = results.get(st, 0) + 1
+            if r.get("email"):            email_found += 1
+            if r.get("contact_form_url"): form_found  += 1
 
         stats = get_stats()
-        write_log("INFO", "diagnose", f"[dashboard] 診断完了: {len(targets)}件")
-        return {"ok": True, "diagnosed": len(targets), "results": results, "stats": stats}
+        write_log(
+            "INFO", "diagnose",
+            f"[dashboard] 診断完了: {len(targets)}件 / メール{email_found}件 / フォーム{form_found}件"
+        )
+        return {
+            "ok": True, "diagnosed": len(targets), "results": results,
+            "email_found": email_found, "form_found": form_found, "stats": stats,
+        }
     except Exception as e:
         write_log("ERROR", "diagnose", f"[dashboard] 診断エラー: {e}")
         return {"ok": False, "error": str(e)}

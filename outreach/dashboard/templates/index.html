@@ -338,6 +338,30 @@
         <button class="btn secondary" onclick="runDiagnoseOnly()" id="btn-diagnose">診断のみ</button>
       </div>
       <div id="op-status" style="margin-top:0.5rem;font-size:0.8rem;color:var(--gray);min-height:1.2em;"></div>
+
+      <!-- 今回の収集・診断結果パネル -->
+      <div id="run-result-panel" style="display:none;margin-top:0.8rem;border:1px solid var(--border);background:var(--off);padding:0.8rem 1rem;">
+        <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;color:var(--gold);text-transform:uppercase;margin-bottom:0.7rem;">今回の結果</div>
+        <div style="display:flex;flex-wrap:wrap;gap:1.6rem;margin-bottom:0.6rem;">
+          <div id="rr-collected-wrap" style="display:none;">
+            <div style="font-size:1.5rem;font-weight:800;color:var(--navy);" id="rr-collected">-</div>
+            <div style="font-size:0.68rem;color:var(--gray);">収集</div>
+          </div>
+          <div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--navy);" id="rr-diagnosed">-</div>
+            <div style="font-size:0.68rem;color:var(--gray);">診断</div>
+          </div>
+          <div>
+            <div style="font-size:1.5rem;font-weight:800;color:#3b5bdb;" id="rr-email">-</div>
+            <div style="font-size:0.68rem;color:var(--gray);">メール発見</div>
+          </div>
+          <div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--green);" id="rr-form">-</div>
+            <div style="font-size:0.68rem;color:var(--gray);">フォーム発見</div>
+          </div>
+        </div>
+        <div id="rr-breakdown" style="font-size:0.74rem;color:var(--gray);border-top:1px solid var(--border);padding-top:0.5rem;"></div>
+      </div>
     </div>
 
     <div class="kpi-label">収集・診断</div>
@@ -349,6 +373,7 @@
       <div class="stat-card"><div class="stat-label">電話のみ</div><div class="stat-value" style="color:var(--purple)" id="s-phone">-</div></div>
       <div class="stat-card"><div class="stat-label">問題なし</div><div class="stat-value green" id="s-ok">-</div></div>
       <div class="stat-card"><div class="stat-label">メールあり</div><div class="stat-value blue" id="s-email">-</div></div>
+      <div class="stat-card"><div class="stat-label">アプローチ可能<span style="font-weight:400;color:var(--light);">（ﾒｰﾙ+ﾌｫｰﾑ）</span></div><div class="stat-value green" id="s-approachable">-</div></div>
       <div class="stat-card"><div class="stat-label">送信候補</div><div class="stat-value" id="s-candidate">-</div></div>
     </div>
     <div class="kpi-label">送信 KPI</div>
@@ -380,12 +405,17 @@
     </select>
     <button class="btn" onclick="loadTargets(1)">検索</button>
     <button class="btn secondary" onclick="resetFilters()">リセット</button>
-    <button class="btn secondary" id="btn-rediagnose" onclick="runReDiagnoseFromList()" style="background:#f0f4ff;color:#3b5bdb;border:1px solid #c5d0e6;">
-      ↻ 未診断を再診断
-    </button>
-    <span id="rediagnose-status" style="font-size:0.75rem;color:var(--gray);"></span>
     <button class="btn secondary" onclick="openTargetModal()" style="margin-left:auto;">＋ 手動追加</button>
     <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:0.5rem;"></span>
+  </div>
+  <!-- 再診断バー（ツールバー直下・独立行） -->
+  <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1rem;background:#f0f4ff;border-bottom:1px solid #c5d0e6;">
+    <button id="btn-rediagnose" onclick="runReDiagnoseFromList()"
+      style="padding:0.35rem 1rem;background:#3b5bdb;color:#fff;border:none;font-size:0.78rem;font-weight:600;cursor:pointer;border-radius:3px;white-space:nowrap;">
+      ↻ 未診断を一括再診断
+    </button>
+    <span id="rediagnose-status" style="font-size:0.75rem;color:#3b5bdb;"></span>
+    <span style="font-size:0.72rem;color:#64748b;margin-left:auto;">診断済み以外のターゲットを一括でサイト診断します</span>
   </div>
 
   <div class="table-wrap">
@@ -394,7 +424,7 @@
         <tr>
           <th style="min-width:160px;">店舗名 / 業種・エリア</th>
           <th style="min-width:120px;">診断 / 営業ポイント</th>
-          <th style="min-width:130px;">電話 / メール</th>
+          <th style="min-width:130px;">電話 / メール・フォーム</th>
           <th style="min-width:140px;">アクション</th>
         </tr>
       </thead>
@@ -846,6 +876,7 @@
       document.getElementById('s-phone').textContent     = d.phone_only;
       document.getElementById('s-ok').textContent        = d.ok;
       document.getElementById('s-email').textContent     = d.with_email;
+      document.getElementById('s-approachable').textContent = d.approachable ?? '-';
       document.getElementById('s-candidate').textContent = d.none + d.old + d.no_mobile + d.phone_only;
       document.getElementById('s-queued').textContent    = d.queued  ?? '-';
       document.getElementById('s-today').textContent     = d.today   ?? '-';
@@ -965,7 +996,14 @@
             ${t.email
               ? `<div style="margin-top:3px;"><a href="mailto:${esc(t.email)}" style="color:var(--blue);font-size:0.72rem;text-decoration:none;">
                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>${esc(t.email)}</a></div>`
-              : `<div style="font-size:0.68rem;color:var(--light);margin-top:2px;">メールなし</div>`}
+              : ''}
+            ${t.contact_form_url
+              ? `<div style="margin-top:3px;"><a href="${esc(t.contact_form_url)}" target="_blank" rel="noopener" title="問い合わせフォームを開く" style="color:var(--green);font-size:0.72rem;text-decoration:none;">
+                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>フォーム ↗</a></div>`
+              : ''}
+            ${(!t.email && !t.contact_form_url)
+              ? `<div style="font-size:0.68rem;color:var(--light);margin-top:2px;">メール・フォームなし</div>`
+              : ''}
           </td>
           <!-- 列4: アクション -->
           <td>
@@ -1791,8 +1829,8 @@
         status.style.color = 'var(--gray)';
         status.textContent = `✓ ${d.added}件収集完了（本日 ${d.today}件）。診断を開始します...`;
         loadStats(); loadQuota();
-        // 収集後に自動で診断を実行
-        await _runDiagnose(status, btn);
+        // 収集後に自動で診断を実行（今回の収集件数をパネルに渡す）
+        await _runDiagnose(status, btn, d.added);
       } else if (d.locked) {
         status.style.color = 'var(--red)';
         status.textContent = d.error;
@@ -1810,10 +1848,31 @@
     }
   }
 
+  // 今回の収集・診断結果パネルを描画する
+  function renderRunResult({ collected, diagnosed, emailFound, formFound, totals }) {
+    const panel = document.getElementById('run-result-panel');
+    const colWrap = document.getElementById('rr-collected-wrap');
+    if (collected != null) {
+      document.getElementById('rr-collected').textContent = collected;
+      colWrap.style.display = '';
+    } else {
+      colWrap.style.display = 'none';
+    }
+    document.getElementById('rr-diagnosed').textContent = diagnosed;
+    document.getElementById('rr-email').textContent     = emailFound;
+    document.getElementById('rr-form').textContent      = formFound;
+    let bd = `サイトなし ${totals.none} / 古い ${totals.old} / スマホ非対応 ${totals.no_mobile} / 電話のみ ${totals.phone_only} / 問題なし ${totals.ok}`;
+    if (totals.error) bd += ` / エラー ${totals.error}`;
+    document.getElementById('rr-breakdown').textContent = bd;
+    panel.style.display = '';
+  }
+
   // 診断を20件ずつバッチ実行（Railwayの30秒タイムアウト対策）
-  async function _runDiagnose(status, btn) {
+  async function _runDiagnose(status, btn, collectedCount = null) {
     const BATCH = 20;
     let totalDiagnosed = 0;
+    let emailFound = 0;
+    let formFound  = 0;
     const totals = { none:0, old:0, no_mobile:0, phone_only:0, ok:0, error:0 };
 
     try {
@@ -1846,6 +1905,8 @@
         const r = d.results || {};
         for (const k of Object.keys(totals)) totals[k] += (r[k] || 0);
         totalDiagnosed += d.diagnosed;
+        emailFound     += (d.email_found || 0);
+        formFound      += (d.form_found  || 0);
         loadStats();
 
         // 未診断がなくなったら終了
@@ -1854,10 +1915,19 @@
 
       if (totalDiagnosed > 0) {
         status.style.color = 'var(--green)';
-        status.textContent = `✓ 診断完了 ${totalDiagnosed}件 — サイトなし:${totals.none} / 古い:${totals.old} / スマホ非対応:${totals.no_mobile} / 問題なし:${totals.ok}`;
+        status.textContent = `✓ 診断完了 ${totalDiagnosed}件（メール ${emailFound} / フォーム ${formFound}）`;
       } else {
         status.style.color = 'var(--green)';
         status.textContent = '✓ 未診断のターゲットはありません';
+      }
+
+      // 今回の結果パネルを表示（収集なしの「診断のみ」でも診断分は表示）
+      if (totalDiagnosed > 0 || collectedCount != null) {
+        renderRunResult({
+          collected: collectedCount,
+          diagnosed: totalDiagnosed,
+          emailFound, formFound, totals,
+        });
       }
       loadStats();
     } catch(e) {

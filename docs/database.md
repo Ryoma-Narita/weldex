@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS targets (
     created_at   TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
+-- ※ 実スキーマ（PostgreSQL / outreach/db/database.py）には診断フラグ列も存在する：
+--   has_line / has_online_booking / phone_only / has_ssl / has_contact_form
+--   contact_form_url TEXT  -- メールが取れない相手の「第2のアプローチ経路」（フォームのあるページURL）
+--                          -- 2026-06-09 追加。メール無しでもフォームでアプローチ可能件数を増やす目的
+
 -- インデックス（検索高速化）
 CREATE INDEX IF NOT EXISTS idx_targets_status   ON targets(site_status);
 CREATE INDEX IF NOT EXISTS idx_targets_industry ON targets(industry);

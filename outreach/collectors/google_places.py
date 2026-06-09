@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import requests
 from config import GOOGLE_PLACES_API_KEY, COLLECT_INTERVAL_SEC
 from collectors.area_config import get_search_queries
-from db.database import upsert_target, write_log
+from db.database import upsert_target, write_log, target_exists
 
 PLACES_TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 PLACES_DETAILS_URL     = "https://maps.googleapis.com/maps/api/place/details/json"
@@ -153,9 +153,10 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
     Returns:
         新規保存件数
     """
-    queries   = get_search_queries(industry, area)
-    saved     = 0
-    skipped   = 0
+    queries     = get_search_queries(industry, area)
+    saved       = 0
+    skipped     = 0   # 大手チェーン除外
+    dup_skipped = 0   # 既存place_id（Details課金を節約）
 
     for query in queries:
         if saved >= limit:
@@ -187,6 +188,12 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
                 if _is_chain_store(name):
                     skipped += 1
                     write_log("INFO", "collect", f"チェーン店除外: {name}")
+                    continue
+
+                # 既存place_idはDetailsを叩く前にスキップ（API課金の無駄打ち防止）
+                if target_exists(place_id):
+                    dup_skipped += 1
+                    write_log("INFO", "collect", f"既存スキップ（Details節約）: {name}")
                     continue
 
                 # Details APIで電話・URL・typesを取得
@@ -227,6 +234,7 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
 
     write_log(
         "INFO", "collect",
-        f"収集完了: {saved}件保存 / {skipped}件チェーン除外 ({industry} / {area})"
+        f"収集完了: {saved}件保存 / {skipped}件チェーン除外 / "
+        f"{dup_skipped}件既存スキップ（Details節約）({industry} / {area})"
     )
     return saved

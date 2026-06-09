@@ -23,7 +23,8 @@ import chardet
 from urllib.parse import urljoin, urlparse
 from datetime import datetime
 from config import REQUEST_TIMEOUT_SEC
-from analyzers.email_extractor import extract_email_with_contact_page
+from analyzers import robots
+from analyzers.email_extractor import find_contacts
 
 # ── 閾値 ─────────────────────────────────────────────────────────────────────
 # 10年以上更新されていないサイトを「古い」と判定
@@ -53,13 +54,6 @@ LINE_KEYWORDS = [
     'line@', 'lineで予約', 'lineから予約',
 ]
 
-# ── フォーム検出キーワード ────────────────────────────────────────────────────
-FORM_KEYWORDS = [
-    '<form', 'お問い合わせフォーム', 'contact form',
-    'formspree', 'googleフォーム', 'typeform',
-    'お問い合わせはこちら', '問い合わせフォーム',
-]
-
 # ── 古い技術シグナル ──────────────────────────────────────────────────────────
 # Flash
 FLASH_PATTERNS = ['.swf', 'shockwave-flash', 'application/x-shockwave-flash']
@@ -79,24 +73,6 @@ HEADERS = {
 
 
 # ── ユーティリティ ────────────────────────────────────────────────────────────
-
-def _check_robots(base_url: str) -> bool:
-    """robots.txtでクロールが許可されているか確認する。"""
-    try:
-        res = requests.get(
-            urljoin(base_url, '/robots.txt'),
-            timeout=4, headers=HEADERS
-        )
-        if res.status_code != 200:
-            return True
-        for line in res.text.splitlines():
-            line = line.strip().lower()
-            if line.startswith('disallow:') and line.split(':', 1)[1].strip() == '/':
-                return False
-        return True
-    except Exception:
-        return True
-
 
 def _decode_html(content: bytes) -> str:
     """文字コードを自動判定してHTMLをデコードする（Shift-JIS対応）。"""
@@ -169,33 +145,6 @@ def _detect_online_booking(html_lower: str) -> bool:
     return any(kw in html_lower for kw in BOOKING_KEYWORDS)
 
 
-def _detect_contact_form(html: str, url: str) -> bool:
-    """
-    お問い合わせフォームがあるか確認する。
-    トップページになければ /contact 等を巡回する。
-    """
-    html_lower = html.lower()
-    if any(kw.lower() in html_lower for kw in FORM_KEYWORDS):
-        return True
-
-    if not url:
-        return False
-    base = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-    for path in ['/contact', '/inquiry', '/form', '/contact.html', '/inquiry.html']:
-        try:
-            res = requests.get(
-                urljoin(base, path), timeout=5,
-                headers=HEADERS, allow_redirects=True
-            )
-            if res.status_code == 200:
-                contact_html = _decode_html(res.content).lower()
-                if '<form' in contact_html or 'formspree' in contact_html:
-                    return True
-        except Exception:
-            continue
-    return False
-
-
 def _detect_old_tech(html: str, html_lower: str) -> tuple[bool, str]:
     """
     古い技術を使っているか検出する。
@@ -265,6 +214,7 @@ def check_site(url: str, industry: str = "") -> dict:
         "phone_only": False,
         "has_ssl": False,
         "has_contact_form": None,
+        "contact_form_url": None,
         "is_medical": medical,
     }
 
@@ -275,8 +225,8 @@ def check_site(url: str, industry: str = "") -> dict:
     # SSL確認
     result["has_ssl"] = url.startswith("https://")
 
-    # robots.txtチェック
-    if not _check_robots(url):
+    # robots.txtチェック（パス単位で尊重）
+    if not robots.is_allowed(url):
         result["status"] = "error"
         result["detail"] = "robots.txtにより収集禁止"
         return result
@@ -306,13 +256,16 @@ def check_site(url: str, industry: str = "") -> dict:
     # ── 詳細診断フラグ ────────────────────────────────────────────────────────
     result["has_line"]            = _detect_line(html_lower)
     result["has_online_booking"]  = _detect_online_booking(html_lower)
-    result["has_contact_form"]    = _detect_contact_form(html, url)
+
+    # メール＋問い合わせフォームを1回の巡回でまとめて取得（robots尊重）
+    contacts = find_contacts(html, url)
+    result["email"]            = contacts["email"]
+    result["contact_form_url"] = contacts["contact_form_url"]
+    result["has_contact_form"] = contacts["contact_form_url"] is not None
+
     result["phone_only"]          = (
         not result["has_online_booking"] and not result["has_contact_form"]
     )
-
-    # メールアドレス抽出（contactページも巡回）
-    result["email"] = extract_email_with_contact_page(html, url)
 
     # スマホ対応確認
     has_viewport    = bool(re.search(r'<meta[^>]+name=["\']viewport["\']', html, re.IGNORECASE))

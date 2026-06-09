@@ -229,6 +229,10 @@ weldex/
 # 2026-05-09 Phase1実装完了
 # 2026-06-01 Railway本番デプロイ・PostgreSQL移行完了
 # 2026-06-05 診断ロジック強化・Claude AI営業メール生成・送信モード切り替え追加
+# 2026-06-09 メール発見ロジック強化（本物の問い合わせリンク巡回・難読化/JSON-LD抽出・取得統合）
+#            フォームを第2のアプローチ経路化（targets.contact_form_url 追加）
+#            Details前のplace_id重複チェックでAPI課金節約・robots.txtをパス単位で遵守（analyzers/robots.py）
+#            ※ Google Places ToS のデータ保存制限は要判断 → docs/decisions.md「RISK」参照
 本番URL：https://weldex-production.up.railway.app
 ```
 
