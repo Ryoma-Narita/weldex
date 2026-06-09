@@ -541,6 +541,11 @@ async def api_collect(
         }
     except Exception as e:
         write_log("ERROR", "collect", f"[dashboard] 収集エラー: {e}")
+        try:
+            from notify import push as notify_push
+            notify_push(f"💥 収集処理エラー\n{type(e).__name__}: {str(e)[:160]}")
+        except Exception:
+            pass
         return {"ok": False, "error": str(e)}
 
 
@@ -610,6 +615,11 @@ async def api_diagnose(
         }
     except Exception as e:
         write_log("ERROR", "diagnose", f"[dashboard] 診断エラー: {e}")
+        try:
+            from notify import push as notify_push
+            notify_push(f"💥 診断処理エラー\n{type(e).__name__}: {str(e)[:160]}")
+        except Exception:
+            pass
         return {"ok": False, "error": str(e)}
 
 

@@ -58,7 +58,15 @@ def send_confirmation(reservation: dict) -> bool:
 
 {APP_NAME}
 """
-    return _send(email, subject, body)
+    ok = _send(email, subject, body)
+    # SendGrid設定済みなのに失敗＝患者に確認が届かない。重要 → LINE通知
+    # （SendGrid未設定の運用ではスパムにならないよう APIキー有無でガード）
+    if not ok and SENDGRID_API_KEY:
+        push(
+            f"⚠️ {APP_NAME}\n確認メール送信失敗\n"
+            f"{reservation['name']} 様 / {reservation['date']} {reservation['time']}"
+        )
+    return ok
 
 
 def send_reminder(reservation: dict) -> bool:
@@ -108,8 +116,8 @@ def send_admin_notification(reservation: dict) -> bool:
 管理画面：{APP_URL}/admin/
 """
     ok = _send(ADMIN_EMAIL, subject, body)
-    if not ok:
-        push(f"⚠️ {APP_NAME}\nメール送信失敗（新規予約）\n{reservation['name']} 様")
+    if not ok and SENDGRID_API_KEY:
+        push(f"⚠️ {APP_NAME}\n管理者メール送信失敗（新規予約）\n{reservation['name']} 様")
     return ok
 
 
@@ -131,4 +139,7 @@ def send_cancel_notification(reservation: dict) -> bool:
 お名前　：{reservation['name']}
 電話番号：{reservation.get('phone', '')}
 """
-    return _send(ADMIN_EMAIL, subject, body)
+    ok = _send(ADMIN_EMAIL, subject, body)
+    if not ok and SENDGRID_API_KEY:
+        push(f"⚠️ {APP_NAME}\n管理者メール送信失敗（キャンセル）\n{reservation['name']} 様")
+    return ok

@@ -138,4 +138,14 @@ def check_replies() -> int:
 
     except Exception as e:
         write_log("ERROR", "reply", f"返信チェックエラー: {e}")
+        # 返信検知が止まる＝商談機会を逃す。認証切れ(invalid_grant)等は重要 → LINE通知
+        try:
+            from notify import push as notify_push
+            notify_push(
+                f"📭 Gmail返信チェック失敗\n"
+                f"{type(e).__name__}: {str(e)[:160]}\n"
+                f"認証切れ(refresh_token失効)の可能性。返信検知が止まっています。"
+            )
+        except Exception:
+            pass
         return 0

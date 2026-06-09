@@ -23,6 +23,7 @@ from db.database import (
 from mailers.templates import get_template
 from mailers.sender import send_email
 from replies.checker import check_replies
+from notify import push as notify_push
 from config import DAILY_SEND_LIMIT
 
 # 送信間隔（秒）：スパム判定回避
@@ -105,6 +106,12 @@ def cmd_run() -> None:
 
     print(f"\n[送信完了] 成功: {sent}件 / 失敗: {failed}件")
     write_log("INFO", "send", f"送信完了: 成功{sent}件 失敗{failed}件")
+    # 1件も送れず全て失敗＝SendGridキー無効/サスペンド等の可能性 → 重要 → LINE通知
+    if sent == 0 and failed > 0:
+        notify_push(
+            f"📨 営業メール送信が全件失敗\n"
+            f"{failed}件すべて失敗。SendGridキー無効・送信停止の可能性。"
+        )
 
 
 def cmd_reply() -> None:
@@ -210,18 +217,28 @@ def main() -> None:
 
     init_db()
 
-    if args.command == "build":
-        cmd_build()
-    elif args.command == "run":
-        cmd_run()
-    elif args.command == "reply":
-        cmd_reply()
-    elif args.command == "auto":
-        cmd_auto()
-    elif args.command == "collect":
-        cmd_collect_and_prepare(args.industry, args.area, args.limit)
-    else:
-        parser.print_help()
+    try:
+        if args.command == "build":
+            cmd_build()
+        elif args.command == "run":
+            cmd_run()
+        elif args.command == "reply":
+            cmd_reply()
+        elif args.command == "auto":
+            cmd_auto()
+        elif args.command == "collect":
+            cmd_collect_and_prepare(args.industry, args.area, args.limit)
+        else:
+            parser.print_help()
+    except Exception as e:
+        # バッチが途中でクラッシュ＝自動化が無言で停止する。重要 → LINE通知
+        write_log("ERROR", "system", f"scheduler {args.command} クラッシュ: {e}")
+        notify_push(
+            f"💥 営業バッチ異常終了\n"
+            f"コマンド: {args.command}\n"
+            f"{type(e).__name__}: {str(e)[:160]}"
+        )
+        raise
 
 
 if __name__ == "__main__":

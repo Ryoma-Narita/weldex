@@ -16,6 +16,7 @@ import requests
 from config import GOOGLE_PLACES_API_KEY, COLLECT_INTERVAL_SEC
 from collectors.area_config import get_search_queries
 from db.database import upsert_target, write_log, target_exists
+from notify import push as notify_push
 
 PLACES_TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 PLACES_DETAILS_URL     = "https://maps.googleapis.com/maps/api/place/details/json"
@@ -168,8 +169,16 @@ def collect_targets(industry: str, area: str, limit: int = 20) -> int:
         while saved < limit:
             data = _fetch_places(query, page_token)
 
-            if data.get("status") not in ("OK", "ZERO_RESULTS"):
-                write_log("ERROR", "collect", f"APIエラー: {data.get('status')} / {query}")
+            api_status = data.get("status")
+            if api_status not in ("OK", "ZERO_RESULTS"):
+                write_log("ERROR", "collect", f"APIエラー: {api_status} / {query}")
+                # 致命的（キー無効・課金/上限超過）は収集が止まるため重要 → LINE通知
+                if api_status in ("REQUEST_DENIED", "OVER_QUERY_LIMIT"):
+                    notify_push(
+                        f"🛑 Google Places 収集停止\n"
+                        f"status: {api_status}\n"
+                        f"APIキー無効 or 課金/上限超過の可能性。収集が止まっています。"
+                    )
                 break
 
             results = data.get("results", [])
