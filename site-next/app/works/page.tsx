@@ -39,7 +39,7 @@ export default function WorksPage() {
             lineHeight: 2.0, maxWidth: 440, margin: "0 auto",
           }}>
             実際に動くデモをご用意しています。<br />
-            商談の場でそのままお見せいただけます。
+            ぜひ実際に触れて、使い心地をご確認ください。
           </p>
         </FadeIn>
 
@@ -57,11 +57,8 @@ export default function WorksPage() {
             <div style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.18em", color: "var(--gold)", textTransform: "uppercase", marginBottom: "0.75rem" }}>
               Share Demo
             </div>
-            <h2 style={{ fontSize: "clamp(1.1rem,2.5vw,1.5rem)", fontWeight: 900, color: "#fff", marginBottom: "0.5rem", lineHeight: 1.3 }}>
-              このURLを商談相手にそのまま送れます
-            </h2>
             <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", marginBottom: "2rem", lineHeight: 1.8 }}>
-              アプリ不要・ログイン不要。URLを貼るだけで相手がすぐ試せます。
+              アプリ不要・ログイン不要。URLからすぐにお試しいただけます。
             </p>
             <style>{`.demo-link:hover { background: rgba(255,255,255,0.12) !important; }`}</style>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
