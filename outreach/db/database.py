@@ -213,6 +213,37 @@ def get_unchecked_targets(limit: int = 50) -> list:
     return [dict(r) for r in rows]
 
 
+def get_targets_missing_contact(limit: int = 50, after_id: int = 0) -> list:
+    """
+    website はあるが email も contact_form_url も未取得のターゲットを取得する。
+    「強制再診断」用：診断済みでも、連絡先が取れていない相手に改善ロジックを当て直す。
+    id カーソル（after_id）で前進し、再診断で連絡先が取れなくても無限ループしない。
+
+    Args:
+        limit:    1バッチの件数
+        after_id: このidより大きいものを返す（カーソル）
+
+    Returns:
+        ターゲット dict のリスト（id昇順）
+    """
+    with get_conn() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT * FROM targets
+                WHERE id > %s
+                  AND website IS NOT NULL AND website != ''
+                  AND (email IS NULL OR email = '')
+                  AND (contact_form_url IS NULL OR contact_form_url = '')
+                ORDER BY id ASC
+                LIMIT %s
+                """,
+                (after_id, limit),
+            )
+            rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
 def update_site_status(
     target_id: int,
     status: str,

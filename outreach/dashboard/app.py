@@ -547,20 +547,33 @@ async def api_collect(
 @app.post("/api/diagnose")
 async def api_diagnose(
     auth=Depends(require_auth),
-    limit: int = Body(50, embed=True)):
+    limit: int = Body(50, embed=True),
+    mode: str = Body("unchecked", embed=True),
+    after_id: int = Body(0, embed=True)):
     """
     ダッシュボードからサイト診断を実行する。
-    未診断ターゲットを limit 件処理してステータスを更新する。
+
+    mode='unchecked'（既定）: 未診断ターゲットを limit 件処理。
+    mode='force'           : website はあるが連絡先未取得の診断済みも対象に再スキャン。
+                             id カーソル（after_id）で前進し、last_id を返す。
     """
     from analyzers.site_checker import check_site
-    from db.database import get_unchecked_targets, update_site_status, get_stats
+    from db.database import (
+        get_unchecked_targets, get_targets_missing_contact,
+        update_site_status, get_stats,
+    )
 
     try:
-        targets = get_unchecked_targets(limit=limit)
-        if not targets:
-            return {"ok": True, "diagnosed": 0, "message": "未診断のターゲットはありません"}
+        if mode == "force":
+            targets = get_targets_missing_contact(limit=limit, after_id=after_id)
+        else:
+            targets = get_unchecked_targets(limit=limit)
 
-        write_log("INFO", "diagnose", f"[dashboard] 診断開始: {len(targets)}件")
+        if not targets:
+            msg = "再スキャン対象（連絡先未取得）はありません" if mode == "force" else "未診断のターゲットはありません"
+            return {"ok": True, "diagnosed": 0, "last_id": after_id, "message": msg}
+
+        write_log("INFO", "diagnose", f"[dashboard] 診断開始({mode}): {len(targets)}件")
 
         results = {"none": 0, "old": 0, "no_mobile": 0, "phone_only": 0, "ok": 0, "error": 0}
         email_found = 0   # このバッチで新たにメールが取れた件数
@@ -585,13 +598,15 @@ async def api_diagnose(
             if r.get("contact_form_url"): form_found  += 1
 
         stats = get_stats()
+        last_id = max((t["id"] for t in targets), default=after_id)
         write_log(
             "INFO", "diagnose",
-            f"[dashboard] 診断完了: {len(targets)}件 / メール{email_found}件 / フォーム{form_found}件"
+            f"[dashboard] 診断完了({mode}): {len(targets)}件 / メール{email_found}件 / フォーム{form_found}件"
         )
         return {
             "ok": True, "diagnosed": len(targets), "results": results,
-            "email_found": email_found, "form_found": form_found, "stats": stats,
+            "email_found": email_found, "form_found": form_found,
+            "last_id": last_id, "stats": stats,
         }
     except Exception as e:
         write_log("ERROR", "diagnose", f"[dashboard] 診断エラー: {e}")

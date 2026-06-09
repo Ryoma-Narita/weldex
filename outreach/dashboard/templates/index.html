@@ -336,6 +336,7 @@
       <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
         <button class="btn" onclick="runCollect()" id="btn-collect">▶ 収集して診断する</button>
         <button class="btn secondary" onclick="runDiagnoseOnly()" id="btn-diagnose">診断のみ</button>
+        <button class="btn secondary" onclick="runForceRediagnose()" id="btn-force-rediagnose" title="診断済みでもメール・フォームが取れていない相手を、改善ロジックで再スキャンします">⟳ メール未取得を再スキャン</button>
       </div>
       <div id="op-status" style="margin-top:0.5rem;font-size:0.8rem;color:var(--gray);min-height:1.2em;"></div>
 
@@ -1979,6 +1980,71 @@
     btn.disabled = true; btn.textContent = '診断中...';
     await _runDiagnose(status, btn);
     btn.textContent = '診断のみ';
+  }
+
+  // 「⟳ メール未取得を再スキャン」ボタン用（診断済みも対象・idカーソルで前進）
+  async function runForceRediagnose() {
+    const status = document.getElementById('op-status');
+    const btn    = document.getElementById('btn-force-rediagnose');
+    const LABEL  = '⟳ メール未取得を再スキャン';
+    btn.disabled = true; btn.textContent = '再スキャン中...';
+
+    const BATCH = 20;
+    let totalDiagnosed = 0, emailFound = 0, formFound = 0, afterId = 0;
+    const totals = { none:0, old:0, no_mobile:0, phone_only:0, ok:0, error:0 };
+
+    try {
+      while (true) {
+        btn.textContent = `再スキャン中... (${totalDiagnosed}件)`;
+        status.style.color = 'var(--gray)';
+        status.textContent = `メール・フォーム未取得を再診断中... ${totalDiagnosed}件完了`;
+
+        let d;
+        try {
+          const res = await fetch('/api/diagnose', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ limit: BATCH, mode: 'force', after_id: afterId })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          d = await res.json();
+        } catch(fetchErr) {
+          status.style.color = 'var(--yellow)';
+          status.textContent = `再スキャン中断（${totalDiagnosed}件）: ${fetchErr}`;
+          break;
+        }
+
+        if (!d.ok) {
+          status.style.color = 'var(--yellow)';
+          status.textContent = `再スキャンエラー: ${d.error || 'サーバーエラー'}`;
+          break;
+        }
+
+        const r = d.results || {};
+        for (const k of Object.keys(totals)) totals[k] += (r[k] || 0);
+        totalDiagnosed += d.diagnosed;
+        emailFound     += (d.email_found || 0);
+        formFound      += (d.form_found  || 0);
+        afterId         = (d.last_id != null) ? d.last_id : afterId;
+        loadStats();
+
+        if (d.diagnosed === 0 || d.diagnosed < BATCH) break;
+      }
+
+      status.style.color = 'var(--green)';
+      status.textContent = totalDiagnosed > 0
+        ? `✓ 再スキャン完了 ${totalDiagnosed}件（新規メール ${emailFound} / フォーム ${formFound}）`
+        : '✓ 再スキャン対象（連絡先未取得）はありません';
+
+      if (totalDiagnosed > 0) {
+        renderRunResult({ collected: null, diagnosed: totalDiagnosed, emailFound, formFound, totals });
+      }
+      loadStats();
+      if (typeof loadTargets === 'function') loadTargets(1);
+    } catch(e) {
+      status.style.color = 'var(--red)';
+      status.textContent = `エラー: ${e}`;
+    }
+    btn.disabled = false; btn.textContent = LABEL;
   }
 
   async function runDiagnose() {
