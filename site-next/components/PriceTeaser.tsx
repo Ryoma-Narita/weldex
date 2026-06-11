@@ -1,11 +1,15 @@
 import Link from "next/link";
 import FadeIn from "./FadeIn";
+import { SERVICES, MAINTENANCE_FROM, fmtYen } from "@/data/services";
 
 const items = [
-  { title: "ホームページ制作", price: "80,000", unit: "〜", note: "スマホ対応・SEO込み" },
-  { title: "WEB予約システム", price: "120,000", unit: "〜", note: "カレンダー予約・管理画面" },
-  { title: "LINE予約連携", price: "80,000", unit: "〜", note: "公式アカウント開設代行" },
-  { title: "月額保守・運用", price: "5,000", unit: "〜 / 月", note: "更新・改善・障害対応" },
+  ...SERVICES.filter((s) => s.slug !== "crm").map((s) => ({
+    title: s.slug === "line" ? "LINE予約連携" : s.title,
+    price: fmtYen(s.priceFrom),
+    unit: "〜",
+    note: s.teaserNote,
+  })),
+  { title: "月額保守・運用", price: fmtYen(MAINTENANCE_FROM), unit: "〜 / 月", note: "更新・改善・障害対応" },
 ];
 
 export default function PriceTeaser() {

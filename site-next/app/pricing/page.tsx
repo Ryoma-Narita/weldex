@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import FadeIn from "@/components/FadeIn";
 import CTABand from "@/components/CTABand";
+import { SERVICES, fmtYen } from "@/data/services";
 
 export const metadata: Metadata = {
   title: "料金 | Weldex",
@@ -9,61 +10,6 @@ export const metadata: Metadata = {
     "Weldexのサービス料金一覧。ホームページ制作・WEB予約システム・LINE連携・顧客管理システムの費用感をご確認いただけます。",
   alternates: { canonical: "https://weldex.jp/pricing" },
 };
-
-const services = [
-  {
-    num: "01",
-    title: "ホームページ制作",
-    initial: "¥150,000〜",
-    monthly: "¥5,000〜 / 月",
-    tag: "HP / LP",
-    points: [
-      "デザイン・コーディング・公開まで一式",
-      "スマホ最適化・SEO対応含む",
-      "保守プランで更新・修正に対応",
-    ],
-    href: "/services/web",
-  },
-  {
-    num: "02",
-    title: "WEB予約システム",
-    initial: "¥200,000〜",
-    monthly: "¥8,000〜 / 月",
-    tag: "予約 / 管理",
-    points: [
-      "予約フォーム・管理画面・自動メール一式",
-      "前日リマインド・顧客管理・CSV出力",
-      "保守プランで機能追加・サポートに対応",
-    ],
-    href: "/services/reservation",
-  },
-  {
-    num: "03",
-    title: "LINE連携・アカウント作成代行",
-    initial: "¥150,000〜",
-    monthly: "¥8,000〜 / 月",
-    tag: "LINE / 代行",
-    points: [
-      "LINE公式アカウント開設・初期設定代行",
-      "リッチメニュー制作・予約システム連携",
-      "保守プランで運用サポートに対応",
-    ],
-    href: "/services/line",
-  },
-  {
-    num: "04",
-    title: "顧客管理システム（CRM）",
-    initial: "¥300,000〜",
-    monthly: "¥10,000〜 / 月",
-    tag: "CRM / 顧客管理",
-    points: [
-      "顧客情報・来歴・コミュニケーションを一元管理",
-      "予約システムとのシームレスな連携",
-      "自動フォローアップ・レポート機能",
-    ],
-    href: "/services/crm",
-  },
-];
 
 export default function PricingPage() {
   return (
@@ -90,7 +36,7 @@ export default function PricingPage() {
         </FadeIn>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 2, background: "var(--border)" }}>
-          {services.map((s, i) => (
+          {SERVICES.map((s, i) => (
             <FadeIn key={s.num} delay={i * 0.08} style={{ background: "var(--white)", padding: "2.5rem clamp(1.5rem,4vw,3rem)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1.5rem" }}>
                 {/* 左：番号・タイトル */}
@@ -113,7 +59,7 @@ export default function PricingPage() {
                       fontFamily: "var(--font-cormorant)", fontSize: "1.5rem",
                       fontWeight: 700, color: "var(--navy)", lineHeight: 1,
                       borderBottom: "1px solid var(--gold)", paddingBottom: 2,
-                    }}>{s.initial}</div>
+                    }}>¥{fmtYen(s.priceFrom)}〜</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: "0.68rem", color: "var(--gray)", letterSpacing: "0.06em", marginBottom: "0.15rem" }}>月額保守</div>
@@ -121,7 +67,7 @@ export default function PricingPage() {
                       fontFamily: "var(--font-cormorant)", fontSize: "1.5rem",
                       fontWeight: 700, color: "var(--navy)", lineHeight: 1,
                       borderBottom: "1px solid var(--border)", paddingBottom: 2,
-                    }}>{s.monthly}</div>
+                    }}>¥{fmtYen(s.monthlyFrom)}〜 / 月</div>
                   </div>
                 </div>
               </div>

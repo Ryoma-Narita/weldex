@@ -13,9 +13,15 @@ from db.database import (
     get_reservation_by_id, update_reservation_status,
 )
 from services.mail import send_confirmation, send_admin_notification
-from config import SLOT_START, SLOT_END, SLOT_INTERVAL_MIN, ADVANCE_DAYS
+from config import SLOT_START, SLOT_END, SLOT_INTERVAL_MIN, ADVANCE_DAYS, APP_NAME, DEMO_MODE
 
 router = APIRouter(prefix="/api/booking", tags=["booking"])
+
+
+@router.get("/config")
+def public_config():
+    """公開設定を返す（店舗名・デモモード判定。個人情報・秘密情報は含めない）。"""
+    return {"app_name": APP_NAME, "demo_mode": DEMO_MODE}
 
 
 def _generate_slots(start: str, end: str, interval: int) -> list[str]:

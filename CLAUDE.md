@@ -354,6 +354,27 @@ DB：Railway PostgreSQL（同プロジェクト内）
     - 商談URLとして weldex.jp/works を案内可能な状態に
     - weldex.jp/booking・weldex.jp/demo-dashboard が完全動作するデモとして機能
 
+[x] パーソナライズドデモURL（2026-06-12・営業用）
+    - /booking/?demo=店舗名 → 予約画面タイトルが「店舗名 ご予約」に差し替わる
+    - DEMO_MODE=true のサーバーでのみ有効（GET /api/booking/config で判定・本番クライアントでは無効）
+    - 営業メールに「貴院専用デモ」リンクとして記載する用途
+    - 詳細：docs/reservation.md 末尾
+
+[x] サービス料金の単一ソース化リファクタ（2026-06-12）
+    - site-next/data/services.ts が料金・説明・特徴の唯一の定義場所
+    - services/pricing/PriceTeaser すべてここを参照。料金改定はこのファイルのみ変更すればよい
+    - 旧料金バグ修正：トップ PriceTeaser が ¥80,000 等の旧料金を本番表示していた → 現行料金に統一
+    - 死にコード削除：components/FAQ.tsx・SchemaOrg.tsx（未使用・旧料金残存）
+
+[x] CV向上施策（2026-06-12）
+    - ROI電卓：components/RoiCalculator.tsx → /services/reservation 料金直前に配置
+      （電話件数×取りこぼし率×客単価 → 月間損失・導入費回収日数を試算表示）
+    - ステップ式問い合わせフォーム：app/contact/ContactForm.tsx 全面書き換え
+      （5ステップ・選択肢はボタン・回答済みサマリーから変更可・Formspree送信は従来同様）
+    - 営業メールのデータドリブン化：site_checker.py に応答秒数実測を追加、
+      AI生成プロンプトを「診断事実→統計で数値化→解決策」構成に強化
+    - docs/blog_ideas.md 新設（ブログ記事ネタ帳・データレポート構想）
+
 未着手：
 [ ] STEP5：無料診断ツール（PageSpeed Insights API）→ B級優先
 [ ] STEP6：Lighthouse計測・docs/seo.mdにスコア記録

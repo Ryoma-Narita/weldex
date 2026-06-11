@@ -89,7 +89,7 @@ export default function AboutPage() {
           }}>
             Weldexの存在意義<br />
             全てのDX・IT業務を<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結。</em>
+            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結で。</em>
           </h1>
 
           <p style={{

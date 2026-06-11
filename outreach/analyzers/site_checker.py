@@ -216,6 +216,7 @@ def check_site(url: str, industry: str = "") -> dict:
         "has_contact_form": None,
         "contact_form_url": None,
         "is_medical": medical,
+        "response_sec": None,
     }
 
     if not url or not url.strip():
@@ -244,6 +245,12 @@ def check_site(url: str, industry: str = "") -> dict:
     if res.status_code >= 400:
         result["detail"] = f"HTTPエラー: {res.status_code}"
         return result
+
+    # サーバー応答時間（営業メールで具体数値として使う）
+    try:
+        result["response_sec"] = round(res.elapsed.total_seconds(), 1)
+    except Exception:
+        result["response_sec"] = None
 
     html       = _decode_html(res.content)
     html_lower = html.lower()
@@ -317,5 +324,10 @@ def check_site(url: str, industry: str = "") -> dict:
     else:
         result["status"] = "ok"
         result["detail"] = "問題なし"
+
+    # 応答が遅い場合は具体数値を detail に追記（メール生成時の訴求材料）
+    sec = result.get("response_sec")
+    if sec is not None and sec >= 1.5:
+        result["detail"] += f"／サーバー応答 {sec}秒（推奨は1秒以内）"
 
     return result

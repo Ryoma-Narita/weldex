@@ -191,3 +191,25 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 □ 確認メール・リマインドの動作確認
 □ 管理画面操作マニュアル（PDF）
 ```
+
+---
+
+## パーソナライズドデモURL（営業用・2026-06-12追加）
+
+```
+仕組み：/booking/?demo=さくら歯科 のようにクエリパラメータを付けると、
+        予約画面のタイトルが「さくら歯科 ご予約」に差し替わる。
+        タイトル下に「デモ環境 — 実際の導入画面と同じ仕様です」と表示。
+
+安全設計：
+- サーバーの DEMO_MODE=true のときだけ有効（GET /api/booking/config で判定）
+  → 本番クライアント環境では ?demo= を付けても何も起きない
+- 差し替えは textContent のみ使用（XSS不可）
+- 店舗名は30文字に切り詰め
+
+用途：営業メールに「貴院専用のデモ」としてリンクを記載する。
+例：https://earnest-gentleness-production-f682.up.railway.app/booking/?demo=〇〇歯科
+
+実装箇所：
+- reservation/routers/booking.py … GET /api/booking/config
+- reservation/static/booking/index.html … applyDemoName()

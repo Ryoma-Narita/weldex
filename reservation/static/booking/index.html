@@ -173,8 +173,31 @@ let sel = { menu: null, date: null, time: null };
 let calYear = 0, calMonth = 0, calCache = {};
 
 async function init() {
+  await applyDemoName();
   document.title = document.getElementById('app-title').textContent;
   await loadMenus();
+}
+
+async function applyDemoName() {
+  // 営業用パーソナライズドデモ：サーバーが DEMO_MODE=true のときだけ
+  // ?demo=店舗名 でタイトルを差し替える（本番クライアント環境では無効）
+  const demoName = new URLSearchParams(location.search).get('demo');
+  if (!demoName) return;
+  try {
+    const res = await fetch(API + '/api/booking/config');
+    const cfg = await res.json();
+    if (!cfg.demo_mode) return;
+    const name = demoName.trim().slice(0, 30);
+    if (!name) return;
+    const title = document.getElementById('app-title');
+    title.textContent = name + ' ご予約';
+    const badge = document.createElement('p');
+    badge.textContent = 'デモ環境 — 実際の導入画面と同じ仕様です';
+    badge.style.cssText = 'font-size:0.72rem;color:#94a3b8;margin-top:0.3rem;letter-spacing:0.04em';
+    title.insertAdjacentElement('afterend', badge);
+  } catch (e) {
+    // 設定取得に失敗しても通常表示で続行する
+  }
 }
 
 async function loadMenus() {

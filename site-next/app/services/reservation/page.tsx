@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import RoiCalculator from "@/components/RoiCalculator";
 
 export const metadata: Metadata = {
   title: "WEB予約システム | Weldex",
@@ -100,7 +101,7 @@ export default function ReservationServicePage() {
 
       <main>
         {/* ─── ヒーロー ─── */}
-        <section className="rs-section" style={{ paddingTop: "6rem", background: "#fff" }}>
+        <section className="rs-section" style={{ paddingTop: "6rem", background: "transparent" }}>
           <div className="rs-inner" style={{ paddingTop: "1.5rem" }}>
             <nav style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: GRAY, marginBottom: "2.5rem", ...DM }}>
               <Link href="/"         style={{ color: GRAY, textDecoration: "none" }}>ホーム</Link>
@@ -226,6 +227,9 @@ export default function ReservationServicePage() {
             </div>
           </div>
         </section>
+
+        {/* ─── 損失シミュレーター ─── */}
+        <RoiCalculator />
 
         {/* ─── 料金 ─── */}
         <section className="rs-section" style={{ background: "#fff" }}>

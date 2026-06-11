@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import FadeIn from "@/components/FadeIn";
 import CTABand from "@/components/CTABand";
+import { SERVICES, fmtYen } from "@/data/services";
 
 export const metadata: Metadata = {
   title: "サービス一覧 | Weldex",
@@ -9,45 +10,6 @@ export const metadata: Metadata = {
     "ホームページ制作・WEB予約システム・LINE連携代行・顧客管理システムの4サービスを一社完結で提供。費用・納期の目安もご確認いただけます。",
   alternates: { canonical: "https://weldex.jp/services" },
 };
-
-const services = [
-  {
-    num: "01",
-    title: "ホームページ制作",
-    price: "150,000円〜",
-    tag: "HP / LP",
-    desc: "集客・信頼・問い合わせ増加を目的とした、業種特化のWebサイトを制作します。SEO対応・スマホ最適化・お問い合わせフォームまで含みます。",
-    features: ["業種特化デザイン", "SEO対応", "スマホ最適化", "Formspreeフォーム設置", "公開後1ヶ月サポート"],
-    detailHref: "/services/web",
-  },
-  {
-    num: "02",
-    title: "WEB予約システム",
-    price: "200,000円〜",
-    tag: "予約 / 管理",
-    desc: "24時間自動で予約を受け付ける管理画面付きの予約システムです。歯科・クリニック・サロンなど幅広い業種に対応します。",
-    features: ["24時間自動受付", "管理画面付き", "メール自動返信", "顧客管理・CSV出力", "前日リマインド"],
-    detailHref: "/services/reservation",
-  },
-  {
-    num: "03",
-    title: "LINE連携・アカウント作成代行",
-    price: "150,000円〜",
-    tag: "LINE / 代行",
-    desc: "LINE公式アカウントの開設から設定・予約システム連携・リッチメニュー制作まで一社完結で代行します。LINEを使った顧客との接点づくりをまるごとお任せいただけます。",
-    features: ["LINE公式アカウント開設代行", "リッチメニュー制作", "予約システム連携", "自動メッセージ設定", "運用サポート"],
-    detailHref: "/services/line",
-  },
-  {
-    num: "04",
-    title: "顧客管理システム（CRM）",
-    price: "300,000円〜",
-    tag: "CRM / 顧客管理",
-    desc: "顧客情報・来院履歴・コミュニケーション履歴を一元管理。予約システムとシームレスに連携し、リピート率向上・離脱防止につながる顧客DXを実現します。",
-    features: ["顧客情報一元管理", "予約履歴連携", "CSV入出力", "自動フォローアップ", "レポート・分析機能"],
-    detailHref: "/services/crm",
-  },
-];
 
 export default function ServicesPage() {
   return (
@@ -74,7 +36,7 @@ export default function ServicesPage() {
         </FadeIn>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 2, background: "var(--border)" }}>
-          {services.map((s, i) => (
+          {SERVICES.map((s, i) => (
             <FadeIn key={s.num} delay={i * 0.1} style={{ background: "var(--white)", padding: "3rem clamp(1.5rem,4vw,3rem)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
@@ -91,11 +53,11 @@ export default function ServicesPage() {
                   fontSize: "0.9rem", fontWeight: 500, color: "var(--navy)",
                   borderBottom: "1px solid var(--gold)", paddingBottom: 2,
                 }}>
-                  {s.price}
+                  {fmtYen(s.priceFrom)}円〜
                 </span>
               </div>
 
-              <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0, marginBottom: "1.5rem", maxWidth: 640 }}>
+              <p style={{ fontSize: "0.9375rem", color: "#1f2937", lineHeight: 2.0, marginBottom: "1.5rem", maxWidth: 640, fontFamily: "'Noto Sans JP', sans-serif" }}>
                 {s.desc}
               </p>
 
@@ -109,18 +71,16 @@ export default function ServicesPage() {
                   </li>
                 ))}
               </ul>
-              {"detailHref" in s && (
-                <div style={{ marginTop: "1.5rem" }}>
-                  <Link href={(s as typeof s & { detailHref: string }).detailHref} style={{
-                    fontSize: "0.8rem", fontWeight: 500, color: "var(--navy)",
-                    textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
-                    borderBottom: "1px solid var(--navy)", paddingBottom: 2,
-                    transition: "opacity 0.15s",
-                  }}>
-                    詳細・料金を見る →
-                  </Link>
-                </div>
-              )}
+              <div style={{ marginTop: "1.5rem" }}>
+                <Link href={s.href} style={{
+                  fontSize: "0.8rem", fontWeight: 500, color: "var(--navy)",
+                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
+                  borderBottom: "1px solid var(--navy)", paddingBottom: 2,
+                  transition: "opacity 0.15s",
+                }}>
+                  詳細・料金を見る →
+                </Link>
+              </div>
             </FadeIn>
           ))}
         </div>
