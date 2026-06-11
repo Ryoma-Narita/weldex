@@ -14,8 +14,9 @@ from db.database import init_db
 from routers import booking, admin, customers, import_export
 from handlers.webhook import process_webhook
 from services.reminder import run_reminder
+from services.demo_reset import run_demo_reset
 from services.line_notify import push
-from config import REMIND_HOUR, APP_NAME
+from config import REMIND_HOUR, APP_NAME, DEMO_MODE
 
 app = FastAPI(title=f"{APP_NAME} 予約システム", docs_url="/api/docs")
 
@@ -52,6 +53,8 @@ def on_startup():
     init_db()
     scheduler = BackgroundScheduler(timezone="Asia/Tokyo")
     scheduler.add_job(run_reminder, "cron", hour=REMIND_HOUR, minute=0)
+    if DEMO_MODE:
+        scheduler.add_job(run_demo_reset, "cron", hour=0, minute=0)
     scheduler.start()
 
 

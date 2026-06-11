@@ -38,3 +38,6 @@ SESSION_EXPIRE_HOURS = 8
 
 # メニュー料金表示（true=表示・飲食/美容、false=非表示・医療/歯科デフォルト）
 SHOW_MENU_PRICE = os.environ.get("SHOW_MENU_PRICE", "false").lower() == "true"
+
+# デモモード（true=毎日0時にデモ予約・顧客をリセット）
+DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"

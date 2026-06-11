@@ -6,18 +6,20 @@ import { useState } from "react";
 const DESKTOP_NAV = [
   { label: "Home",     href: "/" },
   { label: "Services", href: "/services" },
+  { label: "Pricing",  href: "/pricing" },
   { label: "Works",    href: "/works" },
   { label: "About",    href: "/about" },
 ];
 
 const MENU_ITEMS = [
   { label: "SERVICE",      href: "/services" },
+  { label: "PRICING",      href: "/pricing" },
   { label: "WORKS & DEMO", href: "/works" },
   { label: "ABOUT",        href: "/about" },
   { label: "NEWS & BLOG",  href: "/news" },
 ];
 
-const STAGGER = ["0.05s", "0.12s", "0.19s", "0.26s"];
+const STAGGER = ["0.05s", "0.12s", "0.19s", "0.26s", "0.33s"];
 
 const DM: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
 
@@ -61,28 +63,19 @@ export default function Header() {
 
         {/* デスクトップ nav */}
         <ul style={{ gap: "2.5rem", listStyle: "none", margin: 0, padding: 0, alignItems: "center" }} className="desktop-nav">
-          {DESKTOP_NAV.map(({ label, href }) => {
-            const active = isActive(href);
-            return (
-              <li key={href}>
-                <Link href={href} style={{
-                  fontSize: "0.875rem",
-                  color: active ? "var(--gold)" : "#0c1a35",
-                  textDecoration: "none",
-                  fontWeight: active ? 500 : 400,
-                  borderBottom: active ? "1px solid var(--gold)" : "none",
-                  paddingBottom: active ? 2 : 0,
-                }}>
-                  {label}
-                </Link>
-              </li>
-            );
-          })}
+          {DESKTOP_NAV.map(({ label, href }) => (
+            <li key={href}>
+              <Link href={href} className={`nav-link${isActive(href) ? " active" : ""}`}>
+                {label}
+              </Link>
+            </li>
+          ))}
           <li>
             <Link href="/contact" style={{
               display: "inline-block", background: "#0c1a35", color: "#fff",
-              fontSize: "0.8rem", fontWeight: 500, letterSpacing: "0.04em",
-              padding: "0.6rem 1.5rem", textDecoration: "none",
+              fontSize: "0.875rem", fontWeight: 600, letterSpacing: "0.05em",
+              padding: "0.65rem 1.6rem", textDecoration: "none",
+              transition: "background 0.2s",
             }}>
               無料相談
             </Link>

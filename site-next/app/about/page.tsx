@@ -87,9 +87,9 @@ export default function AboutPage() {
             letterSpacing: "-0.03em",
             marginBottom: "1.75rem",
           }}>
-            技術で、<br />
-            小さな会社を<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>強くする。</em>
+            Weldexの存在意義<br />
+            全てのDX・IT業務を<br />
+            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結。</em>
           </h1>
 
           <p style={{
@@ -134,8 +134,8 @@ export default function AboutPage() {
                 lineHeight: 1.78,
                 letterSpacing: "-0.01em",
               }}>
-                &ldquo;技術を安売りせず、<br />
-                誠実に向き合う。<br />
+                &ldquo;AI時代の今だからこそ、<br />
+                技術と誠実に向き合う。<br />
                 それがWeldexの<br />
                 存在理由です。&rdquo;
               </p>
@@ -146,7 +146,7 @@ export default function AboutPage() {
                 letterSpacing: "0.06em",
                 fontFamily: "'DM Sans', sans-serif",
               }}>
-                — 成田 涼真 / Founder
+                — 成田 涼真 / Weldex代表
               </footer>
             </blockquote>
 

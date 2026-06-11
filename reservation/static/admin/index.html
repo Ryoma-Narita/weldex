@@ -318,9 +318,15 @@ function changeDate(delta) {
   loadReservations();
 }
 
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function statusBadge(s) {
   const map = {confirmed:'確認済み',cancelled:'キャンセル',done:'完了',no_show:'無断キャンセル'};
-  return `<span class="badge badge-${s}">${map[s]||s}</span>`;
+  const label = map[s] || esc(s);
+  return `<span class="badge badge-${esc(s)}">${label}</span>`;
 }
 
 function renderReservationTable(rows, containerId) {
@@ -329,12 +335,12 @@ function renderReservationTable(rows, containerId) {
   el.innerHTML = `<table><thead><tr>
     <th>時間</th><th>お名前</th><th>電話番号</th><th>メニュー</th><th>ステータス</th><th></th>
   </tr></thead><tbody>${rows.map(r => `<tr>
-    <td>${r.time}</td>
-    <td>${r.name}</td>
-    <td>${r.phone||'—'}</td>
-    <td>${r.menu_name||'—'}</td>
+    <td>${esc(r.time)}</td>
+    <td>${esc(r.name)}</td>
+    <td>${esc(r.phone)||'—'}</td>
+    <td>${esc(r.menu_name)||'—'}</td>
     <td>${statusBadge(r.status)}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="openResModal(${r.id})">詳細</button></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openResModal(${Number(r.id)})">詳細</button></td>
   </tr>`).join('')}</tbody></table>`;
 }
 
@@ -345,14 +351,14 @@ async function openResModal(id) {
   const r = await res.json();
   document.getElementById('res-modal-body').innerHTML = `
     <table style="width:100%;font-size:0.875rem"><tbody>
-      <tr><td style="color:#64748b;width:120px;padding:0.5rem 0">予約ID</td><td>#${r.id}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">日時</td><td>${r.date} ${r.time}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">メニュー</td><td>${r.menu_name||'—'}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">お名前</td><td>${r.name}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">電話番号</td><td>${r.phone||'—'}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">メール</td><td>${r.email||'—'}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">備考</td><td>${r.notes||'—'}</td></tr>
-      <tr><td style="color:#64748b;padding:0.5rem 0">経路</td><td>${r.channel}</td></tr>
+      <tr><td style="color:#64748b;width:120px;padding:0.5rem 0">予約ID</td><td>#${Number(r.id)}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">日時</td><td>${esc(r.date)} ${esc(r.time)}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">メニュー</td><td>${esc(r.menu_name)||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">お名前</td><td>${esc(r.name)}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">電話番号</td><td>${esc(r.phone)||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">メール</td><td>${esc(r.email)||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">備考</td><td>${esc(r.notes)||'—'}</td></tr>
+      <tr><td style="color:#64748b;padding:0.5rem 0">経路</td><td>${esc(r.channel)}</td></tr>
       <tr><td style="color:#64748b;padding:0.5rem 0">ステータス</td><td>${statusBadge(r.status)}</td></tr>
     </tbody></table>`;
   openModal('res-modal');
@@ -378,13 +384,13 @@ async function loadCustomers(page) {
   el.innerHTML = `<table><thead><tr>
     <th>ID</th><th>氏名</th><th>電話番号</th><th>メール</th><th>登録元</th><th>登録日</th><th></th>
   </tr></thead><tbody>${d.items.map(c => `<tr>
-    <td>${c.id}</td>
-    <td><a href="#" onclick="openCustModal(${c.id});return false" style="color:#0c1a35;font-weight:500">${c.name}</a></td>
-    <td>${c.phone||'—'}</td>
-    <td>${c.email||'—'}</td>
-    <td>${c.source}</td>
-    <td>${c.created_at.slice(0,10)}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="openCustModal(${c.id})">詳細</button></td>
+    <td>${Number(c.id)}</td>
+    <td><a href="#" onclick="openCustModal(${Number(c.id)});return false" style="color:#0c1a35;font-weight:500">${esc(c.name)}</a></td>
+    <td>${esc(c.phone)||'—'}</td>
+    <td>${esc(c.email)||'—'}</td>
+    <td>${esc(c.source)}</td>
+    <td>${esc(c.created_at.slice(0,10))}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openCustModal(${Number(c.id)})">詳細</button></td>
   </tr>`).join('')}</tbody></table>`;
   const nav = document.getElementById('cust-page-nav');
   nav.innerHTML = custTotalPages > 1 ? `
@@ -401,18 +407,29 @@ async function openCustModal(id) {
   if (!res || !res.ok) return;
   const c = await res.json();
   document.getElementById('cust-modal-title').textContent = c.name + ' 様';
+  // inputのvalue・textareaはHTML属性経由でなくJSプロパティで設定しXSSを回避する
   document.getElementById('cust-modal-body').innerHTML = `
-    <div class="field"><label>氏名</label><input id="cm-name" value="${c.name||''}"></div>
-    <div class="field"><label>フリガナ</label><input id="cm-kana" value="${c.name_kana||''}"></div>
-    <div class="field"><label>電話番号</label><input id="cm-phone" value="${c.phone||''}"></div>
-    <div class="field"><label>メール</label><input id="cm-email" value="${c.email||''}"></div>
-    <div class="field"><label>生年月日</label><input id="cm-birth" type="date" value="${c.birthdate||''}"></div>
-    <div class="field"><label>性別</label><select id="cm-gender"><option value="">未選択</option><option ${c.gender==='男性'?'selected':''}>男性</option><option ${c.gender==='女性'?'selected':''}>女性</option><option ${c.gender==='その他'?'selected':''}>その他</option></select></div>
-    <div class="field"><label>住所</label><input id="cm-address" value="${c.address||''}"></div>
-    <div class="field"><label>備考</label><textarea id="cm-notes" rows="2">${c.notes||''}</textarea></div>
+    <div class="field"><label>氏名</label><input id="cm-name"></div>
+    <div class="field"><label>フリガナ</label><input id="cm-kana"></div>
+    <div class="field"><label>電話番号</label><input id="cm-phone"></div>
+    <div class="field"><label>メール</label><input id="cm-email"></div>
+    <div class="field"><label>生年月日</label><input id="cm-birth" type="date"></div>
+    <div class="field"><label>性別</label><select id="cm-gender"><option value="">未選択</option><option>男性</option><option>女性</option><option>その他</option></select></div>
+    <div class="field"><label>住所</label><input id="cm-address"></div>
+    <div class="field"><label>備考</label><textarea id="cm-notes" rows="2"></textarea></div>
     ${c.reservations&&c.reservations.length?`<h4 style="font-size:0.82rem;font-weight:600;margin:1rem 0 0.5rem">予約履歴</h4>
     <table style="width:100%;font-size:0.78rem"><thead><tr><th>日時</th><th>メニュー</th><th>ステータス</th></tr></thead>
-    <tbody>${c.reservations.map(r=>`<tr><td>${r.date} ${r.time}</td><td>${r.menu_name||'—'}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody></table>`:''}`;
+    <tbody>${c.reservations.map(r=>`<tr><td>${esc(r.date)} ${esc(r.time)}</td><td>${esc(r.menu_name)||'—'}</td><td>${statusBadge(r.status)}</td></tr>`).join('')}</tbody></table>`:''}`;
+  // valueはプロパティ経由でセット（HTML属性に展開しないためエスケープ不要・かつ安全）
+  document.getElementById('cm-name').value    = c.name     || '';
+  document.getElementById('cm-kana').value    = c.name_kana|| '';
+  document.getElementById('cm-phone').value   = c.phone    || '';
+  document.getElementById('cm-email').value   = c.email    || '';
+  document.getElementById('cm-birth').value   = c.birthdate|| '';
+  document.getElementById('cm-address').value = c.address  || '';
+  document.getElementById('cm-notes').value   = c.notes    || '';
+  const genderEl = document.getElementById('cm-gender');
+  for (const opt of genderEl.options) { opt.selected = opt.value === (c.gender||''); }
   document.getElementById('cust-del-btn').style.display = id ? '' : 'none';
   openModal('cust-modal');
 }
