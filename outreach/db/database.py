@@ -213,6 +213,29 @@ def get_unchecked_targets(limit: int = 50) -> list:
     return [dict(r) for r in rows]
 
 
+def get_non_ok_targets(limit: int = 50, after_id: int = 0) -> list:
+    """
+    ok・none 以外のターゲットを返す（「問題あり全再診断」用）。
+    サイトが改善されている可能性があるため、診断済みでも再チェックできる。
+    id カーソル（after_id）で前進し無限ループを防ぐ。
+    """
+    with get_conn() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT * FROM targets
+                WHERE id > %s
+                  AND website IS NOT NULL AND website != ''
+                  AND site_status NOT IN ('ok', 'none')
+                ORDER BY id ASC
+                LIMIT %s
+                """,
+                (after_id, limit),
+            )
+            rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_targets_missing_contact(limit: int = 50, after_id: int = 0) -> list:
     """
     website はあるが email も contact_form_url も未取得のターゲットを取得する。

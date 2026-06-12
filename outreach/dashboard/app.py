@@ -578,17 +578,23 @@ async def api_diagnose(
     from analyzers.site_checker import check_site
     from db.database import (
         get_unchecked_targets, get_targets_missing_contact,
-        update_site_status, get_stats,
+        get_non_ok_targets, update_site_status, get_stats,
     )
 
     try:
         if mode == "force":
             targets = get_targets_missing_contact(limit=limit, after_id=after_id)
+        elif mode == "rediagnose_all":
+            targets = get_non_ok_targets(limit=limit, after_id=after_id)
         else:
             targets = get_unchecked_targets(limit=limit)
 
         if not targets:
-            msg = "再スキャン対象（連絡先未取得）はありません" if mode == "force" else "未診断のターゲットはありません"
+            msg = (
+                "再スキャン対象（連絡先未取得）はありません" if mode == "force"
+                else "再診断対象（問題あり）はありません" if mode == "rediagnose_all"
+                else "未診断のターゲットはありません"
+            )
             return {"ok": True, "diagnosed": 0, "last_id": after_id, "message": msg}
 
         write_log("INFO", "diagnose", f"[dashboard] 診断開始({mode}): {len(targets)}件")

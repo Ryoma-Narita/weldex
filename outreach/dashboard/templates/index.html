@@ -419,13 +419,18 @@
     <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:0.5rem;"></span>
   </div>
   <!-- 再診断バー（ツールバー直下・独立行） -->
-  <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1rem;background:#f0f4ff;border-bottom:1px solid #c5d0e6;">
+  <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1rem;background:#f0f4ff;border-bottom:1px solid #c5d0e6;flex-wrap:wrap;">
     <button id="btn-rediagnose" onclick="runReDiagnoseFromList()"
       style="padding:0.35rem 1rem;background:#3b5bdb;color:#fff;border:none;font-size:0.78rem;font-weight:600;cursor:pointer;border-radius:3px;white-space:nowrap;">
       ↻ 未診断を一括再診断
     </button>
+    <button id="btn-rediagnose-all" onclick="runRediagnoseAll()"
+      style="padding:0.35rem 1rem;background:#d97706;color:#fff;border:none;font-size:0.78rem;font-weight:600;cursor:pointer;border-radius:3px;white-space:nowrap;"
+      title="ok・サイトなし以外を全て再診断。サイトが改善されていれば新ステータスに更新されます。">
+      ↺ 問題あり全再診断
+    </button>
     <span id="rediagnose-status" style="font-size:0.75rem;color:#3b5bdb;"></span>
-    <span style="font-size:0.72rem;color:#64748b;margin-left:auto;">診断済み以外のターゲットを一括でサイト診断します</span>
+    <span style="font-size:0.72rem;color:#64748b;margin-left:auto;">未診断 or 問題ありのターゲットを一括でサイト診断します</span>
   </div>
 
   <div class="table-wrap">
@@ -2018,6 +2023,74 @@
     btn.disabled = true; btn.textContent = '診断中...';
     await _runDiagnose(status, btn);
     btn.textContent = '診断のみ';
+  }
+
+  // 「↺ 問題あり全再診断」ボタン用（ok・none 以外を全て再診断・idカーソルで前進）
+  async function runRediagnoseAll() {
+    const statusEl = document.getElementById('rediagnose-status');
+    const btn      = document.getElementById('btn-rediagnose-all');
+    const LABEL    = '↺ 問題あり全再診断';
+    btn.disabled = true; btn.textContent = '再診断中...';
+
+    const BATCH = 20;
+    let totalDiagnosed = 0, emailFound = 0, formFound = 0, afterId = 0;
+    const totals = {
+      none:0, no_ssl:0, old_tech:0, outdated:0, old:0,
+      no_mobile:0, phone_only:0, slow:0, no_line:0, ok:0, error:0,
+    };
+
+    try {
+      while (true) {
+        btn.textContent = `再診断中... (${totalDiagnosed}件)`;
+        statusEl.style.color = 'var(--gray)';
+        statusEl.textContent = `問題ありターゲットを再診断中... ${totalDiagnosed}件完了`;
+
+        let d;
+        try {
+          const res = await fetch('/api/diagnose', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ limit: BATCH, mode: 'rediagnose_all', after_id: afterId })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          d = await res.json();
+        } catch(fetchErr) {
+          statusEl.style.color = 'var(--yellow)';
+          statusEl.textContent = `再診断中断（${totalDiagnosed}件）: ${fetchErr}`;
+          break;
+        }
+
+        if (!d.ok) {
+          statusEl.style.color = 'var(--yellow)';
+          statusEl.textContent = `再診断エラー: ${d.error || 'サーバーエラー'}`;
+          break;
+        }
+
+        const r = d.results || {};
+        for (const k of Object.keys(totals)) totals[k] += (r[k] || 0);
+        totalDiagnosed += d.diagnosed;
+        emailFound     += (d.email_found || 0);
+        formFound      += (d.form_found  || 0);
+        afterId         = (d.last_id != null) ? d.last_id : afterId;
+        loadStats();
+
+        if (d.diagnosed === 0 || d.diagnosed < BATCH) break;
+      }
+
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = totalDiagnosed > 0
+        ? `✓ 再診断完了 ${totalDiagnosed}件（ok化: ${totals.ok} / メール ${emailFound}）`
+        : '✓ 再診断対象はありません';
+
+      if (totalDiagnosed > 0) {
+        renderRunResult({ collected: null, diagnosed: totalDiagnosed, emailFound, formFound, totals });
+      }
+      loadStats();
+    } catch(e) {
+      statusEl.style.color = 'var(--yellow)';
+      statusEl.textContent = `再診断エラー: ${e}`;
+    }
+    btn.disabled = false; btn.textContent = LABEL;
+    updateCounts();
   }
 
   // 「⟳ メール未取得を再スキャン」ボタン用（診断済みも対象・idカーソルで前進）
