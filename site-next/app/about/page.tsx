@@ -29,246 +29,203 @@ const VALUES = [
 
 const STACK = [
   "Next.js", "TypeScript", "React", "Python",
-  "FastAPI", "SQLite", "LINE Messaging API",
+  "FastAPI", "PostgreSQL", "LINE Messaging API",
   "SendGrid", "Vercel", "Cloudflare Pages", "Tailwind CSS",
 ];
 
 export default function AboutPage() {
   return (
     <main>
-      {/* ── Hero ── */}
+      {/* ── Page Header ── */}
       <section style={{
-        position: "relative",
-        overflow: "hidden",
-        background: "var(--navy)",
-        minHeight: "82vh",
-        display: "flex",
-        alignItems: "center",
-        padding: "8rem clamp(1.5rem, 5vw, 6rem) 6rem",
+        padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
+        borderBottom: "1px solid var(--border)",
       }}>
-        {/* Watermark */}
-        <div aria-hidden="true" style={{
-          position: "absolute",
-          top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          fontSize: "clamp(7rem, 23vw, 17rem)",
-          fontWeight: 900,
-          letterSpacing: "-0.03em",
-          color: "rgba(201,168,76,0.042)",
-          userSelect: "none",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-          fontFamily: "'DM Sans', sans-serif",
-          lineHeight: 1,
-        }}>
-          WELDEX
-        </div>
-
-        {/* Rotating rings */}
-        <div aria-hidden="true" className="about-ring-wrap">
-          <div className="about-ring-outer" />
-          <div className="about-ring-inner" />
-        </div>
-
-        {/* Hero content */}
-        <div style={{
-          position: "relative", zIndex: 1, maxWidth: 680,
-          animation: "aboutHeroIn 0.9s ease 0.2s both",
-        }}>
-          <div className="sec-label" style={{ color: "var(--gold)" }}>
-            About Weldex
-          </div>
-
-          <h1 style={{
-            fontFamily: "'Zen Kaku Gothic New', sans-serif",
-            fontSize: "clamp(2.8rem, 7vw, 6rem)",
-            fontWeight: 900,
-            color: "var(--white)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.03em",
-            marginBottom: "1.75rem",
-          }}>
-            全てのDX・IT業務を、<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結で。</em>
-          </h1>
-
+        <FadeIn>
           <p style={{
-            fontSize: "clamp(0.9375rem, 1.5vw, 1.05rem)",
-            color: "rgba(255,255,255,0.72)",
-            lineHeight: 2.0,
-            maxWidth: 500,
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "clamp(3.5rem, 8vw, 7rem)",
+            fontWeight: 900,
+            color: "var(--navy)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            marginBottom: "2rem",
           }}>
-            Weldexは、医療・士業・建設などの中小企業向けに、<br />
-            AIを活用したWEB制作・予約システム・LINE連携を<br />
+            About
+          </p>
+          <p style={{
+            fontSize: "0.9375rem", color: "var(--gray)",
+            lineHeight: 2.0, maxWidth: 480,
+          }}>
+            医療・士業・建設などの中小企業向けに、AIを活用したWEB制作・予約システム・LINE連携を<br />
             大手の1/3以下のコストで提供する個人事業です。
           </p>
-        </div>
+        </FadeIn>
       </section>
 
       {/* ── Philosophy & Values ── */}
       <section style={{
-        background: "#f8f9fc",
+        background: "var(--white)",
         padding: "7rem clamp(1.5rem, 5vw, 6rem)",
       }}>
         <FadeIn>
-        <div style={{
-          maxWidth: 1080,
-          margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "5rem",
-          alignItems: "start",
-        }} className="resp-2col">
+          <div style={{
+            maxWidth: 1080,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "5rem",
+            alignItems: "start",
+          }} className="resp-2col">
 
-          {/* Left: blockquote */}
-          <div>
-            <div className="sec-label">Philosophy</div>
-            <blockquote style={{
-              borderLeft: "2px solid var(--gold)",
-              paddingLeft: "2rem",
-              margin: "2rem 0 2.5rem",
-            }}>
+            <div>
+              <div className="sec-label">Philosophy</div>
+              <blockquote style={{
+                borderLeft: "2px solid var(--gold)",
+                paddingLeft: "2rem",
+                margin: "2rem 0 2.5rem",
+              }}>
+                <p style={{
+                  fontSize: "clamp(1.05rem, 2.2vw, 1.45rem)",
+                  fontWeight: 700,
+                  color: "var(--navy)",
+                  lineHeight: 1.78,
+                  letterSpacing: "-0.01em",
+                }}>
+                  &ldquo;AI時代の今だからこそ、<br />
+                  技術と誠実に向き合う。<br />
+                  それがWeldexの<br />
+                  存在理由です。&rdquo;
+                </p>
+                <footer style={{
+                  marginTop: "1.25rem",
+                  fontSize: "0.75rem",
+                  color: "var(--gray)",
+                  letterSpacing: "0.06em",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  — 成田 涼真 / Weldex代表
+                </footer>
+              </blockquote>
+
               <p style={{
-                fontSize: "clamp(1.05rem, 2.2vw, 1.45rem)",
-                fontWeight: 700,
-                color: "var(--navy)",
-                lineHeight: 1.78,
-                letterSpacing: "-0.01em",
-              }}>
-                &ldquo;AI時代の今だからこそ、<br />
-                技術と誠実に向き合う。<br />
-                それがWeldexの<br />
-                存在理由です。&rdquo;
-              </p>
-              <footer style={{
-                marginTop: "1.25rem",
-                fontSize: "0.75rem",
+                fontSize: "0.9375rem",
                 color: "var(--gray)",
-                letterSpacing: "0.06em",
-                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 2.0,
+                maxWidth: 400,
               }}>
-                — 成田 涼真 / Weldex代表
-              </footer>
-            </blockquote>
+                大手制作会社への対抗軸は「価格」だけではありません。
+                レスポンスの速さ、クライアントへの理解、そして実装品質—
+                その全てで期待を超えることを目指しています。
+              </p>
+            </div>
 
-            <p style={{
-              fontSize: "0.9375rem",
-              color: "var(--gray)",
-              lineHeight: 2.0,
-              maxWidth: 400,
-            }}>
-              大手制作会社への対抗軸は「価格」だけではありません。
-              レスポンスの速さ、クライアントへの理解、そして実装品質—
-              その全てで期待を超えることを目指しています。
-            </p>
-          </div>
-
-          {/* Right: numbered value cards */}
-          <div>
-            <div className="sec-label">Values</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "2.25rem", marginTop: "2rem" }}>
-              {VALUES.map((v, i) => (
-                <div
-                  key={v.num}
-                  style={{
-                    borderBottom: i < VALUES.length - 1 ? "1px solid var(--border)" : "none",
-                    paddingBottom: i < VALUES.length - 1 ? "2.25rem" : 0,
-                    display: "flex",
-                    gap: "1.5rem",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <span style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "0.62rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.14em",
-                    color: "var(--gold)",
-                    paddingTop: "0.35rem",
-                    flexShrink: 0,
-                  }}>
-                    {v.num}
-                  </span>
-                  <div>
-                    <h3 style={{
-                      fontSize: "1.05rem",
+            <div>
+              <div className="sec-label">Values</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2.25rem", marginTop: "2rem" }}>
+                {VALUES.map((v, i) => (
+                  <div
+                    key={v.num}
+                    style={{
+                      borderBottom: i < VALUES.length - 1 ? "1px solid var(--border)" : "none",
+                      paddingBottom: i < VALUES.length - 1 ? "2.25rem" : 0,
+                      display: "flex",
+                      gap: "1.5rem",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span style={{
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontSize: "0.62rem",
                       fontWeight: 700,
-                      color: "var(--navy)",
-                      marginBottom: "0.5rem",
+                      letterSpacing: "0.14em",
+                      color: "var(--gold)",
+                      paddingTop: "0.35rem",
+                      flexShrink: 0,
                     }}>
-                      {v.title}
-                    </h3>
-                    <p style={{
-                      fontSize: "0.9375rem",
-                      color: "var(--gray)",
-                      lineHeight: 2.0,
-                    }}>
-                      {v.desc}
-                    </p>
+                      {v.num}
+                    </span>
+                    <div>
+                      <h3 style={{
+                        fontSize: "1.05rem",
+                        fontWeight: 700,
+                        color: "var(--navy)",
+                        marginBottom: "0.5rem",
+                      }}>
+                        {v.title}
+                      </h3>
+                      <p style={{
+                        fontSize: "0.9375rem",
+                        color: "var(--gray)",
+                        lineHeight: 2.0,
+                      }}>
+                        {v.desc}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
         </FadeIn>
       </section>
 
       {/* ── Tech Stack ── */}
       <section style={{
-        background: "var(--white)",
+        background: "var(--off)",
         padding: "5.5rem clamp(1.5rem, 5vw, 6rem)",
         borderTop: "1px solid var(--border)",
       }}>
         <FadeIn>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div className="sec-label">Tech Stack</div>
-          <h2 style={{
-            fontSize: "clamp(22px, 3vw, 36px)",
-            fontWeight: 900,
-            color: "var(--navy)",
-            lineHeight: 1.25,
-            marginBottom: "2.5rem",
-            letterSpacing: "-0.01em",
-          }}>
-            使用技術
-          </h2>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div className="sec-label">Tech Stack</div>
+            <h2 style={{
+              fontSize: "clamp(22px, 3vw, 36px)",
+              fontWeight: 900,
+              color: "var(--navy)",
+              lineHeight: 1.25,
+              marginBottom: "2.5rem",
+              letterSpacing: "-0.01em",
+            }}>
+              使用技術
+            </h2>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
-            {STACK.map(tag => (
-              <span key={tag} style={{
-                display: "inline-block",
-                border: "1px solid var(--border)",
-                padding: "0.45rem 1.1rem",
-                fontSize: "0.78rem",
-                color: "var(--navy)",
-                fontWeight: 500,
-                letterSpacing: "0.02em",
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                {tag}
-              </span>
-            ))}
-          </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
+              {STACK.map(tag => (
+                <span key={tag} style={{
+                  display: "inline-block",
+                  border: "1px solid var(--border)",
+                  background: "var(--white)",
+                  padding: "0.45rem 1.1rem",
+                  fontSize: "0.78rem",
+                  color: "var(--navy)",
+                  fontWeight: 500,
+                  letterSpacing: "0.02em",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
 
-          <div style={{
-            marginTop: "4.5rem",
-            paddingTop: "3rem",
-            borderTop: "1px solid var(--border)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.25rem",
-          }}>
-            <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0 }}>
-              まずはお気軽にご相談ください。初回相談は無料です。
-            </p>
-            <div>
-              <Link href="/contact" className="btn btn-primary">
-                無料相談をする
-              </Link>
+            <div style={{
+              marginTop: "4.5rem",
+              paddingTop: "3rem",
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+            }}>
+              <p style={{ fontSize: "0.9375rem", color: "var(--gray)", lineHeight: 2.0 }}>
+                まずはお気軽にご相談ください。初回相談は無料です。
+              </p>
+              <div>
+                <Link href="/contact" className="btn btn-primary">
+                  無料相談をする
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
         </FadeIn>
       </section>
     </main>

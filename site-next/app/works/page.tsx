@@ -21,57 +21,31 @@ const industries = [
 export default function WorksPage() {
   return (
     <main>
-      {/* ── Hero ── */}
+      {/* ── Page Header ── */}
       <section style={{
-        position: "relative",
-        background: "var(--navy)",
-        minHeight: "68vh",
-        display: "flex",
-        alignItems: "flex-end",
         padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        overflow: "hidden",
+        borderBottom: "1px solid var(--border)",
       }}>
-        <div aria-hidden="true" style={{
-          position: "absolute",
-          top: "50%", right: "-3%",
-          transform: "translateY(-50%)",
-          fontSize: "clamp(9rem, 25vw, 20rem)",
-          fontWeight: 900,
-          letterSpacing: "-0.04em",
-          color: "rgba(201,168,76,0.04)",
-          userSelect: "none",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-          fontFamily: "'DM Sans', sans-serif",
-          lineHeight: 1,
-        }}>
-          WORKS
-        </div>
-
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div className="sec-label" style={{ color: "var(--gold)" }}>Works &amp; Demo</div>
-          <h1 style={{
-            fontFamily: "'Zen Kaku Gothic New', sans-serif",
-            fontSize: "clamp(2.8rem, 7vw, 6rem)",
-            fontWeight: 900,
-            color: "var(--white)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.03em",
-            marginBottom: "1.5rem",
-          }}>
-            実際に触れて、<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>体験してください。</em>
-          </h1>
+        <FadeIn>
           <p style={{
-            fontSize: "clamp(0.9375rem, 1.4vw, 1.05rem)",
-            color: "rgba(255,255,255,0.65)",
-            lineHeight: 2.0,
-            maxWidth: 460,
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "clamp(3.5rem, 8vw, 7rem)",
+            fontWeight: 900,
+            color: "var(--navy)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            marginBottom: "2rem",
           }}>
-            ログイン不要・アプリ不要。<br />
-            完全動作するデモを今すぐお試しいただけます。
+            Works
           </p>
-        </div>
+          <p style={{
+            fontSize: "0.9375rem", color: "var(--gray)",
+            lineHeight: 2.0, maxWidth: 440,
+          }}>
+            実際に動くデモをご用意しています。<br />
+            ぜひ触れて、使い心地をご確認ください。
+          </p>
+        </FadeIn>
       </section>
 
       {/* ── カルーセル ── */}
@@ -149,7 +123,6 @@ export default function WorksPage() {
       <section style={{
         padding: "5rem clamp(1.5rem,5vw,6rem)",
         borderTop: "1px solid var(--border)",
-        background: "var(--off)",
       }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <FadeIn>

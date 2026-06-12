@@ -14,57 +14,31 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <main>
-      {/* ── Hero ── */}
+      {/* ── Page Header ── */}
       <section style={{
-        position: "relative",
-        background: "var(--navy)",
-        minHeight: "60vh",
-        display: "flex",
-        alignItems: "flex-end",
         padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        overflow: "hidden",
+        borderBottom: "1px solid var(--border)",
       }}>
-        <div aria-hidden="true" style={{
-          position: "absolute",
-          top: "50%", right: "-3%",
-          transform: "translateY(-50%)",
-          fontSize: "clamp(9rem, 25vw, 20rem)",
-          fontWeight: 900,
-          letterSpacing: "-0.04em",
-          color: "rgba(201,168,76,0.04)",
-          userSelect: "none",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-          fontFamily: "'DM Sans', sans-serif",
-          lineHeight: 1,
-        }}>
-          PRICING
-        </div>
-
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div className="sec-label" style={{ color: "var(--gold)" }}>Pricing</div>
-          <h1 style={{
-            fontFamily: "'Zen Kaku Gothic New', sans-serif",
-            fontSize: "clamp(2.8rem, 7vw, 6rem)",
-            fontWeight: 900,
-            color: "var(--white)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.03em",
-            marginBottom: "1.5rem",
-          }}>
-            明確な料金、<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>驚きのコスパ。</em>
-          </h1>
+        <FadeIn>
           <p style={{
-            fontSize: "clamp(0.9375rem, 1.4vw, 1.05rem)",
-            color: "rgba(255,255,255,0.65)",
-            lineHeight: 2.0,
-            maxWidth: 480,
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "clamp(3.5rem, 8vw, 7rem)",
+            fontWeight: 900,
+            color: "var(--navy)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            marginBottom: "2rem",
+          }}>
+            Pricing
+          </p>
+          <p style={{
+            fontSize: "0.9375rem", color: "var(--gray)",
+            lineHeight: 2.0, maxWidth: 520,
           }}>
             初期費用と月額保守費の目安です。<br />
-            規模・要件によって変動しますので、まずはご相談ください。
+            規模・要件によって変動します。詳細はお気軽にご相談ください。
           </p>
-        </div>
+        </FadeIn>
       </section>
 
       {/* ── 料金テーブル ── */}
@@ -81,7 +55,6 @@ export default function PricingPage() {
               margin: "0 auto",
               alignItems: "start",
             }}>
-              {/* 大きな番号 */}
               <div style={{
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: "clamp(3.5rem, 7vw, 7rem)",
@@ -95,7 +68,6 @@ export default function PricingPage() {
                 {s.num}
               </div>
 
-              {/* コンテンツ */}
               <div>
                 <div style={{
                   fontSize: "0.68rem", color: "var(--gold)", fontWeight: 700,
@@ -116,7 +88,6 @@ export default function PricingPage() {
                   {s.title}
                 </h2>
 
-                {/* 料金グリッド */}
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
@@ -129,10 +100,7 @@ export default function PricingPage() {
                     { label: "初期費用", value: `¥${fmtYen(s.priceFrom)}〜` },
                     { label: "月額保守", value: `¥${fmtYen(s.monthlyFrom)}〜 / 月` },
                   ].map(({ label, value }) => (
-                    <div key={label} style={{
-                      background: "var(--white)",
-                      padding: "1.25rem 1.5rem",
-                    }}>
+                    <div key={label} style={{ background: "var(--white)", padding: "1.25rem 1.5rem" }}>
                       <div style={{
                         fontSize: "0.65rem", color: "var(--gray)",
                         letterSpacing: "0.08em", marginBottom: "0.5rem",
@@ -153,7 +121,6 @@ export default function PricingPage() {
                   ))}
                 </div>
 
-                {/* ポイント */}
                 <ul style={{
                   margin: 0, padding: 0, listStyle: "none",
                   display: "flex", flexDirection: "column", gap: "0.4rem",
@@ -185,7 +152,6 @@ export default function PricingPage() {
         ))}
       </section>
 
-      {/* ── 注記 ── */}
       <FadeIn>
         <div style={{
           maxWidth: 1100, margin: "0 auto",

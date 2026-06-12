@@ -14,58 +14,31 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <main>
-      {/* ── Hero ── */}
+      {/* ── Page Header ── */}
       <section style={{
-        position: "relative",
-        background: "var(--navy)",
-        minHeight: "72vh",
-        display: "flex",
-        alignItems: "flex-end",
         padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        overflow: "hidden",
+        borderBottom: "1px solid var(--border)",
       }}>
-        {/* 背景透かし */}
-        <div aria-hidden="true" style={{
-          position: "absolute",
-          top: "50%", right: "-5%",
-          transform: "translateY(-50%)",
-          fontSize: "clamp(10rem, 28vw, 22rem)",
-          fontWeight: 900,
-          letterSpacing: "-0.04em",
-          color: "rgba(201,168,76,0.04)",
-          userSelect: "none",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-          fontFamily: "'DM Sans', sans-serif",
-          lineHeight: 1,
-        }}>
-          SERVICES
-        </div>
-
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 900 }}>
-          <div className="sec-label" style={{ color: "var(--gold)" }}>Services</div>
-          <h1 style={{
-            fontFamily: "'Zen Kaku Gothic New', sans-serif",
-            fontSize: "clamp(2.8rem, 7vw, 6rem)",
-            fontWeight: 900,
-            color: "var(--white)",
-            lineHeight: 1.08,
-            letterSpacing: "-0.03em",
-            marginBottom: "1.5rem",
-          }}>
-            制作から運用まで、<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結</em>で届ける。
-          </h1>
+        <FadeIn>
           <p style={{
-            fontSize: "clamp(0.9375rem, 1.4vw, 1.05rem)",
-            color: "rgba(255,255,255,0.65)",
-            lineHeight: 2.0,
-            maxWidth: 520,
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "clamp(3.5rem, 8vw, 7rem)",
+            fontWeight: 900,
+            color: "var(--navy)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            marginBottom: "2rem",
           }}>
-            業種・規模に合わせて4つのサービスをご用意。<br />
-            組み合わせ導入でコストを抑えながら最大の効果を出せます。
+            Service
           </p>
-        </div>
+          <p style={{
+            fontSize: "0.9375rem", color: "var(--gray)",
+            lineHeight: 2.0, maxWidth: 440,
+          }}>
+            制作から運用まで一社完結。<br />
+            業種・規模に合わせてご提案します。
+          </p>
+        </FadeIn>
       </section>
 
       {/* ── サービス一覧 ── */}
@@ -128,7 +101,6 @@ export default function ServicesPage() {
                   {s.desc}
                 </p>
 
-                {/* 特徴タグ */}
                 <ul style={{
                   display: "flex", flexWrap: "wrap", gap: "0.5rem",
                   listStyle: "none", padding: 0, margin: "0 0 2rem",
@@ -146,7 +118,6 @@ export default function ServicesPage() {
                   ))}
                 </ul>
 
-                {/* 価格 + リンク */}
                 <div style={{
                   display: "flex", alignItems: "center",
                   justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
@@ -177,7 +148,6 @@ export default function ServicesPage() {
         ))}
       </section>
 
-      {/* ── CTA ── */}
       <FadeIn style={{ textAlign: "center", padding: "4rem clamp(1.5rem,5vw,6rem)" }}>
         <Link href="/contact" className="btn btn-primary" style={{ fontSize: "1rem" }}>
           無料相談をする
