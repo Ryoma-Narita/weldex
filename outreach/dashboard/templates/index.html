@@ -65,9 +65,14 @@
     /* ステータスバッジ */
     .badge { display: inline-block; font-size: 0.62rem; padding: 0.12rem 0.45rem; font-weight: 600; letter-spacing: 0.03em; border-radius: 2px; }
     .badge-none      { background: #fee2e2; color: var(--red); }
+    .badge-no_ssl    { background: #fee2e2; color: #dc2626; }
+    .badge-old_tech  { background: #ffedd5; color: #c2410c; }
+    .badge-outdated  { background: #fef3c7; color: var(--yellow); }
     .badge-old       { background: #fef3c7; color: var(--yellow); }
-    .badge-no_mobile { background: #fef3c7; color: var(--yellow); }
+    .badge-no_mobile { background: #fef9c3; color: #854d0e; }
     .badge-phone_only{ background: #ede9fe; color: var(--purple); }
+    .badge-slow      { background: #dbeafe; color: #1d4ed8; }
+    .badge-no_line   { background: #f3e8ff; color: #7c3aed; }
     .badge-ok        { background: #dcfce7; color: var(--green); }
     .badge-error     { background: #f1f5f9; color: var(--light); }
     .badge-unchecked { background: #f1f5f9; color: var(--light); }
@@ -394,9 +399,13 @@
     <select id="status-filter">
       <option value="">ステータス：すべて</option>
       <option value="none">サイトなし</option>
-      <option value="old">古いサイト</option>
+      <option value="no_ssl">SSL非対応</option>
+      <option value="old_tech">古い技術</option>
+      <option value="outdated">長期未更新</option>
       <option value="no_mobile">スマホ非対応</option>
       <option value="phone_only">電話のみ</option>
+      <option value="slow">表示速度遅延</option>
+      <option value="no_line">LINE未連携</option>
       <option value="ok">問題なし</option>
       <option value="unchecked">未診断</option>
       <option value="error">エラー</option>
@@ -873,12 +882,13 @@
       document.getElementById('s-total').textContent     = d.total;
       document.getElementById('s-unchecked').textContent = d.unchecked;
       document.getElementById('s-none').textContent      = d.none;
-      document.getElementById('s-weak').textContent      = d.old + d.no_mobile;
+      const weak = (d.no_ssl_st||0) + (d.old_tech_st||0) + (d.outdated_st||0) + (d.old||0) + (d.no_mobile||0) + (d.slow_st||0) + (d.no_line_st||0);
+      document.getElementById('s-weak').textContent      = weak;
       document.getElementById('s-phone').textContent     = d.phone_only;
       document.getElementById('s-ok').textContent        = d.ok;
       document.getElementById('s-email').textContent     = d.with_email;
       document.getElementById('s-approachable').textContent = d.approachable ?? '-';
-      document.getElementById('s-candidate').textContent = d.none + d.old + d.no_mobile + d.phone_only;
+      document.getElementById('s-candidate').textContent = d.none + (d.no_ssl_st||0) + (d.old_tech_st||0) + (d.outdated_st||0) + (d.old||0) + (d.no_mobile||0) + d.phone_only + (d.slow_st||0) + (d.no_line_st||0);
       document.getElementById('s-queued').textContent    = d.queued  ?? '-';
       document.getElementById('s-today').textContent     = d.today   ?? '-';
       document.getElementById('s-sent').textContent      = d.sent    ?? '-';
@@ -890,9 +900,14 @@
   // ─── ステータス日本語ラベル ───
   const STATUS_LABEL = {
     none:      'サイトなし',
+    no_ssl:    'SSL非対応',
+    old_tech:  '古い技術',
+    outdated:  '長期未更新',
     old:       '古いサイト',
     no_mobile: 'スマホ非対応',
     phone_only:'電話のみ',
+    slow:      '速度遅延',
+    no_line:   'LINE未連携',
     ok:        '問題なし',
     unchecked: '未診断',
     error:     'エラー',
@@ -901,19 +916,26 @@
   // ─── 営業ポイント（ステータス別） ───
   const PITCH = {
     none:      { text: 'Webサイト制作を提案', color: 'var(--red)' },
+    no_ssl:    { text: 'SSL対応＋セキュリティ改善を提案', color: '#dc2626' },
+    old_tech:  { text: 'サイトリニューアルを提案（古い技術）', color: '#c2410c' },
+    outdated:  { text: 'サイトリニューアルを提案（長期未更新）', color: 'var(--yellow)' },
     old:       { text: 'サイトリニューアルを提案', color: 'var(--yellow)' },
-    no_mobile: { text: 'スマホ対応を提案', color: 'var(--yellow)' },
-    phone_only:{ text: 'LINE予約導入を提案', color: 'var(--purple)' },
+    no_mobile: { text: 'スマホ対応リニューアルを提案', color: '#854d0e' },
+    phone_only:{ text: 'LINE予約 / WEB予約導入を提案', color: 'var(--purple)' },
+    slow:      { text: 'サーバー最適化・表示速度改善を提案', color: '#1d4ed8' },
+    no_line:   { text: 'LINE公式アカウント開設を提案', color: '#7c3aed' },
   };
 
   // ─── 診断フラグ HTML生成 ───
   function diagFlags(t) {
     const f = [];
-    if (t.has_line === 0)           f.push('<span class="flag-tag flag-purple">LINE未連携</span>');
-    if (t.has_ssl === 0)            f.push('<span class="flag-tag flag-red">SSL非対応</span>');
-    if (t.has_online_booking === 0) f.push('<span class="flag-tag flag-orange">予約なし</span>');
-    if (t.has_contact_form === 0)   f.push('<span class="flag-tag flag-gray">フォームなし</span>');
-    if (t.phone_only === 1)         f.push('<span class="flag-tag flag-blue">電話のみ</span>');
+    if (t.has_line === 0)                        f.push('<span class="flag-tag flag-purple">LINE未連携</span>');
+    if (t.has_ssl === 0)                         f.push('<span class="flag-tag flag-red">SSL非対応</span>');
+    if (t.has_online_booking === 0)              f.push('<span class="flag-tag flag-orange">予約なし</span>');
+    if (t.has_contact_form === 0)                f.push('<span class="flag-tag flag-gray">フォームなし</span>');
+    if (t.phone_only === 1)                      f.push('<span class="flag-tag flag-blue">電話のみ</span>');
+    if (t.response_sec != null && t.response_sec >= 3.0)
+                                                 f.push(`<span class="flag-tag flag-blue">${t.response_sec}秒</span>`);
     return f.join(' ');
   }
 
@@ -1523,7 +1545,11 @@
 
   // ─── 送信プレビュー ───
   const TMPL_LABEL = { A: 'パターンA：サイトなし', B: 'パターンB：古い/非対応', C: 'パターンC：電話のみ' };
-  const REASON_LABEL = { none: 'サイトなし', old: '古いサイト', no_mobile: 'スマホ非対応', phone_only: '電話のみ' };
+  const REASON_LABEL = {
+    none: 'サイトなし', no_ssl: 'SSL非対応', old_tech: '古い技術', outdated: '長期未更新',
+    old: '古いサイト', no_mobile: 'スマホ非対応', phone_only: '電話のみ',
+    slow: '速度遅延', no_line: 'LINE未連携',
+  };
 
   async function loadPreview() {
     const el = document.getElementById('preview-cards');
@@ -1862,8 +1888,20 @@
     document.getElementById('rr-diagnosed').textContent = diagnosed;
     document.getElementById('rr-email').textContent     = emailFound;
     document.getElementById('rr-form').textContent      = formFound;
-    let bd = `サイトなし ${totals.none} / 古い ${totals.old} / スマホ非対応 ${totals.no_mobile} / 電話のみ ${totals.phone_only} / 問題なし ${totals.ok}`;
-    if (totals.error) bd += ` / エラー ${totals.error}`;
+    const parts = [
+      totals.none        ? `サイトなし ${totals.none}`         : null,
+      totals.no_ssl      ? `SSL非対応 ${totals.no_ssl}`        : null,
+      totals.old_tech    ? `古い技術 ${totals.old_tech}`       : null,
+      totals.outdated    ? `長期未更新 ${totals.outdated}`     : null,
+      totals.old         ? `古い ${totals.old}`                : null,
+      totals.no_mobile   ? `スマホ非対応 ${totals.no_mobile}`  : null,
+      totals.phone_only  ? `電話のみ ${totals.phone_only}`     : null,
+      totals.slow        ? `速度遅延 ${totals.slow}`           : null,
+      totals.no_line     ? `LINE未連携 ${totals.no_line}`      : null,
+      totals.ok          ? `問題なし ${totals.ok}`             : null,
+      totals.error       ? `エラー ${totals.error}`            : null,
+    ].filter(Boolean);
+    let bd = parts.join(' / ');
     document.getElementById('rr-breakdown').textContent = bd;
     panel.style.display = '';
   }
@@ -2303,9 +2341,14 @@
   // ステータスの日本語ラベル
   const STATUS_LABELS = {
     none:       'サイトなし',
+    no_ssl:     'SSL非対応',
+    old_tech:   '古い技術が使われている',
+    outdated:   '長期間更新されていない',
     old:        'サイトが古い',
     no_mobile:  'スマホ非対応',
     phone_only: '電話のみ',
+    slow:       '表示速度が遅い',
+    no_line:    'LINE公式未連携',
     ok:         '問題なし',
     unchecked:  '未診断',
     error:      'エラー',
@@ -2321,7 +2364,11 @@
     // サマリーバッジ
     const summary = document.getElementById('gen-email-summary');
     const statusLabel = STATUS_LABELS[t.site_status] || t.site_status || '不明';
-    const statusColor = { none:'var(--red)', old:'#d97706', no_mobile:'#7c3aed', phone_only:'var(--blue)', ok:'var(--green)' }[t.site_status] || 'var(--gray)';
+    const statusColor = {
+      none:'var(--red)', no_ssl:'#dc2626', old_tech:'#c2410c', outdated:'#d97706',
+      old:'#d97706', no_mobile:'#854d0e', phone_only:'var(--purple)',
+      slow:'#1d4ed8', no_line:'#7c3aed', ok:'var(--green)',
+    }[t.site_status] || 'var(--gray)';
     const parts = [
       t.industry ? `<span style="color:var(--navy);font-weight:600;">${esc(t.industry)}</span>` : null,
       t.area     ? `<span>${esc(t.area)}</span>` : null,

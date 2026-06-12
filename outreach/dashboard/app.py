@@ -326,9 +326,14 @@ def api_preview_queue(limit: int = Query(50), auth=Depends(require_auth)):
 
     TEMPLATE_BY_STATUS = {
         "none":      "A",
+        "no_ssl":    "B",
+        "old_tech":  "B",
+        "outdated":  "B",
         "old":       "B",
         "no_mobile": "B",
         "phone_only":"C",
+        "slow":      "B",
+        "no_line":   "B",
     }
 
     with get_conn() as conn:
@@ -339,14 +344,22 @@ def api_preview_queue(limit: int = Query(50), auth=Depends(require_auth)):
             FROM targets
             WHERE email IS NOT NULL AND email != ''
               AND send_status = 'pending'
-              AND site_status IN ('none','old','no_mobile','phone_only')
+              AND site_status IN (
+                'none','old','no_ssl','old_tech','outdated',
+                'no_mobile','phone_only','slow','no_line'
+              )
             ORDER BY
               CASE site_status
                 WHEN 'phone_only' THEN 1
                 WHEN 'none'       THEN 2
-                WHEN 'no_mobile'  THEN 3
-                WHEN 'old'        THEN 4
-                ELSE 5
+                WHEN 'no_ssl'     THEN 3
+                WHEN 'old_tech'   THEN 4
+                WHEN 'outdated'   THEN 4
+                WHEN 'no_mobile'  THEN 5
+                WHEN 'slow'       THEN 6
+                WHEN 'no_line'    THEN 6
+                WHEN 'old'        THEN 7
+                ELSE 8
               END, id ASC
             LIMIT ?
         """, (limit,)).fetchall()
@@ -580,7 +593,11 @@ async def api_diagnose(
 
         write_log("INFO", "diagnose", f"[dashboard] 診断開始({mode}): {len(targets)}件")
 
-        results = {"none": 0, "old": 0, "no_mobile": 0, "phone_only": 0, "ok": 0, "error": 0}
+        results = {
+            "none": 0, "no_ssl": 0, "old_tech": 0, "outdated": 0, "old": 0,
+            "no_mobile": 0, "phone_only": 0, "slow": 0, "no_line": 0,
+            "ok": 0, "error": 0,
+        }
         email_found = 0   # このバッチで新たにメールが取れた件数
         form_found  = 0   # このバッチでフォームURLが取れた件数
 
@@ -841,9 +858,14 @@ def api_customers_update(
 # ステータス → 日本語ラベル
 _STATUS_LABEL: dict[str, str] = {
     "none":       "WEBサイトなし",
+    "no_ssl":     "SSL非対応（ブラウザ警告あり）",
+    "old_tech":   "古い技術が使われている（frameset/Flash等）",
+    "outdated":   "長期間更新されていない",
     "old":        "サイトが古い・古い技術を使用",
     "no_mobile":  "スマホ非対応",
     "phone_only": "電話のみ（WEB予約・フォームなし）",
+    "slow":       "表示速度が遅い（3秒超）",
+    "no_line":    "LINE公式アカウント未連携",
     "ok":         "サイトあり（改善余地あり）",
     "error":      "サイト取得エラー",
     "unchecked":  "未診断",

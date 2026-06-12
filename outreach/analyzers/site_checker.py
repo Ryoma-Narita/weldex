@@ -3,7 +3,8 @@ outreach/analyzers/site_checker.py
 サイト診断：モバイル対応・技術年齢・予約システム・LINE・フォーム有無などを判定する
 
 返却フィールド:
-    status          : "none" / "old" / "no_mobile" / "phone_only" / "ok" / "error"
+    status          : "none" / "no_ssl" / "old_tech" / "outdated" /
+                      "no_mobile" / "phone_only" / "slow" / "no_line" / "ok" / "error"
     email           : 抽出したメールアドレス（なければNone）
     detail          : 診断詳細メッセージ（人間が読む形式）
     has_line        : LINE公式連携あり（bool | None）
@@ -193,7 +194,8 @@ def check_site(url: str, industry: str = "") -> dict:
         industry: 業種名（医療系判定・テンプレート選択に使用）
 
     Returns dict:
-        status          : "none" / "old" / "no_mobile" / "phone_only" / "ok" / "error"
+        status          : "none" / "no_ssl" / "old_tech" / "outdated" /
+                          "no_mobile" / "phone_only" / "slow" / "no_line" / "ok" / "error"
         email           : 抽出したメールアドレス（なければNone）
         detail          : 診断詳細メッセージ
         has_line        : LINE公式連携あり（bool | None）
@@ -288,25 +290,27 @@ def check_site(url: str, industry: str = "") -> dict:
     # ── ステータス判定（優先度順）─────────────────────────────────────────────
     #
     # 優先度:
-    #  1. SSL未対応                        → old
-    #  2. 古い技術（フレーム/Flash/非推奨タグ）→ old
-    #  3. Copyright 10年以上前              → old
+    #  1. SSL未対応                        → no_ssl
+    #  2. 古い技術（フレーム/Flash/非推奨タグ）→ old_tech
+    #  3. Copyright 10年以上前              → outdated
     #  4. スマホ非対応                      → no_mobile
     #  5. 医療系 + 予約なし                  → phone_only（LINE訴求）
     #  6. 一般 + 電話のみ                   → phone_only
-    #  7. 問題なし                          → ok
+    #  7. 表示速度遅延（3秒超）             → slow
+    #  8. LINE未導入                       → no_line
+    #  9. 問題なし                          → ok
 
     if not result["has_ssl"]:
-        result["status"] = "old"
+        result["status"] = "no_ssl"
         result["detail"] = "SSL未対応（HTTP）" if not url.startswith("https://") else "SSL証明書エラー"
 
     elif old_tech:
-        result["status"] = "old"
+        result["status"] = "old_tech"
         result["detail"] = old_tech_reason
 
     elif is_old_copyright:
         years_ago = datetime.now().year - copyright_year
-        result["status"] = "old"
+        result["status"] = "outdated"
         result["detail"] = f"Copyright {copyright_year}年（{years_ago}年以上更新されていない可能性）"
 
     elif not has_viewport and not has_media_query:
@@ -321,13 +325,21 @@ def check_site(url: str, industry: str = "") -> dict:
         else:
             result["detail"] = "ネット予約・フォームなし（電話のみと推定）"
 
+    elif result.get("response_sec") is not None and result["response_sec"] >= 3.0:
+        result["status"] = "slow"
+        result["detail"] = f"表示速度遅延（{result['response_sec']}秒 — Googleの推奨は3秒以内）"
+
+    elif result["has_line"] is False:
+        result["status"] = "no_line"
+        result["detail"] = "LINE公式アカウント未連携（サイト自体は問題なし）"
+
     else:
         result["status"] = "ok"
         result["detail"] = "問題なし"
 
-    # 応答が遅い場合は具体数値を detail に追記（メール生成時の訴求材料）
+    # slow以外でも応答1.5秒超は detail に追記（メール生成時の訴求材料）
     sec = result.get("response_sec")
-    if sec is not None and sec >= 1.5:
+    if sec is not None and sec >= 1.5 and result["status"] != "slow":
         result["detail"] += f"／サーバー応答 {sec}秒（推奨は1秒以内）"
 
     return result

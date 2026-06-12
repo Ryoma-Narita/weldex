@@ -326,8 +326,16 @@ def add_unsubscribe(email: str) -> None:
 
 def build_send_queue() -> int:
     """送信キューを構築する。"""
-    PRIORITY = {"phone_only": 3, "none": 2, "no_mobile": 1, "old": 0}
-    TEMPLATE  = {"phone_only": "C", "none": "A", "no_mobile": "B", "old": "B"}
+    PRIORITY = {
+        "phone_only": 5, "none": 4, "no_ssl": 3,
+        "old_tech": 2, "outdated": 2, "no_mobile": 2,
+        "slow": 1, "no_line": 1, "old": 0,
+    }
+    TEMPLATE  = {
+        "phone_only": "C", "none": "A",
+        "no_ssl": "B", "old_tech": "B", "outdated": "B",
+        "no_mobile": "B", "slow": "B", "no_line": "B", "old": "B",
+    }
 
     with get_conn() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -336,7 +344,10 @@ def build_send_queue() -> int:
                 FROM targets t
                 WHERE t.email IS NOT NULL AND t.email != ''
                   AND t.send_status = 'pending'
-                  AND t.site_status IN ('none','old','no_mobile','phone_only')
+                  AND t.site_status IN (
+                    'none','old','no_ssl','old_tech','outdated',
+                    'no_mobile','phone_only','slow','no_line'
+                  )
                   AND t.id NOT IN (SELECT target_id FROM send_queue)
             """)
             targets = cur.fetchall()
@@ -437,8 +448,13 @@ def get_stats() -> dict:
             unchecked     = count("SELECT COUNT(*) FROM targets WHERE site_status='unchecked'")
             none_         = count("SELECT COUNT(*) FROM targets WHERE site_status='none'")
             old           = count("SELECT COUNT(*) FROM targets WHERE site_status='old'")
+            no_ssl_st     = count("SELECT COUNT(*) FROM targets WHERE site_status='no_ssl'")
+            old_tech_st   = count("SELECT COUNT(*) FROM targets WHERE site_status='old_tech'")
+            outdated_st   = count("SELECT COUNT(*) FROM targets WHERE site_status='outdated'")
             no_mobile     = count("SELECT COUNT(*) FROM targets WHERE site_status='no_mobile'")
             phone_only_st = count("SELECT COUNT(*) FROM targets WHERE site_status='phone_only'")
+            slow_st       = count("SELECT COUNT(*) FROM targets WHERE site_status='slow'")
+            no_line_st    = count("SELECT COUNT(*) FROM targets WHERE site_status='no_line'")
             ok            = count("SELECT COUNT(*) FROM targets WHERE site_status='ok'")
             with_email    = count("SELECT COUNT(*) FROM targets WHERE email IS NOT NULL AND email != ''")
             no_line       = count("SELECT COUNT(*) FROM targets WHERE has_line=0")
@@ -456,7 +472,9 @@ def get_stats() -> dict:
     return {
         "total": total, "unchecked": unchecked,
         "none": none_, "old": old,
+        "no_ssl_st": no_ssl_st, "old_tech_st": old_tech_st, "outdated_st": outdated_st,
         "no_mobile": no_mobile, "phone_only": phone_only_st,
+        "slow_st": slow_st, "no_line_st": no_line_st,
         "ok": ok, "with_email": with_email,
         "no_line": no_line, "no_booking": no_booking,
         "phone_only_flag": phone_only_fl,
