@@ -32,7 +32,7 @@ export default function Hero() {
       </div>
 
       {/* テキストコンテンツ：左側 */}
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 660 }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 780 }}>
         <FadeIn delay={0.1} style={{
           fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.18em",
           color: "var(--gold)", textTransform: "uppercase", marginBottom: "1.5rem",
@@ -46,15 +46,17 @@ export default function Hero() {
         <FadeIn delay={0.2}>
           <h1 style={{
             fontFamily: "var(--font-cormorant)",
-            fontSize: "clamp(1.8rem, 4vw, 2.7rem)",
-            fontWeight: 700,
+            fontSize: "clamp(2.2rem, 6vw, 4.6rem)",
+            fontWeight: 900,
             color: "var(--navy)",
-            lineHeight: 1.3,
-            letterSpacing: "-0.01em",
-            marginBottom: "1.25rem",
+            lineHeight: 1.22,
+            letterSpacing: "-0.02em",
+            marginBottom: "1.5rem",
           }}>
-            AIで、中小企業のデジタルを。<br />
-            大手品質を、<em style={{ color: "var(--gold)", fontStyle: "italic", fontWeight: 700 }}>1/3</em>のコストで。
+            AIで、中小企業の<br />
+            デジタルを。<br />
+            大手品質を、<br />
+            <em style={{ color: "var(--gold)", fontStyle: "normal", fontWeight: 900 }}>1/3</em>のコストで。
           </h1>
         </FadeIn>
 
@@ -105,33 +107,6 @@ export default function Hero() {
           </div>
         </FadeIn>
 
-        <FadeIn delay={0.5}>
-          <div style={{
-            borderLeft: "2px solid var(--gold)",
-            maxWidth: 440,
-            background: "rgba(255,255,255,0.82)",
-            backdropFilter: "blur(4px)",
-            padding: "0.75rem 0.75rem 0.75rem 1rem",
-            borderRadius: "0 4px 4px 0",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.45rem",
-          }}>
-            {[
-              "AIが予約リマインドを自動送信 → 無断キャンセル率を削減",
-              "AIが営業メールを自動生成 → 月多数の企業に自動アプローチ",
-            ].map((text, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "flex-start", gap: "0.5rem",
-                fontSize: "clamp(0.78rem, 1.2vw, 0.875rem)",
-                color: "var(--gray)", lineHeight: 1.65,
-              }}>
-                <span style={{ color: "var(--gold)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
-                <span>{text}</span>
-              </div>
-            ))}
-          </div>
-        </FadeIn>
       </div>
     </div>
   );

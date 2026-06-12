@@ -13,82 +13,176 @@ export const metadata: Metadata = {
 
 export default function ServicesPage() {
   return (
-    <main style={{ paddingTop: "7rem" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 clamp(1.5rem,5vw,6rem) 5rem" }}>
-        <FadeIn>
-          <div className="sec-label">Services</div>
-          <h1 style={{
-            fontFamily: "var(--font-cormorant)",
-            fontSize: "clamp(30px,4vw,52px)",
-            fontWeight: 900, color: "var(--navy)",
-            lineHeight: 1.2, letterSpacing: "-0.02em",
-            marginBottom: "0.75rem",
-          }}>
-            サービス一覧
-          </h1>
-          <p style={{
-            fontSize: "0.9375rem", color: "var(--gray)",
-            lineHeight: 2.0, marginBottom: "4rem", maxWidth: 480,
-          }}>
-            制作から運用まで一社完結。<br />
-            業種・規模に合わせてご提案します。
-          </p>
-        </FadeIn>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, background: "var(--border)" }}>
-          {SERVICES.map((s, i) => (
-            <FadeIn key={s.num} delay={i * 0.1} style={{ background: "var(--white)", padding: "3rem clamp(1.5rem,4vw,3rem)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-                  <span style={{
-                    fontFamily: "var(--font-cormorant)", fontSize: "2.5rem",
-                    fontWeight: 700, color: "var(--border)", lineHeight: 1,
-                  }}>{s.num}</span>
-                  <div>
-                    <div style={{ fontSize: "0.7rem", color: "var(--gold)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: "0.25rem" }}>{s.tag}</div>
-                    <h2 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--navy)", lineHeight: 1.3 }}>{s.title}</h2>
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: "0.9rem", fontWeight: 500, color: "var(--navy)",
-                  borderBottom: "1px solid var(--gold)", paddingBottom: 2,
-                }}>
-                  {fmtYen(s.priceFrom)}円〜
-                </span>
-              </div>
-
-              <p style={{ fontSize: "0.9375rem", color: "#1f2937", lineHeight: 2.0, marginBottom: "1.5rem", maxWidth: 640, fontFamily: "'Noto Sans JP', sans-serif" }}>
-                {s.desc}
-              </p>
-
-              <ul style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", listStyle: "none", padding: 0, margin: 0 }}>
-                {s.features.map((f) => (
-                  <li key={f} style={{
-                    fontSize: "0.75rem", border: "1px solid var(--border)",
-                    color: "var(--gray)", padding: "0.3rem 0.75rem",
-                  }}>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ marginTop: "1.5rem" }}>
-                <Link href={s.href} style={{
-                  fontSize: "0.8rem", fontWeight: 500, color: "var(--navy)",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
-                  borderBottom: "1px solid var(--navy)", paddingBottom: 2,
-                  transition: "opacity 0.15s",
-                }}>
-                  詳細・料金を見る →
-                </Link>
-              </div>
-            </FadeIn>
-          ))}
+    <main>
+      {/* ── Hero ── */}
+      <section style={{
+        position: "relative",
+        background: "var(--navy)",
+        minHeight: "72vh",
+        display: "flex",
+        alignItems: "flex-end",
+        padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
+        overflow: "hidden",
+      }}>
+        {/* 背景透かし */}
+        <div aria-hidden="true" style={{
+          position: "absolute",
+          top: "50%", right: "-5%",
+          transform: "translateY(-50%)",
+          fontSize: "clamp(10rem, 28vw, 22rem)",
+          fontWeight: 900,
+          letterSpacing: "-0.04em",
+          color: "rgba(201,168,76,0.04)",
+          userSelect: "none",
+          whiteSpace: "nowrap",
+          pointerEvents: "none",
+          fontFamily: "'DM Sans', sans-serif",
+          lineHeight: 1,
+        }}>
+          SERVICES
         </div>
 
-        <FadeIn delay={0.2} style={{ marginTop: "3rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-          <Link href="/contact" className="btn btn-primary">無料相談をする</Link>
-        </FadeIn>
-      </div>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 900 }}>
+          <div className="sec-label" style={{ color: "var(--gold)" }}>Services</div>
+          <h1 style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: "clamp(2.8rem, 7vw, 6rem)",
+            fontWeight: 900,
+            color: "var(--white)",
+            lineHeight: 1.08,
+            letterSpacing: "-0.03em",
+            marginBottom: "1.5rem",
+          }}>
+            制作から運用まで、<br />
+            <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結</em>で届ける。
+          </h1>
+          <p style={{
+            fontSize: "clamp(0.9375rem, 1.4vw, 1.05rem)",
+            color: "rgba(255,255,255,0.65)",
+            lineHeight: 2.0,
+            maxWidth: 520,
+          }}>
+            業種・規模に合わせて4つのサービスをご用意。<br />
+            組み合わせ導入でコストを抑えながら最大の効果を出せます。
+          </p>
+        </div>
+      </section>
+
+      {/* ── サービス一覧 ── */}
+      <section style={{ background: "var(--white)" }}>
+        {SERVICES.map((s, i) => (
+          <FadeIn key={s.num}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              gap: "clamp(2rem, 5vw, 5rem)",
+              padding: "5rem clamp(1.5rem, 5vw, 6rem)",
+              borderBottom: i < SERVICES.length - 1 ? "1px solid var(--border)" : "none",
+              maxWidth: 1200,
+              margin: "0 auto",
+              alignItems: "start",
+            }}>
+              {/* 大きな番号 */}
+              <div style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "clamp(4rem, 8vw, 8rem)",
+                fontWeight: 900,
+                color: "var(--border)",
+                lineHeight: 1,
+                letterSpacing: "-0.04em",
+                paddingTop: "0.1em",
+                userSelect: "none",
+              }}>
+                {s.num}
+              </div>
+
+              {/* コンテンツ */}
+              <div>
+                <div style={{
+                  fontSize: "0.68rem", color: "var(--gold)", fontWeight: 700,
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  marginBottom: "0.75rem", fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {s.tag}
+                </div>
+
+                <h2 style={{
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
+                  fontWeight: 900,
+                  color: "var(--navy)",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.02em",
+                  marginBottom: "1.25rem",
+                }}>
+                  {s.title}
+                </h2>
+
+                <p style={{
+                  fontSize: "0.9375rem",
+                  color: "var(--gray)",
+                  lineHeight: 2.2,
+                  marginBottom: "1.75rem",
+                  maxWidth: 600,
+                }}>
+                  {s.desc}
+                </p>
+
+                {/* 特徴タグ */}
+                <ul style={{
+                  display: "flex", flexWrap: "wrap", gap: "0.5rem",
+                  listStyle: "none", padding: 0, margin: "0 0 2rem",
+                }}>
+                  {s.features.map((f) => (
+                    <li key={f} style={{
+                      fontSize: "0.75rem",
+                      border: "1px solid var(--border)",
+                      color: "var(--gray)",
+                      padding: "0.3rem 0.85rem",
+                      letterSpacing: "0.02em",
+                    }}>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* 価格 + リンク */}
+                <div style={{
+                  display: "flex", alignItems: "center",
+                  justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
+                }}>
+                  <span style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: "clamp(1.1rem, 2vw, 1.4rem)",
+                    fontWeight: 700,
+                    color: "var(--navy)",
+                    letterSpacing: "-0.01em",
+                  }}>
+                    ¥{fmtYen(s.priceFrom)}<span style={{ fontSize: "0.75em", fontWeight: 400, marginLeft: 2 }}>円〜</span>
+                  </span>
+
+                  <Link href={s.href} style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    fontSize: "0.82rem", fontWeight: 600, color: "var(--navy)",
+                    textDecoration: "none",
+                    borderBottom: "1px solid var(--navy)", paddingBottom: 2,
+                    letterSpacing: "0.04em", transition: "opacity 0.15s",
+                  }}>
+                    詳細・料金を見る →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        ))}
+      </section>
+
+      {/* ── CTA ── */}
+      <FadeIn style={{ textAlign: "center", padding: "4rem clamp(1.5rem,5vw,6rem)" }}>
+        <Link href="/contact" className="btn btn-primary" style={{ fontSize: "1rem" }}>
+          無料相談をする
+        </Link>
+      </FadeIn>
 
       <CTABand />
     </main>

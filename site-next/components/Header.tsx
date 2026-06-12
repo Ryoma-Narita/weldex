@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const DESKTOP_NAV = [
   { label: "Home",     href: "/" },
@@ -26,6 +26,13 @@ const DM: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -42,17 +49,20 @@ export default function Header() {
 
   return (
     <>
-      {/* ── ナビゲーションバー ── */}
+      {/* ── ナビゲーションバー（ロゴ左・ナビ中央・CTA右の3カラム） ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
         background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #e8e8e8",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "1.1rem clamp(1.5rem,5vw,5rem)",
+        borderBottom: scrolled ? "1px solid #e8e8e8" : "none",
+        boxShadow: scrolled ? "0 2px 16px rgba(0,0,0,0.06)" : "none",
+        transition: "border-bottom 0.2s, box-shadow 0.2s",
+        display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center",
+        padding: "1.6rem clamp(1.5rem,5vw,5rem)",
       }}>
-        {/* ロゴ */}
+        {/* ロゴ（左） */}
         <Link href="/" style={{
-          fontSize: "1.45rem", fontWeight: 700, color: "#0c1a35",
+          justifySelf: "start",
+          fontSize: "1.6rem", fontWeight: 700, color: "#0c1a35",
           letterSpacing: "0.04em", textDecoration: "none",
           display: "flex", alignItems: "center", gap: 3,
           ...DM,
@@ -61,8 +71,8 @@ export default function Header() {
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#c9a84c", display: "inline-block", marginBottom: 6 }} />
         </Link>
 
-        {/* デスクトップ nav */}
-        <ul style={{ gap: "2.5rem", listStyle: "none", margin: 0, padding: 0, alignItems: "center" }} className="desktop-nav">
+        {/* デスクトップ nav（中央） */}
+        <ul style={{ gap: "3rem", listStyle: "none", margin: 0, padding: 0, alignItems: "center", justifySelf: "center" }} className="desktop-nav">
           {DESKTOP_NAV.map(({ label, href }) => (
             <li key={href}>
               <Link href={href} className={`nav-link${isActive(href) ? " active" : ""}`}>
@@ -70,29 +80,31 @@ export default function Header() {
               </Link>
             </li>
           ))}
-          <li>
-            <Link href="/contact" style={{
-              display: "inline-block", background: "#0c1a35", color: "#fff",
-              fontSize: "0.875rem", fontWeight: 600, letterSpacing: "0.05em",
-              padding: "0.65rem 1.6rem", textDecoration: "none",
-              transition: "background 0.2s",
-            }}>
-              無料相談
-            </Link>
-          </li>
         </ul>
 
-        {/* ハンバーガーボタン */}
-        <button
-          onClick={toggle}
-          aria-label="メニュー"
-          className="flex md:hidden hamburger-btn"
-          style={{ flexDirection: "column", gap: 5, padding: 8, background: "none", border: "none", cursor: "pointer", alignItems: "flex-end" }}
-        >
-          {[22, 22, 16].map((w, i) => (
-            <span key={i} style={{ display: "block", width: w, height: 1.5, background: "#1a2540", borderRadius: 2 }} />
-          ))}
-        </button>
+        {/* 右：CTA（デスクトップ）＋ ハンバーガー（モバイル） */}
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <Link href="/contact" className="desktop-nav" style={{
+            background: "#0c1a35", color: "#fff",
+            fontSize: "0.9rem", fontWeight: 600, letterSpacing: "0.05em",
+            padding: "0.75rem 1.8rem", textDecoration: "none",
+            transition: "background 0.2s",
+          }}>
+            無料相談
+          </Link>
+
+          {/* ハンバーガーボタン */}
+          <button
+            onClick={toggle}
+            aria-label="メニュー"
+            className="flex md:hidden hamburger-btn"
+            style={{ flexDirection: "column", gap: 5, padding: 8, background: "none", border: "none", cursor: "pointer", alignItems: "flex-end" }}
+          >
+            {[22, 22, 16].map((w, i) => (
+              <span key={i} style={{ display: "block", width: w, height: 1.5, background: "#1a2540", borderRadius: 2 }} />
+            ))}
+          </button>
+        </div>
       </nav>
 
       {/* ── フルスクリーンメニュー ── */}

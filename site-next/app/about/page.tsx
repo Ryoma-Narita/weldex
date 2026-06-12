@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import FadeIn from "@/components/FadeIn";
 
 export const metadata: Metadata = {
   title: "About | Weldex",
@@ -79,16 +80,15 @@ export default function AboutPage() {
           </div>
 
           <h1 style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "clamp(3rem, 7vw, 5.8rem)",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: "clamp(2.8rem, 7vw, 6rem)",
             fontWeight: 900,
             color: "var(--white)",
             lineHeight: 1.08,
             letterSpacing: "-0.03em",
             marginBottom: "1.75rem",
           }}>
-            Weldexの存在意義<br />
-            全てのDX・IT業務を<br />
+            全てのDX・IT業務を、<br />
             <em style={{ color: "var(--gold)", fontStyle: "normal" }}>一社完結で。</em>
           </h1>
 
@@ -110,6 +110,7 @@ export default function AboutPage() {
         background: "#f8f9fc",
         padding: "7rem clamp(1.5rem, 5vw, 6rem)",
       }}>
+        <FadeIn>
         <div style={{
           maxWidth: 1080,
           margin: "0 auto",
@@ -210,6 +211,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
+        </FadeIn>
       </section>
 
       {/* ── Tech Stack ── */}
@@ -218,6 +220,7 @@ export default function AboutPage() {
         padding: "5.5rem clamp(1.5rem, 5vw, 6rem)",
         borderTop: "1px solid var(--border)",
       }}>
+        <FadeIn>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div className="sec-label">Tech Stack</div>
           <h2 style={{
@@ -266,6 +269,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
+        </FadeIn>
       </section>
     </main>
   );
