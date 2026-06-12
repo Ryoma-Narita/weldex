@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import RoiCalculator from "@/components/RoiCalculator";
+import { RESERVATION_INITIAL, RESERVATION_PLANS, fmtPrice } from "@/data/pricing";
 
 export const metadata: Metadata = {
   title: "WEB予約システム | Weldex",
@@ -44,23 +45,6 @@ const DELIVERABLES = [
   { icon: "🔒", title: "セキュリティ設定",          desc: "HTTPS・レートリミット・ハニーポットで堅牢に。" },
 ];
 
-const PLANS = [
-  {
-    name: "Light", price: "¥200,000", monthly: "¥8,000/月",
-    badge: null, dark: false,
-    features: ["予約フォーム", "管理画面", "確認メール自動送信"],
-  },
-  {
-    name: "Standard", price: "¥280,000", monthly: "¥12,000/月",
-    badge: "人気", dark: true,
-    features: ["Lightの全て", "前日リマインド", "顧客管理・CSV出力", "LINE通知オプション"],
-  },
-  {
-    name: "Premium", price: "¥380,000", monthly: "¥18,000/月",
-    badge: null, dark: false,
-    features: ["Standardの全て", "LINE予約連携", "Push配信", "優先サポート"],
-  },
-];
 
 function SecLabel({ children }: { children: string }) {
   return (
@@ -236,58 +220,59 @@ export default function ReservationServicePage() {
           <div className="rs-inner">
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
-            <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, marginBottom: "2.5rem" }}>
-              現在モニター価格にて受付中です。
-            </p>
 
-            <div className="rs-plans-grid">
-              {PLANS.map(plan => (
-                <div key={plan.name} style={{
-                  position: "relative",
-                  background: plan.dark ? NAVY : "#fff",
-                  border: plan.dark ? "none" : `1px solid ${BORDER}`,
-                  padding: "2rem 1.5rem",
-                  display: "flex", flexDirection: "column",
-                }}>
-                  {plan.badge && (
-                    <span style={{ position: "absolute", top: "-0.6rem", left: "50%", transform: "translateX(-50%)", background: GOLD, color: "#fff", fontSize: "0.62rem", fontWeight: 700, padding: "0.2rem 0.75rem", borderRadius: 100, letterSpacing: "0.06em", whiteSpace: "nowrap", ...DM }}>
-                      {plan.badge}
-                    </span>
-                  )}
-                  <div style={{ ...DM, fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.1em", color: plan.dark ? "rgba(255,255,255,0.55)" : GRAY, marginBottom: "0.75rem" }}>
-                    {plan.name.toUpperCase()}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem", alignItems: "start" }} className="resp-2col">
+              {/* 初期費用 */}
+              <div>
+                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>初期費用（一括）</p>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                  <tbody>
+                    {RESERVATION_INITIAL.map((item, i) => (
+                      <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
+                        <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
+                        <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
+                          {fmtPrice(item.price)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 月額プラン */}
+              <div>
+                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
+                <div style={{ background: NAVY, padding: "2rem 1.75rem" }}>
+                  <div style={{ ...DM, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "0.6rem" }}>
+                    {RESERVATION_PLANS[0].name.toUpperCase()}
                   </div>
-                  <div style={{ ...ZEN, fontSize: "1.75rem", fontWeight: 900, color: plan.dark ? "#fff" : NAVY, lineHeight: 1, marginBottom: "0.25rem" }}>
-                    {plan.price}
+                  <div style={{ ...DM, fontSize: "clamp(1.5rem,3vw,1.9rem)", fontWeight: 900, color: "#fff", lineHeight: 1, marginBottom: "0.2rem" }}>
+                    {fmtPrice(RESERVATION_PLANS[0].price)}
                   </div>
-                  <div style={{ ...DM, fontSize: "0.78rem", color: plan.dark ? "rgba(255,255,255,0.5)" : GRAY, marginBottom: "1.5rem" }}>
-                    {plan.monthly}
-                  </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem", flex: 1 }}>
-                    {plan.features.map(f => (
-                      <li key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", ...ZEN, color: plan.dark ? "rgba(255,255,255,0.85)" : GRAY }}>
-                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                          <circle cx="6.5" cy="6.5" r="6.5" fill={plan.dark ? "rgba(255,255,255,0.15)" : "#f0f7ff"} />
-                          <path d="M3.5 6.5l2 2 4-4" stroke={plan.dark ? GOLD : BLUE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <div style={{ ...DM, fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginBottom: "1.5rem" }}>/ 月（税抜）</div>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                    {RESERVATION_PLANS[0].newFeatures.map((f) => (
+                      <li key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.88)", ...ZEN }}>
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
+                          <circle cx="6.5" cy="6.5" r="6.5" fill="rgba(201,168,76,0.2)" />
+                          <path d="M3.5 6.5l2 2 4-4" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         {f}
                       </li>
                     ))}
                   </ul>
                 </div>
-              ))}
+              </div>
             </div>
 
-            <div style={{ marginTop: "1.75rem", background: "#fffbeb", border: "1px solid #fde68a", padding: "0.9rem 1.25rem", maxWidth: 860 }}>
-              <p style={{ ...ZEN, fontSize: "0.8rem", color: "#92400e", lineHeight: 1.75 }}>
-                現在モニター価格にて受付中。受注5社以降は料金改定予定です。
-              </p>
+            <div style={{ marginTop: "1.5rem", background: BG_L, borderLeft: `3px solid ${BORDER}`, padding: "0.9rem 1.25rem" }}>
+              <p style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, lineHeight: 1.75 }}>※ 表示価格はすべて税抜き目安です。要件・規模により変動します。</p>
             </div>
           </div>
         </section>
 
         {/* ─── CTA ─── */}
-        <section style={{ background: "#f8f9fb", padding: "6rem clamp(1.5rem,5vw,5rem)", textAlign: "center" }}>
+        <section className="svc-cta" style={{ background: "#f8f9fb", padding: "6rem clamp(1.5rem,5vw,5rem)", textAlign: "center" }}>
           <p style={{ ...DM, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase", marginBottom: "1rem" }}>Contact</p>
           <h2 style={{ ...ZEN, fontSize: "clamp(1.6rem,3vw,2.4rem)", fontWeight: 900, color: NAVY, marginBottom: "1.25rem", letterSpacing: "-0.01em" }}>
             まずは、話を聞いてみる。

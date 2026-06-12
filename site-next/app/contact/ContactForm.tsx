@@ -13,7 +13,6 @@ import { useState } from "react";
 type Status = "idle" | "sending" | "done" | "error";
 
 const SERVICES = ["ホームページ制作", "WEB予約システム", "LINE連携", "顧客管理（CRM）", "その他・未定"];
-const INDUSTRIES = ["医療・歯科", "士業", "建設", "美容・サロン", "飲食", "その他"];
 
 const TOTAL_STEPS = 5;
 
@@ -71,7 +70,7 @@ export default function ContactForm() {
   }
 
   /** 選択肢ボタンは選んだ瞬間に次のステップへ進む */
-  function choose(key: "service" | "industry", value: string) {
+  function choose(key: "service", value: string) {
     set(key, value);
     setTouched(false);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
@@ -173,17 +172,19 @@ export default function ContactForm() {
         </div>
       )}
 
-      {/* STEP 2: 業種（ボタン選択） */}
+      {/* STEP 2: 業種（フリーテキスト） */}
       {step === 1 && (
         <div>
           <label style={labelStyle}>業種 <span style={{ color: "#c0392b" }}>*</span></label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {INDUSTRIES.map((s) => (
-              <button key={s} type="button" onClick={() => choose("industry", s)} style={choiceBtn(a.industry === s)}>
-                {s}
-              </button>
-            ))}
-          </div>
+          <input
+            type="text" value={a.industry} required autoFocus
+            onChange={(e) => set("industry", e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && next()}
+            style={inputStyle} placeholder="例：歯科医院、税理士事務所、工務店..."
+          />
+          {touched && !stepValid() && (
+            <p style={{ fontSize: "0.75rem", color: "#c0392b", marginTop: "0.4rem" }}>業種を入力してください</p>
+          )}
         </div>
       )}
 
@@ -252,8 +253,8 @@ export default function ContactForm() {
         </p>
       )}
 
-      {/* 操作ボタン（選択肢ステップでは選択＝次へなので非表示） */}
-      {step >= 2 && (
+      {/* 操作ボタン（step0はボタン自動遷移なので非表示、step1以降は表示） */}
+      {step >= 1 && (
         <div style={{ display: "flex", gap: "0.75rem" }}>
           {step < TOTAL_STEPS - 1 ? (
             <button type="button" onClick={next} className="btn btn-primary">

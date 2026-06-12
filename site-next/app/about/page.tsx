@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FadeIn from "@/components/FadeIn";
+import PageHeader from "@/components/PageHeader";
 
 export const metadata: Metadata = {
   title: "About | Weldex",
@@ -28,40 +29,20 @@ const VALUES = [
 ];
 
 const STACK = [
-  "Next.js", "TypeScript", "React", "Python",
-  "FastAPI", "PostgreSQL", "LINE Messaging API",
-  "SendGrid", "Vercel", "Cloudflare Pages", "Tailwind CSS",
+  "Next.js 15", "TypeScript", "React", "Tailwind CSS",
+  "Python 3.11", "FastAPI", "PostgreSQL", "psycopg2",
+  "Claude AI (Anthropic)", "APScheduler",
+  "LINE Messaging API", "SendGrid",
+  "Vercel", "Railway", "Cloudflare Pages",
 ];
 
 export default function AboutPage() {
   return (
     <main>
-      {/* ── Page Header ── */}
-      <section style={{
-        padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <FadeIn>
-          <p style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "clamp(3.5rem, 8vw, 7rem)",
-            fontWeight: 900,
-            color: "var(--navy)",
-            lineHeight: 1,
-            letterSpacing: "-0.03em",
-            marginBottom: "2rem",
-          }}>
-            About
-          </p>
-          <p style={{
-            fontSize: "0.9375rem", color: "var(--gray)",
-            lineHeight: 2.0, maxWidth: 480,
-          }}>
-            医療・士業・建設などの中小企業向けに、AIを活用したWEB制作・予約システム・LINE連携を<br />
-            大手の1/3以下のコストで提供する個人事業です。
-          </p>
-        </FadeIn>
-      </section>
+      <PageHeader
+        title="About"
+        desc={<>医療・士業・建設などの中小企業向けに、AIを活用したWEB制作・予約システム・LINE連携を<br />大手の1/3以下のコストで提供する個人事業です。</>}
+      />
 
       {/* ── Philosophy & Values ── */}
       <section style={{

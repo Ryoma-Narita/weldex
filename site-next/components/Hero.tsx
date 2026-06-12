@@ -1,10 +1,25 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import FadeIn from "./FadeIn";
+import { useEffect, useState } from "react";
+
+const LINES = [
+  "AIとテクノロジーで",
+  "日本の全ての会社の技術を",
+  "底上げする。",
+];
 
 export default function Hero() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div style={{
+    <div className="hero-wrap" style={{
       minHeight: "100svh",
       background: "#ffffff",
       display: "flex",
@@ -14,7 +29,7 @@ export default function Hero() {
       overflow: "hidden",
     }}>
 
-      {/* 画像：ヒーロー全体を覆い、左側がうっすら見えるグラデーション */}
+      {/* 背景画像 */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <Image
           src="/hero-tech.jpg"
@@ -31,7 +46,7 @@ export default function Hero() {
         }} />
       </div>
 
-      {/* テキストコンテンツ：左側 */}
+      {/* テキストコンテンツ */}
       <div style={{ position: "relative", zIndex: 1, maxWidth: 780 }}>
         <FadeIn delay={0.1} style={{
           fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.18em",
@@ -43,24 +58,38 @@ export default function Hero() {
           AI-Powered Digital Partner
         </FadeIn>
 
-        <FadeIn delay={0.2}>
-          <h1 style={{
-            fontFamily: "var(--font-cormorant)",
-            fontSize: "clamp(2.2rem, 6vw, 4.6rem)",
-            fontWeight: 900,
-            color: "var(--navy)",
-            lineHeight: 1.22,
-            letterSpacing: "-0.02em",
-            marginBottom: "1.5rem",
-          }}>
-            AIで、中小企業の<br />
-            デジタルを。<br />
-            大手品質を、<br />
-            <em style={{ color: "var(--gold)", fontStyle: "normal", fontWeight: 900 }}>1/3</em>のコストで。
-          </h1>
-        </FadeIn>
+        {/* ① 一文字ずつ下からスライドイン (baigie.me CSS Tips #1) */}
+        <h1 style={{
+          fontFamily: "var(--font-cormorant)",
+          fontSize: "clamp(1.7rem, 3.8vw, 3.2rem)",
+          fontWeight: 900,
+          color: "var(--navy)",
+          lineHeight: 1.45,
+          letterSpacing: "-0.01em",
+          marginBottom: "1.5rem",
+        }}>
+          {LINES.map((line, lineIdx) => (
+            <div key={lineIdx} style={{ overflow: "hidden" }}>
+              <div style={{ display: "flex" }}>
+                {line.split("").map((char, charIdx) => (
+                  <span
+                    key={charIdx}
+                    style={{
+                      display: "block",
+                      transform: visible ? "translate(0, 0)" : "translate(0, 110%)",
+                      transition: `transform cubic-bezier(0.215, 0.61, 0.355, 1) 0.65s`,
+                      transitionDelay: `${0.15 + lineIdx * 0.32 + charIdx * 0.038}s`,
+                    }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </h1>
 
-        <FadeIn delay={0.3}>
+        <FadeIn delay={0.9}>
           <p style={{
             fontSize: "clamp(0.875rem, 1.5vw, 1rem)",
             color: "var(--gray)",
@@ -77,7 +106,7 @@ export default function Hero() {
           </p>
         </FadeIn>
 
-        <FadeIn delay={0.4}>
+        <FadeIn delay={1.0}>
           <div style={{
             display: "flex", flexWrap: "wrap", alignItems: "center",
             gap: "0.75rem", marginBottom: "1.75rem",

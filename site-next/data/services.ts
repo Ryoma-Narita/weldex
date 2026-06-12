@@ -35,8 +35,8 @@ export const SERVICES: Service[] = [
     slug: "web",
     tag: "HP / LP",
     title: "ホームページ制作",
-    priceFrom: 150000,
-    monthlyFrom: 5000,
+    priceFrom: 300000,
+    monthlyFrom: 12000,
     desc: "集客・信頼・問い合わせ増加を目的とした、業種特化のWebサイトを制作します。SEO対応・スマホ最適化・お問い合わせフォームまで含みます。",
     features: ["業種特化デザイン", "SEO対応", "スマホ最適化", "Formspreeフォーム設置", "公開後1ヶ月サポート"],
     points: [
@@ -52,8 +52,8 @@ export const SERVICES: Service[] = [
     slug: "reservation",
     tag: "予約 / 管理",
     title: "WEB予約システム",
-    priceFrom: 200000,
-    monthlyFrom: 8000,
+    priceFrom: 300000,
+    monthlyFrom: 30000,
     desc: "24時間自動で予約を受け付ける管理画面付きの予約システムです。歯科・クリニック・サロンなど幅広い業種に対応します。",
     features: ["24時間自動受付", "管理画面付き", "メール自動返信", "顧客管理・CSV出力", "前日リマインド"],
     points: [
@@ -69,8 +69,8 @@ export const SERVICES: Service[] = [
     slug: "line",
     tag: "LINE / 代行",
     title: "LINE連携・アカウント作成代行",
-    priceFrom: 150000,
-    monthlyFrom: 8000,
+    priceFrom: 50000,
+    monthlyFrom: 19800,
     desc: "LINE公式アカウントの開設から設定・予約システム連携・リッチメニュー制作まで一社完結で代行します。LINEを使った顧客との接点づくりをまるごとお任せいただけます。",
     features: ["LINE公式アカウント開設代行", "リッチメニュー制作", "予約システム連携", "自動メッセージ設定", "運用サポート"],
     points: [
@@ -86,8 +86,8 @@ export const SERVICES: Service[] = [
     slug: "crm",
     tag: "CRM / 顧客管理",
     title: "顧客管理システム（CRM）",
-    priceFrom: 300000,
-    monthlyFrom: 10000,
+    priceFrom: 350000,
+    monthlyFrom: 19800,
     desc: "顧客情報・来院履歴・コミュニケーション履歴を一元管理。予約システムとシームレスに連携し、リピート率向上・離脱防止につながる顧客DXを実現します。",
     features: ["顧客情報一元管理", "予約履歴連携", "CSV入出力", "自動フォローアップ", "レポート・分析機能"],
     points: [

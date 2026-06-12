@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FadeIn from "@/components/FadeIn";
-import CTABand from "@/components/CTABand";
+import PageHeader from "@/components/PageHeader";
 import WorksCarousel from "./WorksCarousel";
 
 export const metadata: Metadata = {
@@ -21,32 +21,10 @@ const industries = [
 export default function WorksPage() {
   return (
     <main>
-      {/* ── Page Header ── */}
-      <section style={{
-        padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <FadeIn>
-          <p style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "clamp(3.5rem, 8vw, 7rem)",
-            fontWeight: 900,
-            color: "var(--navy)",
-            lineHeight: 1,
-            letterSpacing: "-0.03em",
-            marginBottom: "2rem",
-          }}>
-            Works
-          </p>
-          <p style={{
-            fontSize: "0.9375rem", color: "var(--gray)",
-            lineHeight: 2.0, maxWidth: 440,
-          }}>
-            実際に動くデモをご用意しています。<br />
-            ぜひ触れて、使い心地をご確認ください。
-          </p>
-        </FadeIn>
-      </section>
+      <PageHeader
+        title="Works"
+        desc={<>実際に動くデモをご用意しています。<br />ぜひ触れて、使い心地をご確認ください。</>}
+      />
 
       {/* ── カルーセル ── */}
       <section style={{ padding: "6rem clamp(1.5rem,5vw,6rem)", maxWidth: 960, margin: "0 auto" }}>
@@ -155,7 +133,6 @@ export default function WorksPage() {
         </div>
       </section>
 
-      <CTABand />
     </main>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FadeIn from "@/components/FadeIn";
-import CTABand from "@/components/CTABand";
+import PageHeader from "@/components/PageHeader";
 import { SERVICES, fmtYen } from "@/data/services";
 
 export const metadata: Metadata = {
@@ -14,32 +14,10 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <main>
-      {/* ── Page Header ── */}
-      <section style={{
-        padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <FadeIn>
-          <p style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "clamp(3.5rem, 8vw, 7rem)",
-            fontWeight: 900,
-            color: "var(--navy)",
-            lineHeight: 1,
-            letterSpacing: "-0.03em",
-            marginBottom: "2rem",
-          }}>
-            Service
-          </p>
-          <p style={{
-            fontSize: "0.9375rem", color: "var(--gray)",
-            lineHeight: 2.0, maxWidth: 440,
-          }}>
-            制作から運用まで一社完結。<br />
-            業種・規模に合わせてご提案します。
-          </p>
-        </FadeIn>
-      </section>
+      <PageHeader
+        title="Service"
+        desc={<>制作から運用まで一社完結。<br />業種・規模に合わせてご提案します。</>}
+      />
 
       {/* ── サービス一覧 ── */}
       <section style={{ background: "var(--white)" }}>
@@ -154,7 +132,6 @@ export default function ServicesPage() {
         </Link>
       </FadeIn>
 
-      <CTABand />
     </main>
   );
 }

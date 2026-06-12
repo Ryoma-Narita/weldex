@@ -50,7 +50,7 @@ export default function Header() {
   return (
     <>
       {/* ── ナビゲーションバー（ロゴ左・ナビ中央・CTA右の3カラム） ── */}
-      <nav style={{
+      <nav className="site-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
         background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
         borderBottom: scrolled ? "1px solid #e8e8e8" : "none",

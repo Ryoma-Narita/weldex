@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import FadeIn from "@/components/FadeIn";
+import PageHeader from "@/components/PageHeader";
 import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
@@ -11,32 +12,10 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <main>
-      {/* ── Page Header ── */}
-      <section style={{
-        padding: "10rem clamp(1.5rem, 5vw, 6rem) 5rem",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <FadeIn>
-          <p style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "clamp(3.5rem, 8vw, 7rem)",
-            fontWeight: 900,
-            color: "var(--navy)",
-            lineHeight: 1,
-            letterSpacing: "-0.03em",
-            marginBottom: "2rem",
-          }}>
-            Contact
-          </p>
-          <p style={{
-            fontSize: "0.9375rem", color: "var(--gray)",
-            lineHeight: 2.0, maxWidth: 440,
-          }}>
-            費用・納期・進め方など、どんなことでも構いません。<br />
-            返信は通常1営業日以内です。
-          </p>
-        </FadeIn>
-      </section>
+      <PageHeader
+        title="Contact"
+        desc={<>費用・納期・進め方など、どんなことでも構いません。<br />返信は通常1営業日以内です。</>}
+      />
 
       {/* ── Form + Info ── */}
       <section>

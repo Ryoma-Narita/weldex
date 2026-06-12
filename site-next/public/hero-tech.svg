@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="900" viewBox="0 0 800 900">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0d2137"/>
+      <stop offset="100%" stop-color="#060f1e"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="900" fill="url(#bg)"/>
+
+  <!-- Grid lines -->
+  <g stroke="#1a3a5c" stroke-width="0.5" opacity="0.4">
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="0" y1="500" x2="800" y2="500"/>
+    <line x1="0" y1="600" x2="800" y2="600"/>
+    <line x1="0" y1="700" x2="800" y2="700"/>
+    <line x1="0" y1="800" x2="800" y2="800"/>
+    <line x1="100" y1="0" x2="100" y2="900"/>
+    <line x1="200" y1="0" x2="200" y2="900"/>
+    <line x1="300" y1="0" x2="300" y2="900"/>
+    <line x1="400" y1="0" x2="400" y2="900"/>
+    <line x1="500" y1="0" x2="500" y2="900"/>
+    <line x1="600" y1="0" x2="600" y2="900"/>
+    <line x1="700" y1="0" x2="700" y2="900"/>
+  </g>
+
+  <!-- Network connections -->
+  <g stroke="#1a5a8a" stroke-width="1" opacity="0.5" filter="url(#glow)">
+    <line x1="400" y1="450" x2="200" y2="250"/>
+    <line x1="400" y1="450" x2="600" y2="200"/>
+    <line x1="400" y1="450" x2="650" y2="550"/>
+    <line x1="400" y1="450" x2="250" y2="650"/>
+    <line x1="400" y1="450" x2="150" y2="500"/>
+    <line x1="400" y1="450" x2="550" y2="700"/>
+    <line x1="400" y1="450" x2="700" y2="380"/>
+
+    <line x1="200" y1="250" x2="100" y2="150"/>
+    <line x1="200" y1="250" x2="350" y2="100"/>
+    <line x1="200" y1="250" x2="150" y2="400"/>
+
+    <line x1="600" y1="200" x2="700" y2="100"/>
+    <line x1="600" y1="200" x2="720" y2="280"/>
+
+    <line x1="650" y1="550" x2="750" y2="600"/>
+    <line x1="650" y1="550" x2="700" y2="680"/>
+
+    <line x1="250" y1="650" x2="150" y2="750"/>
+    <line x1="250" y1="650" x2="350" y2="780"/>
+
+    <line x1="550" y1="700" x2="450" y2="800"/>
+    <line x1="550" y1="700" x2="650" y2="800"/>
+  </g>
+
+  <!-- Glowing network connections (bright) -->
+  <g stroke="#2a8fd4" stroke-width="1.5" opacity="0.7" filter="url(#glow)">
+    <line x1="400" y1="450" x2="200" y2="250"/>
+    <line x1="400" y1="450" x2="600" y2="200"/>
+    <line x1="400" y1="450" x2="650" y2="550"/>
+  </g>
+
+  <!-- City buildings at bottom -->
+  <g fill="#0a1e33" stroke="#1a4a6a" stroke-width="0.5">
+    <rect x="0" y="760" width="40" height="140"/>
+    <rect x="45" y="790" width="30" height="110"/>
+    <rect x="80" y="740" width="50" height="160"/>
+    <rect x="135" y="770" width="35" height="130"/>
+    <rect x="175" y="750" width="60" height="150"/>
+    <rect x="240" y="730" width="45" height="170"/>
+    <rect x="290" y="760" width="30" height="140"/>
+    <rect x="325" y="700" width="55" height="200"/>
+    <rect x="385" y="740" width="40" height="160"/>
+    <rect x="430" y="720" width="70" height="180"/>
+    <rect x="505" y="750" width="35" height="150"/>
+    <rect x="545" y="710" width="50" height="190"/>
+    <rect x="600" y="760" width="40" height="140"/>
+    <rect x="645" y="730" width="55" height="170"/>
+    <rect x="705" y="750" width="35" height="150"/>
+    <rect x="745" y="770" width="55" height="130"/>
+  </g>
+
+  <!-- Building windows -->
+  <g fill="#1a6a9a" opacity="0.6">
+    <rect x="5" y="770" width="6" height="4"/>
+    <rect x="14" y="770" width="6" height="4"/>
+    <rect x="5" y="780" width="6" height="4"/>
+    <rect x="14" y="782" width="6" height="4"/>
+
+    <rect x="85" y="748" width="8" height="5"/>
+    <rect x="96" y="748" width="8" height="5"/>
+    <rect x="85" y="758" width="8" height="5"/>
+    <rect x="96" y="762" width="8" height="5"/>
+    <rect x="85" y="770" width="8" height="5"/>
+
+    <rect x="330" y="708" width="8" height="5"/>
+    <rect x="342" y="708" width="8" height="5"/>
+    <rect x="354" y="712" width="8" height="5"/>
+    <rect x="330" y="720" width="8" height="5"/>
+    <rect x="342" y="720" width="8" height="5"/>
+    <rect x="354" y="722" width="8" height="5"/>
+    <rect x="330" y="732" width="8" height="5"/>
+
+    <rect x="435" y="728" width="10" height="6"/>
+    <rect x="450" y="728" width="10" height="6"/>
+    <rect x="463" y="730" width="10" height="6"/>
+    <rect x="435" y="740" width="10" height="6"/>
+    <rect x="450" y="742" width="10" height="6"/>
+    <rect x="463" y="742" width="10" height="6"/>
+
+    <rect x="550" y="718" width="8" height="5"/>
+    <rect x="562" y="718" width="8" height="5"/>
+    <rect x="550" y="730" width="8" height="5"/>
+    <rect x="562" y="732" width="8" height="5"/>
+
+    <rect x="650" y="738" width="9" height="6"/>
+    <rect x="663" y="738" width="9" height="6"/>
+    <rect x="676" y="740" width="9" height="6"/>
+    <rect x="650" y="750" width="9" height="6"/>
+    <rect x="663" y="752" width="9" height="6"/>
+  </g>
+
+  <!-- Node points -->
+  <g filter="url(#softglow)">
+    <!-- Center main node -->
+    <circle cx="400" cy="450" r="10" fill="#2a9fd4" opacity="0.9"/>
+    <circle cx="400" cy="450" r="5" fill="#7ad4f8"/>
+
+    <!-- Secondary nodes -->
+    <circle cx="200" cy="250" r="7" fill="#2a8fd4" opacity="0.8"/>
+    <circle cx="200" cy="250" r="3.5" fill="#5abde8"/>
+
+    <circle cx="600" cy="200" r="7" fill="#2a8fd4" opacity="0.8"/>
+    <circle cx="600" cy="200" r="3.5" fill="#5abde8"/>
+
+    <circle cx="650" cy="550" r="6" fill="#2a7fc4" opacity="0.7"/>
+    <circle cx="650" cy="550" r="3" fill="#5aade0"/>
+
+    <circle cx="250" cy="650" r="6" fill="#2a7fc4" opacity="0.7"/>
+    <circle cx="250" cy="650" r="3" fill="#5aade0"/>
+
+    <circle cx="150" cy="500" r="5" fill="#1a6aaa" opacity="0.6"/>
+    <circle cx="550" cy="700" r="5" fill="#1a6aaa" opacity="0.6"/>
+    <circle cx="700" cy="380" r="5" fill="#1a6aaa" opacity="0.6"/>
+
+    <!-- Tertiary nodes -->
+    <circle cx="100" cy="150" r="4" fill="#1a5a8a" opacity="0.5"/>
+    <circle cx="350" cy="100" r="4" fill="#1a5a8a" opacity="0.5"/>
+    <circle cx="700" cy="100" r="4" fill="#1a5a8a" opacity="0.5"/>
+    <circle cx="720" cy="280" r="4" fill="#1a5a8a" opacity="0.5"/>
+    <circle cx="750" cy="600" r="4" fill="#1a5a8a" opacity="0.5"/>
+    <circle cx="150" cy="750" r="4" fill="#1a5a8a" opacity="0.5"/>
+    <circle cx="350" cy="780" r="4" fill="#1a5a8a" opacity="0.5"/>
+  </g>
+
+  <!-- Floating data particles -->
+  <g fill="#4ac8f8" opacity="0.4">
+    <rect x="310" y="320" width="2" height="2"/>
+    <rect x="480" y="280" width="2" height="2"/>
+    <rect x="520" y="390" width="2" height="2"/>
+    <rect x="340" y="560" width="2" height="2"/>
+    <rect x="460" y="600" width="2" height="2"/>
+    <rect x="280" y="420" width="2" height="2"/>
+    <rect x="580" y="450" width="2" height="2"/>
+    <rect x="420" y="320" width="2" height="2"/>
+    <rect x="360" y="480" width="2" height="2"/>
+    <rect x="500" y="500" width="2" height="2"/>
+  </g>
+
+  <!-- Radial glow at center node -->
+  <circle cx="400" cy="450" r="120" fill="none" stroke="#1a6aaa" stroke-width="0.5" opacity="0.25"/>
+  <circle cx="400" cy="450" r="200" fill="none" stroke="#1a5a8a" stroke-width="0.5" opacity="0.15"/>
+  <circle cx="400" cy="450" r="300" fill="none" stroke="#1a4a70" stroke-width="0.5" opacity="0.1"/>
+
+  <!-- Top atmospheric glow -->
+  <ellipse cx="500" cy="200" rx="300" ry="180" fill="#0a3a5e" opacity="0.25"/>
+</svg>
