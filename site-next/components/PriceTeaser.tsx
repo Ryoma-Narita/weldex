@@ -61,7 +61,7 @@ export default function PriceTeaser() {
           ))}
         </div>
 
-        <FadeIn style={{ textAlign: "center", marginTop: "2rem" }}>
+        <FadeIn style={{ textAlign: "center", marginTop: "4rem" }}>
           <p style={{ fontSize: "0.72rem", color: "var(--light)", marginBottom: "1.25rem" }}>
             ※ 価格はすべて税別・目安です。要件により変動します。
           </p>

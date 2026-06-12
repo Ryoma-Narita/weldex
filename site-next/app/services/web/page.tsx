@@ -202,10 +202,10 @@ export default function WebServicePage() {
                       <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: NAVY, fontWeight: 600, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>
                         {row.label}
                       </td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: GRAY, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem" }}>
+                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: GRAY, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>
                         {row.other}
                       </td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexBlue ? BLUE : NAVY }}>
+                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexBlue ? BLUE : NAVY, whiteSpace: "nowrap" }}>
                         {row.weldex}
                         {row.weldexSub && (
                           <span style={{ display: "block", fontSize: "0.68rem", color: GOLD, fontWeight: 500, marginTop: "0.15rem", ...DM }}>

@@ -177,8 +177,8 @@ export default function CrmServicePage() {
                   {COMPARE_ROWS.map((row, i) => (
                     <tr key={row.label} style={{ background: row.highlight ? "#f5f3ff" : (i % 2 === 0 ? "#fff" : BG_L) }}>
                       <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: NAVY, fontWeight: 600, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>{row.label}</td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: GRAY, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem" }}>{row.other}</td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexPurple ? PURPLE : NAVY }}>{row.weldex}</td>
+                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: GRAY, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>{row.other}</td>
+                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexPurple ? PURPLE : NAVY, whiteSpace: "nowrap" }}>{row.weldex}</td>
                     </tr>
                   ))}
                 </tbody>

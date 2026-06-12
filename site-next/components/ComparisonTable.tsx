@@ -128,12 +128,18 @@ export default function ComparisonTable() {
                       </td>
 
                       {/* A社 */}
-                      <td style={{ ...tdBase, ...ZEN, color: GRAY, textAlign: "center", whiteSpace: "nowrap" }}>
+                      <td style={{
+                        ...tdBase, ...ZEN, color: GRAY, textAlign: "center", whiteSpace: "nowrap",
+                        ...(row.priceStar ? { ...DM, fontSize: "0.94rem", fontWeight: 700 } : {}),
+                      }}>
                         {row.a}
                       </td>
 
                       {/* B社 */}
-                      <td style={{ ...tdBase, ...ZEN, color: GRAY, textAlign: "center", whiteSpace: "nowrap" }}>
+                      <td style={{
+                        ...tdBase, ...ZEN, color: GRAY, textAlign: "center", whiteSpace: "nowrap",
+                        ...(row.priceStar ? { ...DM, fontSize: "0.94rem", fontWeight: 700 } : {}),
+                      }}>
                         {row.b}
                       </td>
 
