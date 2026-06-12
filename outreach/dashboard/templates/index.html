@@ -429,14 +429,41 @@
       title="ok・サイトなし以外を全て再診断。サイトが改善されていれば新ステータスに更新されます。">
       ↺ 問題あり全再診断
     </button>
+    <button id="btn-batch-generate" onclick="runBatchGenerate()"
+      style="padding:0.35rem 1rem;background:#7c3aed;color:#fff;border:none;font-size:0.78rem;font-weight:600;cursor:pointer;border-radius:3px;white-space:nowrap;"
+      title="LINE未連携ターゲットのメールをAI一括生成して送信キューに追加">
+      ✦ LINE未連携 一括生成
+    </button>
     <span id="rediagnose-status" style="font-size:0.75rem;color:#3b5bdb;"></span>
     <span style="font-size:0.72rem;color:#64748b;margin-left:auto;">未診断 or 問題ありのターゲットを一括でサイト診断します</span>
+  </div>
+  <!-- 一括生成進捗 -->
+  <div id="batch-progress" style="display:none;padding:0.4rem 1rem;font-size:0.78rem;color:var(--navy);background:#f5f3ff;border-bottom:1px solid #ede9fe;">
+    <span id="batch-progress-text">生成中…</span>
+  </div>
+
+  <!-- 選択操作バー（チェックボックス選択時に表示） -->
+  <div id="selection-bar" style="display:none;align-items:center;gap:0.75rem;padding:0.45rem 1rem;background:#fffbeb;border-bottom:1px solid #fde68a;flex-wrap:wrap;">
+    <span id="selection-count" style="font-size:0.78rem;font-weight:700;color:#92400e;">0件選択中</span>
+    <button onclick="generateSelectedTargets()"
+      style="padding:0.3rem 0.85rem;background:var(--navy);color:#fff;border:none;font-size:0.75rem;font-weight:600;cursor:pointer;border-radius:3px;">
+      ✦ 選択してメール生成
+    </button>
+    <button onclick="openTestSendModal()"
+      style="padding:0.3rem 0.85rem;background:#059669;color:#fff;border:none;font-size:0.75rem;font-weight:600;cursor:pointer;border-radius:3px;">
+      ✉ テスト送信（1件）
+    </button>
+    <button onclick="clearSelection()"
+      style="padding:0.3rem 0.7rem;background:none;border:1px solid #d1d5db;font-size:0.72rem;cursor:pointer;border-radius:3px;color:var(--gray);">
+      選択解除
+    </button>
   </div>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
+          <th style="width:36px;text-align:center;"><input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)" style="cursor:pointer;accent-color:var(--blue);"></th>
           <th style="min-width:160px;">店舗名 / 業種・エリア</th>
           <th style="min-width:120px;">診断 / 営業ポイント</th>
           <th style="min-width:130px;">電話 / メール・フォーム</th>
@@ -554,6 +581,35 @@
       <div id="modal-blocked" style="display:none;position:absolute;inset:0;background:var(--off);align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem;text-align:center;">
         <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         <p style="font-size:0.82rem;color:var(--gray);line-height:1.6;">このサイトはiframe表示をブロックしています。<br>「新しいタブで開く」ボタンで直接確認できます。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── テスト送信モーダル ─── -->
+<div id="modal-test-send" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+  <div style="background:var(--white);width:90%;max-width:480px;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;padding:0.85rem 1.25rem;background:var(--navy);">
+      <span style="font-weight:600;color:var(--white);font-size:0.9rem;flex:1;">✉ テスト送信</span>
+      <button onclick="closeTestSendModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.85rem;">
+      <input type="hidden" id="ts-target-id">
+      <div style="font-size:0.8rem;color:var(--gray);">
+        対象ターゲット：<strong id="ts-target-name" style="color:var(--text);"></strong>
+      </div>
+      <div>
+        <label style="font-size:0.7rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">送信先メールアドレス（テスト用）</label>
+        <input id="ts-to-email" type="email" placeholder="yourname+test@gmail.com"
+          style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.5rem 0.7rem;font-size:0.83rem;margin-top:0.3rem;border-radius:3px;">
+        <div style="font-size:0.68rem;color:var(--light);margin-top:0.3rem;">
+          Gmail の <code>+</code> エイリアス（例：naripippipi+weldex@gmail.com）を使うと同じ受信箱で確認できます
+        </div>
+      </div>
+      <div id="ts-result" style="font-size:0.8rem;line-height:1.6;"></div>
+      <div style="display:flex;gap:0.6rem;justify-content:flex-end;">
+        <button onclick="closeTestSendModal()" class="btn secondary" style="font-size:0.8rem;padding:0.45rem 1rem;">キャンセル</button>
+        <button id="ts-send-btn" onclick="doTestSend()" class="btn" style="background:var(--blue);color:#fff;border:none;font-size:0.8rem;padding:0.45rem 1.2rem;font-weight:600;">送信する</button>
       </div>
     </div>
   </div>
@@ -944,6 +1000,126 @@
     return f.join(' ');
   }
 
+  // ─── ターゲット選択管理 ──────────────────────────────────────────────────────
+
+  let _selectedTargets = new Map(); // id → target object
+
+  function toggleTargetSelect(cb) {
+    const id = parseInt(cb.value, 10);
+    try {
+      const t = JSON.parse(cb.dataset.target);
+      if (cb.checked) _selectedTargets.set(id, t);
+      else            _selectedTargets.delete(id);
+    } catch { if (cb.checked) _selectedTargets.set(id, { id }); else _selectedTargets.delete(id); }
+    updateSelectionBar();
+  }
+
+  function toggleSelectAll(checked) {
+    document.querySelectorAll('.target-cb').forEach(cb => {
+      cb.checked = checked;
+      const id = parseInt(cb.value, 10);
+      try {
+        const t = JSON.parse(cb.dataset.target);
+        if (checked) _selectedTargets.set(id, t); else _selectedTargets.delete(id);
+      } catch { if (checked) _selectedTargets.set(id, { id }); else _selectedTargets.delete(id); }
+    });
+    updateSelectionBar();
+  }
+
+  function clearSelection() {
+    _selectedTargets.clear();
+    document.querySelectorAll('.target-cb').forEach(cb => cb.checked = false);
+    const allCb = document.getElementById('select-all-cb');
+    if (allCb) allCb.checked = false;
+    updateSelectionBar();
+  }
+
+  function updateSelectionBar() {
+    const bar   = document.getElementById('selection-bar');
+    const count = document.getElementById('selection-count');
+    if (!bar) return;
+    if (_selectedTargets.size > 0) {
+      bar.style.display = 'flex';
+      count.textContent = `${_selectedTargets.size}件選択中`;
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+
+  // ─── 選択した対象のメール一括生成 ────────────────────────────────────────────
+
+  async function generateSelectedTargets() {
+    if (_selectedTargets.size === 0) return;
+    const ids = [..._selectedTargets.keys()];
+
+    const progress = document.getElementById('batch-progress');
+    const progText = document.getElementById('batch-progress-text');
+    progress.style.display = 'block';
+    progText.textContent   = `${ids.length}件のメールを生成中…`;
+
+    try {
+      const res  = await fetch('/api/batch-generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_ids: ids }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        progText.innerHTML = `<strong>✓ ${data.generated}件をキューに追加しました</strong>${data.skipped ? `（${data.skipped}件スキップ）` : ''}`;
+        clearSelection();
+        setTimeout(() => { loadQueue(); }, 1500);
+      } else {
+        progText.innerHTML = `<span style="color:var(--red);">エラー: ${esc(data.error || '不明')}</span>`;
+      }
+    } catch (e) {
+      progText.innerHTML = `<span style="color:var(--red);">通信エラー: ${esc(String(e))}</span>`;
+    }
+  }
+
+  // ─── テスト送信モーダル ──────────────────────────────────────────────────────
+
+  function openTestSendModal() {
+    if (_selectedTargets.size === 0) return alert('ターゲットを1件以上選択してください');
+    const first = [..._selectedTargets.values()][0];
+    document.getElementById('ts-target-name').textContent = first.name || `ID:${first.id}`;
+    document.getElementById('ts-target-id').value  = first.id;
+    document.getElementById('ts-to-email').value   = '';
+    document.getElementById('ts-result').textContent = '';
+    document.getElementById('modal-test-send').style.display = 'flex';
+  }
+
+  function closeTestSendModal() {
+    document.getElementById('modal-test-send').style.display = 'none';
+  }
+
+  async function doTestSend() {
+    const targetId = parseInt(document.getElementById('ts-target-id').value, 10);
+    const toEmail  = document.getElementById('ts-to-email').value.trim();
+    const resultEl = document.getElementById('ts-result');
+    const btn      = document.getElementById('ts-send-btn');
+
+    if (!toEmail) { resultEl.textContent = 'メアドを入力してください'; return; }
+    btn.disabled = true; btn.textContent = '送信中…';
+    resultEl.textContent = '';
+
+    try {
+      const res  = await fetch('/api/test-send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_id: targetId, to_email: toEmail }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        resultEl.innerHTML = `<span style="color:#059669;">✓ 送信完了！<br>宛先: ${esc(data.sent_to)}<br>件名: ${esc(data.subject)}</span>`;
+        btn.textContent = '✓ 送信済み';
+      } else {
+        resultEl.innerHTML = `<span style="color:var(--red);">エラー: ${esc(data.error || '不明')}</span>`;
+        btn.disabled = false; btn.textContent = '送信する';
+      }
+    } catch (e) {
+      resultEl.innerHTML = `<span style="color:var(--red);">通信エラー: ${esc(String(e))}</span>`;
+      btn.disabled = false; btn.textContent = '送信する';
+    }
+  }
+
   // ─── ターゲットリスト ───
   let currentPage = 1;
   async function loadTargets(page = 1) {
@@ -996,7 +1172,12 @@
         : '';
       const tJson = JSON.stringify(t).replace(/"/g, '&quot;');
       return `
-        <tr class="data-row">
+        <tr class="data-row" id="row-${t.id}">
+          <!-- チェックボックス -->
+          <td style="text-align:center;vertical-align:middle;">
+            <input type="checkbox" class="target-cb" value="${t.id}" data-target='${tJson}'
+              onchange="toggleTargetSelect(this)" style="cursor:pointer;accent-color:var(--blue);">
+          </td>
           <!-- 列1: 店舗名 -->
           <td>
             <div style="font-weight:600;font-size:0.82rem;line-height:1.3;">${esc(t.name)}</div>
@@ -2247,6 +2428,63 @@
     }
   }
 
+  // ─── LINE未連携 一括メール生成 ───────────────────────────────────────────────
+
+  async function runBatchGenerate() {
+    const btn      = document.getElementById('btn-batch-generate');
+    const progress = document.getElementById('batch-progress');
+    const progText = document.getElementById('batch-progress-text');
+    if (!btn || !progress) return;
+
+    const limit = parseInt(prompt('何件まで生成しますか？（最大50）', '50'), 10);
+    if (!limit || isNaN(limit)) return;
+
+    btn.disabled    = true;
+    btn.textContent = '生成中…';
+    progress.style.display = 'block';
+    progText.textContent   = `LINE未連携ターゲット（最大${limit}件）のメールを生成しています…`;
+
+    try {
+      const res  = await fetch('/api/batch-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status_filter: 'no_line', limit }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        progText.innerHTML = `<span style="color:var(--red);">エラー: ${esc(data.error || '不明')}</span>`;
+        return;
+      }
+
+      const okItems   = (data.items || []).filter(i => i.ok);
+      const failItems = (data.items || []).filter(i => !i.ok);
+
+      let summary = `✓ ${data.generated}件をキューに追加しました`;
+      if (data.skipped) summary += `（${data.skipped}件失敗）`;
+      if (data.message) summary = data.message;
+
+      progText.innerHTML = `<strong>${summary}</strong>`;
+      if (failItems.length) {
+        progText.innerHTML += `<br><span style="font-size:0.68rem;color:var(--red);">失敗: ${failItems.map(i => esc(i.name)).join('、')}</span>`;
+      }
+      if (okItems.length) {
+        progText.innerHTML += `<br><span style="font-size:0.68rem;color:var(--light);">${okItems.slice(0,5).map(i => esc(i.name)).join(' / ')}${okItems.length > 5 ? ' …他' : ''}</span>`;
+      }
+
+      // 送信キューを承認待ちで再読み込み
+      if (data.generated > 0) {
+        document.getElementById('sq-filter').value = 'pending';
+        await loadSendQueue(1);
+      }
+    } catch (e) {
+      progText.innerHTML = `<span style="color:var(--red);">通信エラー: ${esc(String(e))}</span>`;
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '✦ LINE未連携 一括メール生成';
+    }
+  }
+
   // ─── 送信キュー ────────────────────────────────────────────────────────────
 
   let sqCurrentPage = 1;
@@ -2300,8 +2538,16 @@
   }
 
   function renderQueueItem(item, filter) {
-    const statusColors = { none:'var(--red)', old:'#d97706', no_mobile:'#7c3aed', phone_only:'var(--blue)', ok:'var(--green)' };
-    const statusLabels = { none:'サイトなし', old:'古い', no_mobile:'スマホ非対応', phone_only:'電話のみ', ok:'問題なし', unchecked:'未診断' };
+    const statusColors = {
+      none:'var(--red)', old:'#d97706', no_mobile:'#7c3aed', phone_only:'var(--blue)',
+      ok:'var(--green)', no_ssl:'#dc2626', old_tech:'#ea580c', outdated:'#ca8a04',
+      slow:'#2563eb', no_line:'#7c3aed',
+    };
+    const statusLabels = {
+      none:'サイトなし', old:'古い', no_mobile:'スマホ非対応', phone_only:'電話のみ',
+      ok:'問題なし', unchecked:'未診断', no_ssl:'SSL未対応', old_tech:'旧技術',
+      outdated:'情報古い', slow:'表示遅延', no_line:'LINE未連携',
+    };
     const sColor = statusColors[item.target_site_status] || 'var(--gray)';
     const sLabel = statusLabels[item.target_site_status] || item.target_site_status || '不明';
     const tmplColors = { A:'#dc2626', B:'#d97706', C:'var(--blue)', D:'#7c3aed' };
@@ -2323,9 +2569,19 @@
           <span style="font-size:0.65rem;background:${tmplColor}1a;color:${tmplColor};padding:0.1rem 0.4rem;border-radius:2px;font-weight:600;">テンプレ${esc(item.template||'')}</span>
           ${item.target_industry ? `<span style="font-size:0.65rem;color:var(--gray);">${esc(item.target_industry)}</span>` : ''}
           ${item.target_area     ? `<span style="font-size:0.65rem;color:var(--light);">${esc(item.target_area)}</span>` : ''}
+          ${item.has_line === 0  ? `<span style="font-size:0.62rem;background:#f3e8ff;color:#7c3aed;padding:0.1rem 0.4rem;border-radius:2px;font-weight:600;">LINE未確認✓</span>` : ''}
           ${isApproved ? `<span style="font-size:0.65rem;background:#dcfce7;color:#16a34a;padding:0.1rem 0.5rem;border-radius:2px;font-weight:700;">✓ 送信済み</span>` : ''}
           ${isRejected ? `<span style="font-size:0.65rem;background:#fee2e2;color:#dc2626;padding:0.1rem 0.5rem;border-radius:2px;font-weight:700;">✗ 却下</span>` : ''}
         </div>
+        <!-- サイトURL（診断検証用） -->
+        ${item.target_website ? `
+        <div style="padding:0.2rem 0.9rem;background:#fafafa;border-bottom:1px solid var(--border);">
+          <a href="${esc(item.target_website)}" target="_blank" rel="noopener"
+             style="font-size:0.68rem;color:#2563eb;text-decoration:none;word-break:break-all;">
+            🔗 ${esc(item.target_website)}
+          </a>
+          <span style="font-size:0.62rem;color:var(--light);margin-left:0.5rem;">← クリックして診断内容を手動確認</span>
+        </div>` : ''}
         <!-- 件名 -->
         <div style="padding:0.5rem 0.9rem 0.25rem;font-size:0.8rem;">
           <span style="color:var(--light);font-size:0.68rem;">件名：</span>

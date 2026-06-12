@@ -6,14 +6,13 @@ import { useState, useEffect } from "react";
 const DESKTOP_NAV = [
   { label: "Home",     href: "/" },
   { label: "Services", href: "/services" },
-  { label: "Pricing",  href: "/pricing" },
   { label: "Works",    href: "/works" },
+  { label: "News",     href: "/news" },
   { label: "About",    href: "/about" },
 ];
 
 const MENU_ITEMS = [
   { label: "SERVICE",      href: "/services" },
-  { label: "PRICING",      href: "/pricing" },
   { label: "WORKS & DEMO", href: "/works" },
   { label: "ABOUT",        href: "/about" },
   { label: "NEWS & BLOG",  href: "/news" },

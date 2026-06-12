@@ -219,21 +219,9 @@ export default function LineServicePage() {
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
 
-            {/* 初期費用 */}
-            <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>初期費用（一括）</p>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem", maxWidth: 520, marginBottom: "3rem" }}>
-              <tbody>
-                {LINE_INITIAL.map((item, i) => (
-                  <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
-                    <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
-                    <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>{fmtPrice(item.price)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
             {/* 月額プラン */}
             <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 運用プラン</p>
+            <div style={{ paddingTop: "0.75rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: BORDER, maxWidth: 860 }} className="ls-plan-grid">
               <style>{`.ls-plan-grid { } @media (max-width: 640px) { .ls-plan-grid { grid-template-columns: 1fr !important; } }`}</style>
               {LINE_PLANS.map((plan, idx) => {
@@ -270,6 +258,20 @@ export default function LineServicePage() {
                 );
               })}
             </div>
+            </div>
+
+            {/* 初期費用 */}
+            <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem", marginTop: "3rem" }}>初期費用（一括）</p>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem", maxWidth: 520 }}>
+              <tbody>
+                {LINE_INITIAL.map((item, i) => (
+                  <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
+                    <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
+                    <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>{fmtPrice(item.price)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             <div style={{ marginTop: "1.5rem", background: BG_L, borderLeft: `3px solid ${BORDER}`, padding: "0.9rem 1.25rem", maxWidth: 860 }}>
               <p style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, lineHeight: 1.75 }}>※ 表示価格はすべて税抜き目安です。要件・規模により変動します。</p>

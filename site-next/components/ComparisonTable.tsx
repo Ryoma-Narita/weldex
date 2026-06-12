@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { SERVICES } from "@/data/services";
 
 const NAVY  = "#1a2540";
 const GOLD  = "#b8960c";
@@ -6,6 +7,9 @@ const BLUE  = "#2563eb";
 const GRAY  = "#6b7280";
 const DM: CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
 const ZEN: CSSProperties = { fontFamily: "'Zen Kaku Gothic New', 'Hiragino Sans', sans-serif" };
+
+const webPriceFrom = SERVICES.find(s => s.slug === "web")!.priceFrom;
+const weldexWebPrice = `¥${webPriceFrom / 10000}万〜`;
 
 type Row = {
   label: string;
@@ -20,7 +24,7 @@ const rows: Row[] = [
   { label: "技術",        a: "WordPress",   b: "Next.js",   weldex: "Next.js"   },
   { label: "品質",        a: "🔴 標準",      b: "🟢 高品質",  weldex: "🟢 高品質", star: true  },
   { label: "表示速度",    a: "🔴 遅い",      b: "🟢 高速",   weldex: "🟢 高速",   star: true  },
-  { label: "費用",        a: "¥20万〜",      b: "¥80万〜",   weldex: "¥18万〜",   star: true, priceStar: true },
+  { label: "費用",        a: "¥20万〜",      b: "¥80万〜",   weldex: weldexWebPrice, star: true, priceStar: true },
   { label: "納期",        a: "1〜2ヶ月",     b: "2〜3ヶ月",  weldex: "最短4週間",  star: true  },
   { label: "一社完結",    a: "🔴 なし",      b: "🔴 なし",   weldex: "🟢 あり",   star: true  },
   { label: "セキュリティ", a: "弱い",         b: "強い",      weldex: "強い"       },

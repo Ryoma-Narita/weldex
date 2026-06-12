@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PainPoints from "@/components/PainPoints";
 import ComparisonTable from "@/components/ComparisonTable";
 import { WEB_INITIAL, SEO_ITEMS, WEB_PLANS, fmtPrice, getPlanDisplay } from "@/data/pricing";
 
@@ -27,17 +26,6 @@ const TECH_CARDS = [
   { icon: "🔍", title: "SEO評価", value: "Lighthouse 90点以上", note: "Googleの評価基準を標準装備" },
   { icon: "🛡️", title: "セキュリティ", value: "プラグインなし",  note: "脆弱性リスクを構造的に排除" },
   { icon: "🔗", title: "システム連携", value: "完全自社実装",    note: "予約・LINE・管理画面を一体化" },
-];
-
-const COMPARE_ROWS = [
-  { label: "使用技術",   other: "WordPress",          weldex: "Next.js 15",      highlight: false, weldexBlue: false },
-  { label: "表示速度",   other: "2〜5秒",              weldex: "0.5〜1秒",        highlight: true,  weldexBlue: true  },
-  { label: "SEO評価",   other: "普通",                 weldex: "高速表示で有利",  highlight: true,  weldexBlue: true  },
-  { label: "セキュリティ", other: "プラグイン脆弱性あり", weldex: "堅牢",          highlight: false, weldexBlue: false },
-  { label: "保守安定性", other: "プラグイン競合リスク",  weldex: "安定",           highlight: false, weldexBlue: false },
-  { label: "納期",       other: "1〜2ヶ月",            weldex: "最短4週間",       highlight: true,  weldexBlue: true  },
-  { label: "予約システム", other: "プラグイン依存",      weldex: "自社完全実装",   highlight: false, weldexBlue: false },
-  { label: "費用",       other: "¥280,000〜",          weldex: "¥280,000〜",      highlight: false, weldexBlue: false, weldexSub: "品質は別次元" },
 ];
 
 const DELIVERABLES = [
@@ -79,7 +67,6 @@ export default function WebServicePage() {
         .ws-tech-text   { flex: 1; }
         .ws-del-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .ws-plans-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; max-width: 860px; }
-        .ws-compare-wrap { overflow-x: auto; }
         @media (max-width: 768px) {
           .ws-inner       { padding: 3rem 20px; }
           .ws-tech-layout { flex-direction: column; gap: 2rem; }
@@ -134,8 +121,6 @@ export default function WebServicePage() {
           </div>
         </section>
 
-        {/* ─── お悩みセクション ─── */}
-        <PainPoints />
 
         {/* ─── ② 技術 ─── */}
         <section className="ws-section" style={{ background: BG_L }}>
@@ -178,55 +163,6 @@ export default function WebServicePage() {
         {/* ─── ComparisonTable ─── */}
         <ComparisonTable />
 
-        {/* ─── ③ 比較表 ─── */}
-        <section className="ws-section" style={{ background: "#fff" }}>
-          <div className="ws-inner">
-            <SecLabel>Comparison</SecLabel>
-            <H2>他社との比較</H2>
-            <p style={{ ...ZEN, fontSize: "0.9rem", color: GRAY, marginBottom: "2rem" }}>
-              同じ費用でも、技術の差がこれだけあります。
-            </p>
-
-            <div className="ws-compare-wrap">
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
-                <thead>
-                  <tr style={{ background: NAVY }}>
-                    <th style={{ ...ZEN, padding: "0.85rem 1.25rem", color: "rgba(255,255,255,0.6)", fontWeight: 500, textAlign: "left", fontSize: "0.75rem", letterSpacing: "0.04em" }}>比較項目</th>
-                    <th style={{ ...ZEN, padding: "0.85rem 1.25rem", color: "rgba(255,255,255,0.6)", fontWeight: 500, textAlign: "left", fontSize: "0.75rem" }}>一般的なWEB制作</th>
-                    <th style={{ ...DM,  padding: "0.85rem 1.25rem", color: GOLD, fontWeight: 700, textAlign: "left", fontSize: "0.8rem", letterSpacing: "0.06em" }}>Weldex</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPARE_ROWS.map((row, i) => (
-                    <tr key={row.label} style={{ background: row.highlight ? "#f0f7ff" : (i % 2 === 0 ? "#fff" : BG_L) }}>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: NAVY, fontWeight: 600, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>
-                        {row.label}
-                      </td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", color: GRAY, borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", whiteSpace: "nowrap" }}>
-                        {row.other}
-                      </td>
-                      <td style={{ ...ZEN, padding: "0.8rem 1.25rem", borderBottom: `1px solid ${BORDER}`, fontSize: "0.82rem", fontWeight: row.highlight ? 700 : 600, color: row.weldexBlue ? BLUE : NAVY, whiteSpace: "nowrap" }}>
-                        {row.weldex}
-                        {row.weldexSub && (
-                          <span style={{ display: "block", fontSize: "0.68rem", color: GOLD, fontWeight: 500, marginTop: "0.15rem", ...DM }}>
-                            {row.weldexSub}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <p style={{ ...ZEN, fontSize: "0.75rem", color: GRAY, lineHeight: 1.75, marginTop: "1.25rem", padding: "0.85rem 1rem", background: BG_L, borderLeft: `3px solid #e2e8f0` }}>
-              ※ 表示速度の差はGoogle検索順位に直接影響します。
-              Googleはページ表示速度をSEOの評価基準のひとつとしており、
-              遅いサイトは検索結果で不利になります。
-            </p>
-          </div>
-        </section>
-
         {/* ─── ④ 納品物 ─── */}
         <section className="ws-section" style={{ background: BG_L }}>
           <div className="ws-inner">
@@ -256,43 +192,6 @@ export default function WebServicePage() {
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
 
-            {/* 初期費用 */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem", marginBottom: "3rem" }} className="resp-2col">
-              <div>
-                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>制作 初期費用</p>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-                  <tbody>
-                    {WEB_INITIAL.map((item, i) => (
-                      <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
-                        <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>
-                          {item.name}
-                          {item.note && <span style={{ display: "block", fontSize: "0.65rem", color: GRAY, marginTop: "0.1rem" }}>※ {item.note}</span>}
-                        </td>
-                        <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
-                          {fmtPrice(item.price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div>
-                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>SEO</p>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-                  <tbody>
-                    {SEO_ITEMS.map((item, i) => (
-                      <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
-                        <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
-                        <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
-                          {fmtPrice(item.price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
             {/* 月額保守プラン（5段階・累積） */}
             <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
             <style>{`
@@ -300,6 +199,7 @@ export default function WebServicePage() {
               @media (max-width: 900px) { .ws-plans-new { grid-template-columns: repeat(2,1fr) !important; } }
               @media (max-width: 480px) { .ws-plans-new { grid-template-columns: 1fr !important; } }
             `}</style>
+            <div style={{ paddingTop: "0.75rem" }}>
             <div className="ws-plans-new">
               {WEB_PLANS.map((plan, idx) => {
                 const { summary, features } = getPlanDisplay(WEB_PLANS, idx);
@@ -334,6 +234,44 @@ export default function WebServicePage() {
                   </div>
                 );
               })}
+            </div>
+            </div>
+
+            {/* 初期費用 */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem", marginTop: "3rem" }} className="resp-2col">
+              <div>
+                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>制作 初期費用</p>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                  <tbody>
+                    {WEB_INITIAL.map((item, i) => (
+                      <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
+                        <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>
+                          {item.name}
+                          {item.note && <span style={{ display: "block", fontSize: "0.65rem", color: GRAY, marginTop: "0.1rem" }}>※ {item.note}</span>}
+                        </td>
+                        <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
+                          {fmtPrice(item.price)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>SEO</p>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                  <tbody>
+                    {SEO_ITEMS.map((item, i) => (
+                      <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
+                        <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
+                        <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
+                          {fmtPrice(item.price)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div style={{ marginTop: "1.5rem", background: BG_L, borderLeft: `3px solid ${BORDER}`, padding: "0.9rem 1.25rem" }}>

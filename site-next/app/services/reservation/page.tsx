@@ -221,49 +221,43 @@ export default function ReservationServicePage() {
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem", alignItems: "start" }} className="resp-2col">
-              {/* 初期費用 */}
-              <div>
-                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>初期費用（一括）</p>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-                  <tbody>
-                    {RESERVATION_INITIAL.map((item, i) => (
-                      <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
-                        <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
-                        <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
-                          {fmtPrice(item.price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* 月額プラン */}
+            <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
+            <div style={{ background: NAVY, padding: "2rem 1.75rem", maxWidth: 480 }}>
+              <div style={{ ...DM, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "0.6rem" }}>
+                {RESERVATION_PLANS[0].name.toUpperCase()}
               </div>
-
-              {/* 月額プラン */}
-              <div>
-                <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
-                <div style={{ background: NAVY, padding: "2rem 1.75rem" }}>
-                  <div style={{ ...DM, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "0.6rem" }}>
-                    {RESERVATION_PLANS[0].name.toUpperCase()}
-                  </div>
-                  <div style={{ ...DM, fontSize: "clamp(1.5rem,3vw,1.9rem)", fontWeight: 900, color: "#fff", lineHeight: 1, marginBottom: "0.2rem" }}>
-                    {fmtPrice(RESERVATION_PLANS[0].price)}
-                  </div>
-                  <div style={{ ...DM, fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginBottom: "1.5rem" }}>/ 月（税抜）</div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                    {RESERVATION_PLANS[0].newFeatures.map((f) => (
-                      <li key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.88)", ...ZEN }}>
-                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
-                          <circle cx="6.5" cy="6.5" r="6.5" fill="rgba(201,168,76,0.2)" />
-                          <path d="M3.5 6.5l2 2 4-4" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              <div style={{ ...DM, fontSize: "clamp(1.5rem,3vw,1.9rem)", fontWeight: 900, color: "#fff", lineHeight: 1, marginBottom: "0.2rem" }}>
+                {fmtPrice(RESERVATION_PLANS[0].price)}
               </div>
+              <div style={{ ...DM, fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginBottom: "1.5rem" }}>/ 月（税抜）</div>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {RESERVATION_PLANS[0].newFeatures.map((f) => (
+                  <li key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.88)", ...ZEN }}>
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="6.5" cy="6.5" r="6.5" fill="rgba(201,168,76,0.2)" />
+                      <path d="M3.5 6.5l2 2 4-4" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
             </div>
+
+            {/* 初期費用 */}
+            <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem", marginTop: "3rem" }}>初期費用（一括）</p>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem", maxWidth: 520 }}>
+              <tbody>
+                {RESERVATION_INITIAL.map((item, i) => (
+                  <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
+                    <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
+                    <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>
+                      {fmtPrice(item.price)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             <div style={{ marginTop: "1.5rem", background: BG_L, borderLeft: `3px solid ${BORDER}`, padding: "0.9rem 1.25rem" }}>
               <p style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, lineHeight: 1.75 }}>※ 表示価格はすべて税抜き目安です。要件・規模により変動します。</p>
