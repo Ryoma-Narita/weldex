@@ -110,9 +110,9 @@ export const LINE_PLANS: Plan[] = [
 // ─── CRM ─────────────────────────────────────────────────
 export const CRM_INITIAL: PriceItem[] = [
   { name: "独自CRM構築（クラウド・DB化）",        price: 350000 },
-  { name: "ヒアリング・データ移行・クレンジング", price: 150000 },
+  { name: "ヒアリング・データ移行・クレンジング", price: 200000 },
   { name: "LINE予約連携",                          price: 200000 },
-  { name: "WEB予約システム連携",                   price: 150000 },
+  { name: "WEB連携",                               price: 200000 },
 ];
 
 export const CRM_BUNDLE_PRICE = 800000;
@@ -125,14 +125,14 @@ export const CRM_PLANS: Plan[] = [
   },
   {
     name: "スタンダード",
-    price: 29800,
+    price: 49800,
     recommended: true,
-    newFeatures: ["CSV取込支援", "ユーザー追加対応", "マスタ修正"],
+    newFeatures: ["CSV取込支援", "ユーザー追加対応", "マスタ修正", "レポート作成"],
   },
   {
     name: "プレミアム",
-    price: 49800,
-    newFeatures: ["月2時間改修", "レポート作成", "運用改善（弊社分析）"],
+    price: 99800,
+    newFeatures: ["月2時間改修", "レポート作成", "運用改善（弊社分析）", "WEB連携サポート"],
   },
 ];
 
