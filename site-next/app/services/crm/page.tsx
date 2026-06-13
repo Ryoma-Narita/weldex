@@ -215,6 +215,9 @@ export default function CrmServicePage() {
           <div className="crm-inner">
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
+            <p style={{ ...ZEN, fontSize: "clamp(1rem,1.8vw,1.2rem)", fontWeight: 700, color: PURPLE, marginBottom: "2rem", letterSpacing: "0.01em" }}>
+              Weldexだからできる、特別プラン
+            </p>
 
             {/* ① 一括パッケージ */}
             <div style={{ marginBottom: "2.5rem" }}>
