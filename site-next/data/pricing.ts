@@ -132,7 +132,7 @@ export const CRM_PLANS: Plan[] = [
   {
     name: "プレミアム",
     price: 99800,
-    newFeatures: ["月2時間改修", "レポート作成", "運用改善（弊社分析）", "WEB連携サポート"],
+    newFeatures: ["月2時間改修", "レポート作成・提案", "WEB運用サポート"],
   },
 ];
 
