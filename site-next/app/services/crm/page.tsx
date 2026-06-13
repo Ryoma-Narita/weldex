@@ -220,19 +220,21 @@ export default function CrmServicePage() {
             <div style={{ marginBottom: "2.5rem" }}>
               <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: PURPLE, textTransform: "uppercase", marginBottom: "1rem" }}>一括パッケージ（全て込み）</p>
               <div style={{ background: "#f8f5ff", border: `2px solid ${PURPLE}`, borderRadius: 10, padding: "2rem 2rem 1.5rem", maxWidth: 600 }}>
-                {/* メイン金額 */}
-                <div style={{ display: "flex", alignItems: "baseline", gap: "0.35rem", marginBottom: "0.4rem" }}>
+                {/* メイン金額：バンドル価格 + 個別合計に横線 */}
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.6rem", flexWrap: "wrap", marginBottom: "0.4rem" }}>
                   <span style={{ ...ZEN, fontSize: "clamp(2.4rem,5vw,3.5rem)", fontWeight: 900, color: NAVY, lineHeight: 1 }}>¥800,000</span>
                   <span style={{ ...DM, fontSize: "1.1rem", fontWeight: 700, color: PURPLE }}>〜</span>
-                  <span style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, marginLeft: "0.2rem" }}>（税抜）</span>
+                  <span style={{ ...DM, fontSize: "1.1rem", color: "#9ca3af", textDecoration: "line-through", fontWeight: 700 }}>
+                    ¥{(CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)).toLocaleString()}〜
+                  </span>
+                  <span style={{ ...ZEN, fontSize: "0.8rem", color: GRAY }}>（税抜）</span>
                 </div>
                 <p style={{ ...ZEN, fontSize: "0.78rem", color: PURPLE, fontWeight: 600, marginBottom: "1.5rem" }}>
-                  CRM構築・データ移行・LINE連携・WEB予約連携がすべて含まれます
+                  CRM構築・データ移行・LINE連携・WEB連携がすべて含まれます
                 </p>
 
                 {/* 横線付き個別価格 */}
                 <div style={{ borderTop: `1px solid rgba(124,58,237,0.15)`, paddingTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.55rem" }}>
-                  <p style={{ ...DM, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", color: "rgba(124,58,237,0.5)", textTransform: "uppercase", marginBottom: "0.25rem" }}>個別で頼むと合計 ¥{(CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)).toLocaleString()}〜</p>
                   {CRM_INITIAL.map(item => (
                     <div key={item.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
                       <span style={{ ...ZEN, fontSize: "0.8rem", color: GRAY }}>{item.name}</span>
@@ -241,15 +243,6 @@ export default function CrmServicePage() {
                       </span>
                     </div>
                   ))}
-                  <div style={{ marginTop: "0.5rem", paddingTop: "0.75rem", borderTop: `1px dashed rgba(124,58,237,0.2)`, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem" }}>
-                    <span style={{ ...ZEN, fontSize: "0.78rem", color: GRAY }}>合計</span>
-                    <span style={{ ...DM, fontSize: "1rem", color: "#9ca3af", textDecoration: "line-through", fontWeight: 700 }}>
-                      ¥{(CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)).toLocaleString()}〜
-                    </span>
-                    <span style={{ ...DM, fontSize: "0.75rem", color: "#fff", background: PURPLE, fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: 4 }}>
-                      ¥{((CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)) - CRM_BUNDLE_PRICE).toLocaleString()} お得
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -262,6 +255,7 @@ export default function CrmServicePage() {
             {/* ② 月額保守プラン */}
             <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
             <div style={{ paddingTop: "0.75rem", marginBottom: "3rem" }}>
+              <div style={{ paddingTop: "0.75rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: BORDER, maxWidth: 860 }} className="crm-plan-grid">
                 <style>{`@media (max-width: 640px) { .crm-plan-grid { grid-template-columns: 1fr !important; } }`}</style>
                 {CRM_PLANS.map((plan, idx) => {
@@ -297,6 +291,7 @@ export default function CrmServicePage() {
                     </div>
                   );
                 })}
+              </div>
               </div>
             </div>
 
