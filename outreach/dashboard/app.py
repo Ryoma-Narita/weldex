@@ -138,7 +138,11 @@ def api_targets(
             total = cnt_cur.fetchone()[0]
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                f"SELECT * FROM targets {where} ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                f"""SELECT * FROM targets {where}
+                    ORDER BY
+                      CASE WHEN site_status IS NULL OR site_status = 'unchecked' THEN 1 ELSE 0 END ASC,
+                      created_at DESC
+                    LIMIT %s OFFSET %s""",
                 params + [per_page, offset]
             )
             rows = cur.fetchall()

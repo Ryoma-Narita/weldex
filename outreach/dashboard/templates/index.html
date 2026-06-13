@@ -1032,6 +1032,7 @@
   // ─── ターゲット選択管理 ──────────────────────────────────────────────────────
 
   let _selectedTargets = new Map(); // id → target object
+  let _targetsMap = {};             // id → target object（カードクリック用）
 
   function toggleTargetSelect(cb) {
     const id = parseInt(cb.value, 10);
@@ -1187,11 +1188,12 @@
       renderPagination(0, 1, 30);
       return;
     }
+    _targetsMap = {};
     grid.innerHTML = data.items.map(t => {
+      _targetsMap[t.id] = t;
       const pitch       = PITCH[t.site_status];
       const isConverted = t.send_status === '顧客化';
       const isSent      = t.send_status === 'sent';
-      const tJson       = JSON.stringify(t).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 
       const statusChip = isConverted
         ? '<span class="tc-icon" style="background:#dcfce7;color:#166534;">顧客化済</span>'
@@ -1208,7 +1210,7 @@
 
       return `
         <div class="target-card${isConverted ? ' converted' : ''}" id="tc-${t.id}"
-             onclick="openTargetModal(${tJson})">
+             onclick="openTargetModal(${t.id})">
           <div style="display:flex;align-items:flex-start;gap:0.3rem;flex-wrap:wrap;">
             <span class="badge badge-${t.site_status||'unchecked'}">${STATUS_LABEL[t.site_status]||'未診断'}</span>
             ${statusChip}
@@ -1227,7 +1229,9 @@
 
   let _tpTarget = null;
 
-  function openTargetModal(t) {
+  function openTargetModal(id) {
+    const t = _targetsMap[id];
+    if (!t) return;
     _tpTarget = t;
     const pitch = PITCH[t.site_status];
 
