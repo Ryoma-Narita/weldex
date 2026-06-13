@@ -258,7 +258,7 @@ export default function CrmServicePage() {
             {/* ② 月額保守プラン */}
             <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
             <div style={{ paddingTop: "1.25rem", marginBottom: "3rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1rem", maxWidth: 860, alignItems: "start" }} className="crm-plan-grid">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1rem", maxWidth: 860, margin: "0 auto", alignItems: "start" }} className="crm-plan-grid">
                 <style>{`@media (max-width: 640px) { .crm-plan-grid { grid-template-columns: 1fr !important; } }`}</style>
                 {CRM_PLANS.map((plan, idx) => {
                   const { summary, features } = getPlanDisplay(CRM_PLANS, idx);
