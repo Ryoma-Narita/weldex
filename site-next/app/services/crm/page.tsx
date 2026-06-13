@@ -257,8 +257,8 @@ export default function CrmServicePage() {
 
             {/* ② 月額保守プラン */}
             <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
-            <div style={{ paddingTop: "0.75rem", marginBottom: "3rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1rem", maxWidth: 860 }} className="crm-plan-grid">
+            <div style={{ paddingTop: "1.25rem", marginBottom: "3rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1rem", maxWidth: 860, alignItems: "start" }} className="crm-plan-grid">
                 <style>{`@media (max-width: 640px) { .crm-plan-grid { grid-template-columns: 1fr !important; } }`}</style>
                 {CRM_PLANS.map((plan, idx) => {
                   const { summary, features } = getPlanDisplay(CRM_PLANS, idx);
@@ -272,7 +272,6 @@ export default function CrmServicePage() {
                       padding: "2rem 1.5rem",
                       display: "flex",
                       flexDirection: "column",
-                      marginTop: plan.recommended ? 0 : "0.75rem",
                     }}>
                       {plan.recommended && (
                         <span style={{ position: "absolute", top: "-0.75rem", left: "50%", transform: "translateX(-50%)", background: GOLD, color: "#fff", fontSize: "0.6rem", fontWeight: 700, padding: "0.2rem 0.75rem", borderRadius: 100, whiteSpace: "nowrap", letterSpacing: "0.06em", ...DM }}>おすすめ</span>
