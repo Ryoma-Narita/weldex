@@ -111,8 +111,11 @@ export const LINE_PLANS: Plan[] = [
 export const CRM_INITIAL: PriceItem[] = [
   { name: "独自CRM構築（クラウド・DB化）",        price: 350000 },
   { name: "ヒアリング・データ移行・クレンジング", price: 150000 },
-  { name: "LINE連携",                             price: 200000 },
+  { name: "LINE予約連携",                          price: 200000 },
+  { name: "WEB予約システム連携",                   price: 150000 },
 ];
+
+export const CRM_BUNDLE_PRICE = 800000;
 
 export const CRM_PLANS: Plan[] = [
   {

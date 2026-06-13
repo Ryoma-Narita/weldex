@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CRM_INITIAL, CRM_PLANS, fmtPrice, getPlanDisplay } from "@/data/pricing";
+import { CRM_INITIAL, CRM_PLANS, CRM_BUNDLE_PRICE, fmtPrice, getPlanDisplay } from "@/data/pricing";
 
 export const metadata: Metadata = {
   title: "顧客管理システム（CRM）| Weldex",
@@ -216,31 +216,52 @@ export default function CrmServicePage() {
             <SecLabel>Pricing</SecLabel>
             <H2>料金</H2>
 
-            {/* 初期費用（目立つように上へ） */}
-            <div style={{ marginBottom: "3rem" }}>
-              <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "1rem" }}>初期費用（一括）</p>
-              <div style={{ background: "#f8f5ff", border: `2px solid ${PURPLE}`, borderRadius: 8, padding: "2rem", maxWidth: 560, display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem" }}>
-                  <span style={{ ...ZEN, fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 900, color: NAVY, lineHeight: 1 }}>¥300,000</span>
-                  <span style={{ ...DM, fontSize: "1rem", fontWeight: 700, color: PURPLE }}>〜</span>
-                  <span style={{ ...ZEN, fontSize: "0.8rem", color: GRAY }}> （税抜）</span>
+            {/* ① 一括パッケージ */}
+            <div style={{ marginBottom: "2.5rem" }}>
+              <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: PURPLE, textTransform: "uppercase", marginBottom: "1rem" }}>一括パッケージ（全て込み）</p>
+              <div style={{ background: "#f8f5ff", border: `2px solid ${PURPLE}`, borderRadius: 10, padding: "2rem 2rem 1.5rem", maxWidth: 600 }}>
+                {/* メイン金額 */}
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.35rem", marginBottom: "0.4rem" }}>
+                  <span style={{ ...ZEN, fontSize: "clamp(2.4rem,5vw,3.5rem)", fontWeight: 900, color: NAVY, lineHeight: 1 }}>¥800,000</span>
+                  <span style={{ ...DM, fontSize: "1.1rem", fontWeight: 700, color: PURPLE }}>〜</span>
+                  <span style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, marginLeft: "0.2rem" }}>（税抜）</span>
                 </div>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
-                  <tbody>
-                    {CRM_INITIAL.map((item, i) => (
-                      <tr key={item.name} style={{ background: i % 2 === 0 ? "rgba(255,255,255,0.7)" : "transparent" }}>
-                        <td style={{ ...ZEN, padding: "0.65rem 0.75rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid rgba(124,58,237,0.1)` }}>{item.name}</td>
-                        <td style={{ ...DM, padding: "0.65rem 0.75rem", fontWeight: item.price === null ? 400 : 700, color: item.price === null ? GRAY : PURPLE, borderBottom: `1px solid rgba(124,58,237,0.1)`, textAlign: "right", whiteSpace: "nowrap" }}>{fmtPrice(item.price)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <p style={{ ...ZEN, fontSize: "0.78rem", color: PURPLE, fontWeight: 600, marginBottom: "1.5rem" }}>
+                  CRM構築・データ移行・LINE連携・WEB予約連携がすべて含まれます
+                </p>
+
+                {/* 横線付き個別価格 */}
+                <div style={{ borderTop: `1px solid rgba(124,58,237,0.15)`, paddingTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+                  <p style={{ ...DM, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.12em", color: "rgba(124,58,237,0.5)", textTransform: "uppercase", marginBottom: "0.25rem" }}>個別で頼むと合計 ¥{(CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)).toLocaleString()}〜</p>
+                  {CRM_INITIAL.map(item => (
+                    <div key={item.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+                      <span style={{ ...ZEN, fontSize: "0.8rem", color: GRAY }}>{item.name}</span>
+                      <span style={{ ...DM, fontSize: "0.82rem", color: "#9ca3af", textDecoration: "line-through", whiteSpace: "nowrap" }}>
+                        ¥{(item.price ?? 0).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: "0.5rem", paddingTop: "0.75rem", borderTop: `1px dashed rgba(124,58,237,0.2)`, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem" }}>
+                    <span style={{ ...ZEN, fontSize: "0.78rem", color: GRAY }}>合計</span>
+                    <span style={{ ...DM, fontSize: "1rem", color: "#9ca3af", textDecoration: "line-through", fontWeight: 700 }}>
+                      ¥{(CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)).toLocaleString()}〜
+                    </span>
+                    <span style={{ ...DM, fontSize: "0.75rem", color: "#fff", background: PURPLE, fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: 4 }}>
+                      ¥{((CRM_INITIAL.reduce((s, i) => s + (i.price ?? 0), 0)) - CRM_BUNDLE_PRICE).toLocaleString()} お得
+                    </span>
+                  </div>
+                </div>
               </div>
+
+              {/* 個別対応メモ */}
+              <p style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, marginTop: "1rem", paddingLeft: "0.25rem" }}>
+                ※ 個別での対応も承っております。必要な機能だけを選んでご発注いただけます。
+              </p>
             </div>
 
-            {/* 月額保守プラン（下へ） */}
+            {/* ② 月額保守プラン */}
             <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>月額 保守プラン</p>
-            <div style={{ paddingTop: "0.75rem" }}>
+            <div style={{ paddingTop: "0.75rem", marginBottom: "3rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: BORDER, maxWidth: 860 }} className="crm-plan-grid">
                 <style>{`@media (max-width: 640px) { .crm-plan-grid { grid-template-columns: 1fr !important; } }`}</style>
                 {CRM_PLANS.map((plan, idx) => {
@@ -278,6 +299,19 @@ export default function CrmServicePage() {
                 })}
               </div>
             </div>
+
+            {/* ③ 個別料金表 */}
+            <p style={{ ...DM, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.14em", color: GRAY, textTransform: "uppercase", marginBottom: "0.75rem" }}>個別料金（参考）</p>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem", maxWidth: 560 }}>
+              <tbody>
+                {CRM_INITIAL.map((item, i) => (
+                  <tr key={item.name} style={{ background: i % 2 === 0 ? "#fff" : BG_L }}>
+                    <td style={{ ...ZEN, padding: "0.75rem 1rem", color: NAVY, fontWeight: 500, borderBottom: `1px solid ${BORDER}` }}>{item.name}</td>
+                    <td style={{ ...DM, padding: "0.75rem 1rem", fontWeight: 700, color: NAVY, borderBottom: `1px solid ${BORDER}`, textAlign: "right", whiteSpace: "nowrap" }}>{fmtPrice(item.price)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             <div style={{ marginTop: "1.5rem", background: BG_L, borderLeft: `3px solid ${BORDER}`, padding: "0.9rem 1.25rem", maxWidth: 860 }}>
               <p style={{ ...ZEN, fontSize: "0.8rem", color: GRAY, lineHeight: 1.75 }}>※ 表示価格はすべて税抜き目安です。要件・規模により変動します。</p>
