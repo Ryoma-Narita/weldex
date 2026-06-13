@@ -26,9 +26,9 @@ const pillars = [
     num: '03',
     label: 'System Dev',
     title: 'システム開発',
-    desc: '予約管理・顧客管理・業務自動化など、貴事業に合わせたシステムをゼロから構築。AIで低コスト実現します。',
+    desc: '予約・顧客管理・在庫・業務自動化まで、貴事業に合わせた独自システムをゼロから構築。AIで大手の1/3以下のコストを実現します。',
     img: '/pillars/system.png',
-    href: '/services/crm',
+    href: '/services/system',
   },
   {
     num: '04',
@@ -75,14 +75,14 @@ function PillarCard({
           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         }}
       >
-        {/* ── 左：写真（60%・斜めクリップ）── */}
+        {/* ── 右：写真（60%・斜めクリップ）── */}
         <div
           style={{
-            position: 'absolute', left: 0, top: 0, bottom: 0,
+            position: 'absolute', right: 0, top: 0, bottom: 0,
             width: '60%',
             overflow: 'hidden',
-            /* 上辺: 0→100%, 下辺: 0→72% → 右端が斜めに */
-            clipPath: 'polygon(0 0, 100% 0, 72% 100%, 0 100%)',
+            /* 左端が斜めに（左下→左上が内側へ） */
+            clipPath: 'polygon(28% 0, 100% 0, 100% 100%, 0 100%)',
             background: '#0c1a35',
             zIndex: 2,
           }}
@@ -110,7 +110,7 @@ function PillarCard({
 
           {/* 番号バッジ */}
           <div style={{
-            position: 'absolute', top: '0.9rem', left: '0.9rem',
+            position: 'absolute', top: '0.9rem', right: '0.9rem',
             background: 'rgba(12,26,53,0.7)',
             backdropFilter: 'blur(8px)',
             padding: '0.15rem 0.55rem',
@@ -127,14 +127,14 @@ function PillarCard({
           </div>
         </div>
 
-        {/* ── 右：テキスト（純白・60%以降／高さを決める）── */}
+        {/* ── 左：テキスト（純白・左40%／高さを決める）── */}
         <div style={{
-          marginLeft: '60%',
+          marginRight: '60%',
           minHeight: 200,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: '1.4rem 1.4rem 1.4rem 1.5rem',
+          padding: '1.4rem 1.5rem 1.4rem 1.4rem',
           background: '#fff',
           position: 'relative',
           zIndex: 1,

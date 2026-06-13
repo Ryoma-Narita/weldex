@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import RoiCalculator from "@/components/RoiCalculator";
+import ServiceHero from "@/components/ServiceHero";
 import { RESERVATION_INITIAL, RESERVATION_PLANS, fmtPrice } from "@/data/pricing";
 
 export const metadata: Metadata = {
@@ -85,41 +86,15 @@ export default function ReservationServicePage() {
 
       <main>
         {/* ─── ヒーロー ─── */}
-        <section className="rs-section" style={{ paddingTop: "6rem", background: "transparent" }}>
-          <div className="rs-inner" style={{ paddingTop: "1.5rem" }}>
-            <nav style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: GRAY, marginBottom: "2.5rem", ...DM }}>
-              <Link href="/"         style={{ color: GRAY, textDecoration: "none" }}>ホーム</Link>
-              <span style={{ color: "#cbd5e1" }}>›</span>
-              <Link href="/services" style={{ color: GRAY, textDecoration: "none" }}>サービス</Link>
-              <span style={{ color: "#cbd5e1" }}>›</span>
-              <span style={{ color: NAVY, fontWeight: 500 }}>WEB予約システム</span>
-            </nav>
-
-            <span style={{ display: "inline-block", background: "#0ea5e9", color: "#fff", fontSize: "0.72rem", fontWeight: 600, padding: "0.3rem 0.9rem", borderRadius: 100, marginBottom: "1.5rem", letterSpacing: "0.04em", ...DM }}>
-              WEB予約システム
-            </span>
-
-            <h1 style={{ ...ZEN, fontSize: "clamp(2.4rem,5.5vw,4rem)", fontWeight: 900, color: NAVY, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: "1.5rem" }}>
-              予約の取りこぼしを、<br />
-              <em style={{ color: GOLD, fontStyle: "normal" }}>なくす。</em>
-            </h1>
-
-            <p style={{ ...ZEN, fontSize: "clamp(0.9rem,1.5vw,1.05rem)", color: GRAY, lineHeight: 1.9, fontWeight: 400, marginBottom: "2.5rem", maxWidth: 520 }}>
-              24時間自動受付・前日リマインド・顧客管理まで一式。<br />
-              電話対応の工数を削減しながら、<br />
-              患者・顧客の利便性を大幅に向上します。
-            </p>
-
-            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              <Link href="/contact" style={{ display: "inline-block", background: NAVY, color: "#fff", padding: "0.85rem 2rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.03em", ...DM }}>
-                無料相談をする
-              </Link>
-              <Link href="/services" style={{ display: "inline-block", border: `1.5px solid ${NAVY}`, color: NAVY, padding: "0.85rem 2rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.03em", background: "transparent", ...DM }}>
-                サービス一覧へ
-              </Link>
-            </div>
-          </div>
-        </section>
+        <ServiceHero
+          crumb="WEB予約システム"
+          tag="WEB予約システム"
+          accent="#0ea5e9"
+          image="/images/services/reservation.png"
+          imageAlt="WEB予約システムのイメージ"
+          title={<>予約の取りこぼしを、<br /><em style={{ color: GOLD, fontStyle: "normal" }}>なくす。</em></>}
+          desc={<>24時間自動受付・前日リマインド・顧客管理まで一式。電話対応の工数を削減しながら、患者・顧客の利便性を大幅に向上します。</>}
+        />
 
         {/* ─── 技術・特長 ─── */}
         <section className="rs-section" style={{ background: BG_L }}>

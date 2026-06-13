@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ServiceHero from "@/components/ServiceHero";
 import { LINE_INITIAL, LINE_PLANS, fmtPrice, getPlanDisplay } from "@/data/pricing";
 
 export const metadata: Metadata = {
@@ -84,41 +85,15 @@ export default function LineServicePage() {
 
       <main>
         {/* ─── ヒーロー ─── */}
-        <section className="ls-section" style={{ paddingTop: "6rem", background: "#fff" }}>
-          <div className="ls-inner" style={{ paddingTop: "1.5rem" }}>
-            <nav style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: GRAY, marginBottom: "2.5rem", ...DM }}>
-              <Link href="/"         style={{ color: GRAY, textDecoration: "none" }}>ホーム</Link>
-              <span style={{ color: "#cbd5e1" }}>›</span>
-              <Link href="/services" style={{ color: GRAY, textDecoration: "none" }}>サービス</Link>
-              <span style={{ color: "#cbd5e1" }}>›</span>
-              <span style={{ color: NAVY, fontWeight: 500 }}>LINE連携・アカウント作成代行</span>
-            </nav>
-
-            <span style={{ display: "inline-block", background: GREEN, color: "#fff", fontSize: "0.72rem", fontWeight: 600, padding: "0.3rem 0.9rem", borderRadius: 100, marginBottom: "1.5rem", letterSpacing: "0.04em", ...DM }}>
-              LINE連携・アカウント作成代行
-            </span>
-
-            <h1 style={{ ...ZEN, fontSize: "clamp(2.4rem,5.5vw,4rem)", fontWeight: 900, color: NAVY, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: "1.5rem" }}>
-              LINEの設定、<br />
-              <em style={{ color: GOLD, fontStyle: "normal" }}>全部お任せください。</em>
-            </h1>
-
-            <p style={{ ...ZEN, fontSize: "clamp(0.9rem,1.5vw,1.05rem)", color: GRAY, lineHeight: 1.9, fontWeight: 400, marginBottom: "2.5rem", maxWidth: 520 }}>
-              LINE公式アカウントの開設から、リッチメニュー制作・<br />
-              自動応答設定・予約システム連携まで一社完結。<br />
-              難しい設定作業をWeldexが全て代行します。
-            </p>
-
-            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              <Link href="/contact" style={{ display: "inline-block", background: NAVY, color: "#fff", padding: "0.85rem 2rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.03em", ...DM }}>
-                無料相談をする
-              </Link>
-              <Link href="/services" style={{ display: "inline-block", border: `1.5px solid ${NAVY}`, color: NAVY, padding: "0.85rem 2rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.03em", background: "transparent", ...DM }}>
-                サービス一覧へ
-              </Link>
-            </div>
-          </div>
-        </section>
+        <ServiceHero
+          crumb="LINE連携・アカウント作成代行"
+          tag="LINE連携・アカウント作成代行"
+          accent={GREEN}
+          image="/images/services/line.png"
+          imageAlt="LINE連携・アカウント作成代行のイメージ"
+          title={<>LINEの設定、<br /><em style={{ color: GOLD, fontStyle: "normal" }}>全部お任せください。</em></>}
+          desc={<>LINE公式アカウントの開設から、リッチメニュー制作・自動応答設定・予約システム連携まで一社完結。難しい設定作業をWeldexが全て代行します。</>}
+        />
 
         {/* ─── 特長 ─── */}
         <section className="ls-section" style={{ background: BG_L }}>
