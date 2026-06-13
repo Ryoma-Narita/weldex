@@ -1,16 +1,13 @@
 import Link from "next/link";
 import FadeIn from "./FadeIn";
-import { SERVICES, MAINTENANCE_FROM, fmtYen } from "@/data/services";
+import { SERVICES, fmtYen } from "@/data/services";
 
-const items = [
-  ...SERVICES.filter((s) => s.slug !== "crm").map((s) => ({
-    title: s.slug === "line" ? "LINE予約連携" : s.title,
-    price: fmtYen(s.priceFrom),
-    unit: "〜",
-    note: s.teaserNote,
-  })),
-  { title: "月額保守・運用", price: fmtYen(MAINTENANCE_FROM), unit: "〜 / 月", note: "更新・改善・障害対応" },
-];
+const items = SERVICES.map((s) => ({
+  title: s.slug === "line" ? "LINE予約連携" : s.title,
+  price: fmtYen(s.priceFrom),
+  unit: "〜",
+  note: s.teaserNote,
+}));
 
 export default function PriceTeaser() {
   return (

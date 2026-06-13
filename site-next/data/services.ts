@@ -95,7 +95,7 @@ export const SERVICES: Service[] = [
       "予約システムとのシームレスな連携",
       "自動フォローアップ・レポート機能",
     ],
-    teaserNote: "顧客情報の一元管理",
+    teaserNote: "予約・LINE・WEBと自由に連携できる独自CRM",
     href: "/services/crm",
   },
 ];
