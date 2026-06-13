@@ -41,6 +41,10 @@ def require_auth(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 # 起動時にDBを初期化
 @app.on_event("startup")
 def on_startup():
