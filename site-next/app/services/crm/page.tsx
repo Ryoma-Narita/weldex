@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CRM_INITIAL, CRM_PLANS, CRM_BUNDLE_PRICE, fmtPrice, getPlanDisplay } from "@/data/pricing";
+import { CRM_INITIAL, CRM_PLANS, fmtPrice, getPlanDisplay } from "@/data/pricing";
 
 export const metadata: Metadata = {
   title: "顧客管理システム（CRM）| Weldex",
