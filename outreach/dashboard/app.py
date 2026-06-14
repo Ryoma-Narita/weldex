@@ -677,6 +677,7 @@ async def api_diagnose(
                 has_ssl            = r.get("has_ssl"),
                 has_contact_form   = r.get("has_contact_form"),
                 contact_form_url   = r.get("contact_form_url"),
+                detail             = r.get("detail"),
             )
             st = r.get("status", "error")
             results[st] = results.get(st, 0) + 1
