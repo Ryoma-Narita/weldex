@@ -896,6 +896,12 @@
           <div id="cd-save-status" style="font-size:0.65rem;color:var(--light);margin-top:4px;text-align:right;min-height:1em;"></div>
         </div>
 
+        <!-- メール生成ボタン -->
+        <button onclick="cdGenerateEmail()"
+          style="width:100%;padding:0.65rem;background:var(--navy);color:#fff;border:none;border-radius:4px;font-size:0.82rem;font-weight:600;cursor:pointer;margin-top:0.25rem;">
+          メール生成
+        </button>
+
       </div>
     </div><!-- /grid -->
   </div>
@@ -1515,7 +1521,8 @@
   });
 
   // ─── 顧客詳細モーダル ───
-  let _cdId = null; // 現在開いている顧客ID
+  let _cdId = null;       // 現在開いている顧客ID
+  let _cdCustomer = null; // 現在開いている顧客データ
 
   async function openCustDetail(id) {
     _cdId = id;
@@ -1539,6 +1546,7 @@
   }
 
   function renderCustDetail(c) {
+    _cdCustomer = c;
     // ヘッダー
     document.getElementById('cd-company').textContent = c.company || '—';
     document.getElementById('cd-meta').textContent =
@@ -1655,6 +1663,24 @@
         statusEl.style.color = 'var(--red)';
       }
     }, 600); // 600ms デバウンス
+  }
+
+  function cdGenerateEmail() {
+    const c = _cdCustomer;
+    if (!c) return;
+    // ターゲット情報があればそちらを優先、なければ顧客データで代替
+    const t = {
+      id:                 c.target_id || null,
+      name:               c.company || '',
+      industry:           c.industry || '',
+      area:               c.target_area || '',
+      site_status:        c.target_site_status || 'unchecked',
+      detail:             c.target_detail || '',
+      has_line:           c.has_line,
+      has_online_booking: c.has_online_booking,
+    };
+    closeCustDetailModal();
+    openGenerateEmailModal(t.id, t);
   }
 
   // ─── ターゲット手動追加モーダル ───

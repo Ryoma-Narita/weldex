@@ -775,6 +775,7 @@ def api_customers_get(
                        t.area        AS target_area,
                        t.website     AS target_website,
                        t.site_status AS target_site_status,
+                       t.detail      AS target_detail,
                        t.has_line,
                        t.has_ssl,
                        t.has_online_booking,
