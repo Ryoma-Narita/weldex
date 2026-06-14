@@ -137,6 +137,9 @@ def init_db() -> None:
             cur.execute(
                 "ALTER TABLE targets ADD COLUMN IF NOT EXISTS contact_form_url TEXT DEFAULT NULL"
             )
+            cur.execute(
+                "ALTER TABLE targets ADD COLUMN IF NOT EXISTS detail TEXT DEFAULT NULL"
+            )
         conn.commit()
 
 
@@ -277,6 +280,7 @@ def update_site_status(
     has_ssl=None,
     has_contact_form=None,
     contact_form_url: str = None,
+    detail: str = None,
 ) -> None:
     """サイト診断結果をターゲットに反映する。"""
     def to_int(v):
@@ -294,13 +298,14 @@ def update_site_status(
                     phone_only         = %s,
                     has_ssl            = %s,
                     has_contact_form   = %s,
-                    contact_form_url   = %s
+                    contact_form_url   = %s,
+                    detail             = %s
                 WHERE id = %s
             """, (
                 status, email,
                 to_int(has_line), to_int(has_online_booking),
                 to_int(phone_only), to_int(has_ssl), to_int(has_contact_form),
-                contact_form_url,
+                contact_form_url, detail,
                 target_id,
             ))
         conn.commit()

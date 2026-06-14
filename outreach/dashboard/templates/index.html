@@ -433,7 +433,7 @@
     </select>
     <button class="btn" onclick="loadTargets(1)">検索</button>
     <button class="btn secondary" onclick="resetFilters()">リセット</button>
-    <button class="btn secondary" onclick="openTargetModal()" style="margin-left:auto;">＋ 手動追加</button>
+    <button class="btn secondary" onclick="openAddTargetModal()" style="margin-left:auto;">＋ 手動追加</button>
     <span id="target-count" style="font-size:0.75rem;color:var(--gray);margin-left:0.5rem;"></span>
   </div>
   <!-- 再診断バー（ツールバー直下・独立行） -->
@@ -575,9 +575,9 @@
   </div>
 </div>
 
-<!-- ─── ターゲット詳細ポップアップ ─── -->
-<div id="modal-target" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;" onclick="if(event.target===this)closeTargetModal()">
-  <div style="background:var(--white);width:90%;max-width:440px;border-radius:6px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+<!-- ─── ターゲット詳細・編集モーダル ─── -->
+<div id="modal-target" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;" onclick="if(event.target===this)closeTargetModal()">
+  <div style="background:var(--white);width:100%;max-width:520px;border-radius:6px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
     <!-- ヘッダー -->
     <div style="background:var(--navy);padding:0.9rem 1.1rem;display:flex;align-items:flex-start;gap:0.6rem;">
       <div style="flex:1;">
@@ -589,28 +589,100 @@
       </div>
       <button onclick="closeTargetModal()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">✕</button>
     </div>
-    <!-- 診断・連絡先 -->
-    <div style="padding:0.9rem 1.1rem;display:flex;flex-direction:column;gap:0.45rem;border-bottom:1px solid var(--border);">
-      <div id="tp-pitch" style="font-size:0.8rem;font-weight:600;color:var(--navy);line-height:1.5;"></div>
-      <div id="tp-contacts" style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.75rem;color:var(--gray);"></div>
-    </div>
-    <!-- アクションボタン -->
-    <div style="padding:0.9rem 1.1rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">
-      <button id="tp-btn-email" onclick="tpGenerateEmail()"
-        style="padding:0.65rem 0.4rem;background:var(--navy);color:#fff;border:none;border-radius:4px;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-        メール生成
-      </button>
-      <button id="tp-btn-site" onclick="tpShowSite()"
-        style="padding:0.65rem 0.4rem;background:#f1f5f9;color:var(--navy);border:none;border-radius:4px;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
-        サイト表示
-      </button>
-      <button id="tp-btn-convert" onclick="tpConvert()"
-        style="padding:0.65rem 0.4rem;background:#dcfce7;color:#166534;border:none;border-radius:4px;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-        <span id="tp-convert-label">顧客化</span>
-      </button>
+    <!-- 編集フォーム -->
+    <div style="padding:1rem 1.1rem;display:flex;flex-direction:column;gap:0.75rem;">
+      <input type="hidden" id="tp-id">
+
+      <!-- 基本情報 -->
+      <div style="font-size:0.68rem;color:var(--gray);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.3rem;">基本情報</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;">
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">店舗名 *</label>
+          <input id="tp-edit-name" type="text" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">業種</label>
+          <input id="tp-edit-industry" type="text" placeholder="例：歯科クリニック" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">エリア</label>
+          <input id="tp-edit-area" type="text" placeholder="例：千葉市中央区" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">電話</label>
+          <input id="tp-edit-phone" type="text" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">メール</label>
+          <input id="tp-edit-email" type="text" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">住所</label>
+          <input id="tp-edit-address" type="text" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">WebサイトURL</label>
+          <input id="tp-edit-website" type="text" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">お問い合わせフォームURL</label>
+          <input id="tp-edit-contact-form" type="text" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.8rem;margin-top:0.2rem;border-radius:3px;">
+        </div>
+      </div>
+
+      <!-- 診断情報 -->
+      <div style="font-size:0.68rem;color:var(--gray);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.3rem;margin-top:0.25rem;">診断情報</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.55rem;">
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">診断ステータス</label>
+          <select id="tp-edit-status" style="width:100%;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.78rem;margin-top:0.2rem;border-radius:3px;">
+            <option value="unchecked">未診断</option>
+            <option value="none">サイトなし</option>
+            <option value="old">古いサイト</option>
+            <option value="no_mobile">スマホ非対応</option>
+            <option value="no_ssl">SSL未対応</option>
+            <option value="slow">表示遅い</option>
+            <option value="phone_only">電話のみ</option>
+            <option value="no_line">LINE未</option>
+            <option value="ok">問題なし</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">LINE公式</label>
+          <select id="tp-edit-has-line" style="width:100%;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.78rem;margin-top:0.2rem;border-radius:3px;">
+            <option value="">不明</option>
+            <option value="1">あり</option>
+            <option value="0">なし</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">ネット予約</label>
+          <select id="tp-edit-has-booking" style="width:100%;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.78rem;margin-top:0.2rem;border-radius:3px;">
+            <option value="">不明</option>
+            <option value="1">あり</option>
+            <option value="0">なし</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.67rem;color:var(--gray);font-weight:600;">診断詳細（AIメール生成で参照）</label>
+          <textarea id="tp-edit-detail" rows="3" placeholder="例：応答速度 4.2秒、スマホ非対応、Copyright 2018年のまま" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.38rem 0.55rem;font-size:0.78rem;margin-top:0.2rem;border-radius:3px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+      </div>
+
+      <!-- エラー表示 -->
+      <div id="tp-edit-error" style="display:none;color:var(--red);font-size:0.78rem;"></div>
+
+      <!-- アクションボタン -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.25rem;">
+        <button onclick="tpSave()" style="padding:0.6rem;background:var(--navy);color:#fff;border:none;border-radius:4px;font-size:0.8rem;font-weight:600;cursor:pointer;">保存</button>
+        <button id="tp-btn-convert" onclick="tpConvert()" style="padding:0.6rem;background:#dcfce7;color:#166534;border:none;border-radius:4px;font-size:0.8rem;font-weight:600;cursor:pointer;">
+          <span id="tp-convert-label">顧客化</span>
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <button id="tp-btn-email" onclick="tpGenerateEmail()" style="padding:0.6rem;background:#f1f5f9;color:var(--navy);border:none;border-radius:4px;font-size:0.8rem;font-weight:600;cursor:pointer;">メール生成</button>
+        <button id="tp-btn-site" onclick="tpShowSite()" style="padding:0.6rem;background:#f1f5f9;color:var(--navy);border:none;border-radius:4px;font-size:0.8rem;font-weight:600;cursor:pointer;">サイト表示</button>
+      </div>
     </div>
   </div>
 </div>
@@ -834,7 +906,7 @@
   <div style="background:var(--white);width:90%;max-width:480px;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
     <div style="display:flex;align-items:center;padding:0.85rem 1.25rem;background:var(--navy);">
       <span style="font-weight:600;color:var(--white);font-size:0.9rem;flex:1;">＋ ターゲットを手動追加</span>
-      <button onclick="closeTargetModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;">✕</button>
+      <button onclick="closeAddTargetModal()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.25rem;cursor:pointer;">✕</button>
     </div>
     <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.65rem;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
@@ -877,10 +949,34 @@
             <option value="ok">問題なし</option>
           </select>
         </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">LINE公式</label>
+          <select id="tm-has-line" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+            <option value="">不明</option>
+            <option value="1">あり</option>
+            <option value="0">なし</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">ネット予約</label>
+          <select id="tm-has-booking" style="width:100%;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+            <option value="">不明</option>
+            <option value="1">あり</option>
+            <option value="0">なし</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">お問い合わせフォームURL</label>
+          <input id="tm-contact-form" type="text" placeholder="例：https://example.jp/contact" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.8rem;margin-top:0.2rem;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.68rem;color:var(--gray);font-weight:600;letter-spacing:0.04em;">診断詳細（AIメール生成で参照）</label>
+          <textarea id="tm-detail" rows="2" placeholder="例：応答速度 4.2秒、スマホ非対応、Copyright 2018年のまま" style="width:100%;box-sizing:border-box;border:1px solid var(--border);padding:0.4rem 0.6rem;font-size:0.78rem;margin-top:0.2rem;resize:vertical;font-family:inherit;"></textarea>
+        </div>
       </div>
       <div id="tm-error" style="color:var(--red);font-size:0.78rem;display:none;"></div>
       <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.25rem;">
-        <button class="btn secondary" onclick="closeTargetModal()">キャンセル</button>
+        <button class="btn secondary" onclick="closeAddTargetModal()">キャンセル</button>
         <button class="btn" onclick="saveTargetModal()">追加する</button>
       </div>
     </div>
@@ -1208,6 +1304,8 @@
         t.has_line === 0   ? '<span class="tc-icon" style="background:#f3e8ff;color:#7c3aed;">LINE未</span>' : '',
       ].filter(Boolean).join('');
 
+      const detailSnip = t.detail ? `<div style="font-size:0.68rem;color:var(--light);margin-top:0.2rem;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(t.detail)}</div>` : '';
+
       return `
         <div class="target-card${isConverted ? ' converted' : ''}" id="tc-${t.id}"
              onclick="openTargetModal(${t.id})">
@@ -1218,6 +1316,7 @@
           <div class="target-card-name">${esc(t.name)}</div>
           <div class="target-card-sub">${[t.industry, t.area].filter(Boolean).map(esc).join(' · ')}</div>
           ${pitch ? `<div class="target-card-pitch" style="color:${pitch.color};">→ ${pitch.text}</div>` : ''}
+          ${detailSnip}
           <div class="target-card-icons">${icons}</div>
         </div>`;
     }).join('');
@@ -1225,7 +1324,7 @@
     renderPagination(data.total, data.page, data.per_page);
   }
 
-  // ─── ターゲット詳細ポップアップ ─────────────────────────────────────────────
+  // ─── ターゲット詳細・編集モーダル ──────────────────────────────────────────
 
   let _tpTarget = null;
 
@@ -1233,35 +1332,102 @@
     const t = _targetsMap[id];
     if (!t) return;
     _tpTarget = t;
-    const pitch = PITCH[t.site_status];
 
-    document.getElementById('tp-name').textContent    = t.name || '';
-    document.getElementById('tp-badge').innerHTML     = `<span class="badge badge-${t.site_status||'unchecked'}">${STATUS_LABEL[t.site_status]||'未診断'}</span>`;
+    // ヘッダー
+    document.getElementById('tp-name').textContent     = t.name || '';
+    document.getElementById('tp-badge').innerHTML      = `<span class="badge badge-${t.site_status||'unchecked'}">${STATUS_LABEL[t.site_status]||'未診断'}</span>`;
     document.getElementById('tp-industry').textContent = [t.industry, t.area].filter(Boolean).join(' · ');
-    document.getElementById('tp-pitch').textContent   = pitch ? `→ ${pitch.text}` : '';
+    document.getElementById('tp-id').value             = t.id;
 
-    const contacts = [];
-    if (t.phone) contacts.push(`📞 ${t.phone}`);
-    if (t.email) contacts.push(`✉ ${t.email}`);
-    if (t.website) contacts.push(`🌐 ${t.website}`);
-    document.getElementById('tp-contacts').innerHTML = contacts.map(c => `<div>${esc(c)}</div>`).join('');
+    // 基本情報フィールド
+    document.getElementById('tp-edit-name').value         = t.name         || '';
+    document.getElementById('tp-edit-industry').value     = t.industry     || '';
+    document.getElementById('tp-edit-area').value         = t.area         || '';
+    document.getElementById('tp-edit-phone').value        = t.phone        || '';
+    document.getElementById('tp-edit-email').value        = t.email        || '';
+    document.getElementById('tp-edit-address').value      = t.address      || '';
+    document.getElementById('tp-edit-website').value      = t.website      || '';
+    document.getElementById('tp-edit-contact-form').value = t.contact_form_url || '';
 
+    // 診断情報
+    document.getElementById('tp-edit-status').value      = t.site_status   || 'unchecked';
+    document.getElementById('tp-edit-detail').value      = t.detail        || '';
+    const lineVal    = t.has_line           === null || t.has_line           === undefined ? '' : String(t.has_line);
+    const bookingVal = t.has_online_booking === null || t.has_online_booking === undefined ? '' : String(t.has_online_booking);
+    document.getElementById('tp-edit-has-line').value    = lineVal;
+    document.getElementById('tp-edit-has-booking').value = bookingVal;
+
+    // 顧客化ボタン状態
     const isConverted = t.send_status === '顧客化';
     const btnConvert  = document.getElementById('tp-btn-convert');
     btnConvert.disabled      = isConverted;
     btnConvert.style.opacity = isConverted ? '0.4' : '1';
     document.getElementById('tp-convert-label').textContent = isConverted ? '顧客化済' : '顧客化';
 
+    // サイト表示ボタン状態
     const btnSite = document.getElementById('tp-btn-site');
-    btnSite.disabled     = !t.website;
+    btnSite.disabled      = !t.website;
     btnSite.style.opacity = t.website ? '1' : '0.4';
 
-    document.getElementById('modal-target').style.display = 'flex';
+    document.getElementById('tp-edit-error').style.display = 'none';
+    document.getElementById('modal-target').style.display  = 'flex';
   }
 
   function closeTargetModal() {
     document.getElementById('modal-target').style.display = 'none';
     _tpTarget = null;
+  }
+
+  async function tpSave() {
+    const id   = document.getElementById('tp-id').value;
+    const name = document.getElementById('tp-edit-name').value.trim();
+    const errEl = document.getElementById('tp-edit-error');
+    if (!name) { errEl.textContent = '店舗名は必須です'; errEl.style.display = ''; return; }
+    errEl.style.display = 'none';
+
+    const payload = {
+      name,
+      industry:         document.getElementById('tp-edit-industry').value.trim(),
+      area:             document.getElementById('tp-edit-area').value.trim(),
+      phone:            document.getElementById('tp-edit-phone').value.trim(),
+      email:            document.getElementById('tp-edit-email').value.trim(),
+      address:          document.getElementById('tp-edit-address').value.trim(),
+      website:          document.getElementById('tp-edit-website').value.trim(),
+      contact_form_url: document.getElementById('tp-edit-contact-form').value.trim(),
+      site_status:      document.getElementById('tp-edit-status').value,
+      detail:           document.getElementById('tp-edit-detail').value.trim(),
+      has_line:         document.getElementById('tp-edit-has-line').value,
+      has_online_booking: document.getElementById('tp-edit-has-booking').value,
+    };
+
+    try {
+      const res = await fetch(`/api/targets/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        // ローカルキャッシュを更新してモーダルヘッダーも反映
+        Object.assign(_tpTarget, payload, { id: Number(id) });
+        _targetsMap[id] = _tpTarget;
+        document.getElementById('tp-name').textContent     = name;
+        document.getElementById('tp-industry').textContent = [payload.industry, payload.area].filter(Boolean).join(' · ');
+        document.getElementById('tp-badge').innerHTML      = `<span class="badge badge-${payload.site_status}">${STATUS_LABEL[payload.site_status]||payload.site_status}</span>`;
+        // リストカードも更新
+        loadTargets(currentPage);
+        errEl.textContent  = '保存しました';
+        errEl.style.color  = '#059669';
+        errEl.style.display = '';
+        setTimeout(() => { errEl.style.display = 'none'; errEl.style.color = 'var(--red)'; }, 2000);
+      } else {
+        errEl.textContent = d.error || '保存エラー';
+        errEl.style.display = '';
+      }
+    } catch(e) {
+      errEl.textContent = '通信エラー: ' + e;
+      errEl.style.display = '';
+    }
   }
 
   function tpGenerateEmail() {
@@ -1272,15 +1438,23 @@
   }
 
   function tpShowSite() {
-    if (!_tpTarget || !_tpTarget.website) return;
-    const t = _tpTarget;
+    const website = document.getElementById('tp-edit-website').value.trim() || (_tpTarget && _tpTarget.website);
+    if (!website) return;
+    const name = document.getElementById('tp-edit-name').value.trim();
     closeTargetModal();
-    openSiteModal(t.name, t.website);
+    openSiteModal(name, website);
   }
 
   async function tpConvert() {
     if (!_tpTarget) return;
     const t = _tpTarget;
+    // モーダルの最新入力値で上書きして渡す
+    t.name     = document.getElementById('tp-edit-name').value.trim()     || t.name;
+    t.phone    = document.getElementById('tp-edit-phone').value.trim()    || t.phone;
+    t.email    = document.getElementById('tp-edit-email').value.trim()    || t.email;
+    t.industry = document.getElementById('tp-edit-industry').value.trim() || t.industry;
+    t.address  = document.getElementById('tp-edit-address').value.trim()  || t.address;
+    t.detail   = document.getElementById('tp-edit-detail').value.trim()   || t.detail;
     await convertToCustomer(t.id, t);
     closeTargetModal();
   }
@@ -1337,7 +1511,7 @@
 
   // ESCキーでモーダルを閉じる
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); closeTargetModal(); closeCustDetailModal(); }
+    if (e.key === 'Escape') { closeSiteModal(); closeCustModal(); closeTargetModal(); closeAddTargetModal(); closeCustDetailModal(); }
   });
 
   // ─── 顧客詳細モーダル ───
@@ -1484,18 +1658,19 @@
   }
 
   // ─── ターゲット手動追加モーダル ───
-  function openTargetModal() {
-    // フィールドをクリア
-    ['tm-name','tm-industry','tm-area','tm-phone','tm-email','tm-address','tm-website'].forEach(id => {
+  function openAddTargetModal() {
+    ['tm-name','tm-industry','tm-area','tm-phone','tm-email','tm-address','tm-website','tm-contact-form','tm-detail'].forEach(id => {
       document.getElementById(id).value = '';
     });
-    document.getElementById('tm-status').value = 'unchecked';
+    document.getElementById('tm-status').value    = 'unchecked';
+    document.getElementById('tm-has-line').value   = '';
+    document.getElementById('tm-has-booking').value = '';
     document.getElementById('tm-error').style.display = 'none';
     document.getElementById('target-modal').style.display = 'flex';
     document.getElementById('tm-name').focus();
   }
 
-  function closeTargetModal() {
+  function closeAddTargetModal() {
     document.getElementById('target-modal').style.display = 'none';
   }
 
@@ -1511,19 +1686,23 @@
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           name,
-          industry:    document.getElementById('tm-industry').value,
-          area:        document.getElementById('tm-area').value,
-          phone:       document.getElementById('tm-phone').value,
-          email:       document.getElementById('tm-email').value,
-          address:     document.getElementById('tm-address').value,
-          website:     document.getElementById('tm-website').value,
-          site_status: document.getElementById('tm-status').value,
+          industry:         document.getElementById('tm-industry').value,
+          area:             document.getElementById('tm-area').value,
+          phone:            document.getElementById('tm-phone').value,
+          email:            document.getElementById('tm-email').value,
+          address:          document.getElementById('tm-address').value,
+          website:          document.getElementById('tm-website').value,
+          site_status:      document.getElementById('tm-status').value,
+          has_line:         document.getElementById('tm-has-line').value,
+          has_online_booking: document.getElementById('tm-has-booking').value,
+          contact_form_url: document.getElementById('tm-contact-form').value,
+          detail:           document.getElementById('tm-detail').value,
         }),
       });
       const d = await res.json();
       if (d.ok) {
-        closeTargetModal();
-        loadTargets(1); // 先頭ページに戻してリスト更新
+        closeAddTargetModal();
+        loadTargets(1);
         loadStats();
       } else {
         errEl.textContent = d.error || 'エラーが発生しました';
@@ -1555,23 +1734,29 @@
   // ─── 顧客化ボタン ───
   async function convertToCustomer(targetId, t) {
     if (!confirm(`「${t.name}」を顧客リストに追加しますか？`)) return;
+    // memo に住所・診断詳細を含める
+    const memoParts = [];
+    if (t.address) memoParts.push(`住所: ${t.address}`);
+    if (t.detail)  memoParts.push(`診断: ${t.detail}`);
+    if (t.website) memoParts.push(`サイト: ${t.website}`);
     try {
       const res = await fetch('/api/customers', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           target_id:    targetId,
-          company:      t.name,
-          phone:        t.phone  || '',
-          email:        t.email  || '',
-          industry:     t.industry || '',
+          company:      t.name      || '',
+          phone:        t.phone     || '',
+          email:        t.email     || '',
+          industry:     t.industry  || '',
           source:       '営業リスト',
+          memo:         memoParts.join('\n'),
         }),
       });
       const d = await res.json();
       if (d.ok) {
         alert(`顧客リストに追加しました（ID: ${d.id}）`);
-        loadTargets(currentPage); // リストを再読み込みして「顧客化済み」バッジを表示
+        loadTargets(currentPage);
       } else {
         alert('エラー: ' + (d.error || '不明'));
       }

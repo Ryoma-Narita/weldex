@@ -169,14 +169,20 @@ def api_targets_create(
     if not name:
         return {"ok": False, "error": "店舗名は必須です"}
 
+    def to_int_or_none(v):
+        if v is None or v == "": return None
+        try: return int(v)
+        except (ValueError, TypeError): return None
+
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO targets
                     (name, address, phone, website, email, industry, area,
-                     site_status, send_status)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'pending')
+                     site_status, send_status, has_line, has_online_booking,
+                     detail, contact_form_url)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'pending',%s,%s,%s,%s)
                 RETURNING id
                 """,
                 (
@@ -188,6 +194,10 @@ def api_targets_create(
                     body.get("industry"),
                     body.get("area"),
                     body.get("site_status", "unchecked"),
+                    to_int_or_none(body.get("has_line")),
+                    to_int_or_none(body.get("has_online_booking")),
+                    body.get("detail") or None,
+                    body.get("contact_form_url") or None,
                 ),
             )
             new_id = cur.fetchone()[0]
@@ -195,6 +205,46 @@ def api_targets_create(
 
     write_log("INFO", "system", f"手動ターゲット追加: {name} (id={new_id})")
     return {"ok": True, "id": new_id}
+
+
+@app.patch("/api/targets/{target_id}")
+def api_targets_update(
+    target_id: int,
+    auth=Depends(require_auth),
+    body: dict = Body(...),
+):
+    """ターゲット情報を更新する。"""
+    def to_int_or_none(v):
+        if v is None or v == "": return None
+        try: return int(v)
+        except (ValueError, TypeError): return None
+
+    allowed = {
+        "name", "address", "phone", "website", "email", "industry", "area",
+        "site_status", "has_line", "has_online_booking", "detail", "contact_form_url",
+    }
+    updates = {k: v for k, v in body.items() if k in allowed}
+    if not updates:
+        return {"ok": False, "error": "更新するフィールドがありません"}
+
+    int_fields = {"has_line", "has_online_booking"}
+    set_clauses = []
+    params = []
+    for k, v in updates.items():
+        set_clauses.append(f"{k} = %s")
+        params.append(to_int_or_none(v) if k in int_fields else (v or None))
+
+    params.append(target_id)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE targets SET {', '.join(set_clauses)} WHERE id = %s",
+                params,
+            )
+        conn.commit()
+
+    write_log("INFO", "system", f"ターゲット更新: id={target_id} fields={list(updates.keys())}")
+    return {"ok": True}
 
 
 @app.get("/api/logs")

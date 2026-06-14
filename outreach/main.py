@@ -83,6 +83,7 @@ def cmd_diagnose(args: argparse.Namespace) -> None:
             has_ssl            = result.get("has_ssl"),
             has_contact_form   = result.get("has_contact_form"),
             contact_form_url   = result.get("contact_form_url"),
+            detail             = result.get("detail"),
         )
 
         # 推奨テンプレートを決定してログに含める
